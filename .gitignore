@@ -1,0 +1,11 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Never commit real credentials from either sub-project
+**/.env
+**/.env.local
+**/.env.*.local

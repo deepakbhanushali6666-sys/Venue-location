@@ -1,0 +1,21 @@
+{
+  "name": "VENUES LOCATION — Venues & Film Shooting Locations",
+  "short_name": "VENUES LOCATION",
+  "description": "Find, book and list premium venues and film shooting locations across India.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1f3a",
+  "theme_color": "#0b1f3a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Book a Venue", "url": "/venues" },
+    { "name": "Film Locations", "url": "/film-locations" },
+    { "name": "Owner Dashboard", "url": "/dashboard" }
+  ]
+}
