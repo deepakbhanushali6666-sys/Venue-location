@@ -50,3 +50,39 @@ npm run dev            # http://localhost:5173
 Sign up with an email listed in the `admin_bootstrap_emails` table (seeded
 with `info@venueslocation.com` by the migration) to automatically get the
 `admin` role. Otherwise every new sign-up gets the `owner` role.
+
+## Deployment
+
+### Frontend → Vercel
+
+When importing this repo in Vercel:
+- **Root Directory**: `frontend`
+- **Build Command**: `npm run build` (auto-detected)
+- **Output Directory**: `dist` (auto-detected)
+- **Environment Variables**: copy every key from `frontend/.env.example`,
+  filled with your real Supabase values, plus `VITE_API_URL` pointing at
+  your deployed backend's URL (e.g. `https://your-backend.onrender.com/api`)
+
+`frontend/vercel.json` already adds the SPA fallback rewrite needed for
+client-side routing (TanStack Router) to work on refresh/direct links.
+
+### Backend → Render (or Railway)
+
+`backend/render.yaml` is a ready-to-use Render Blueprint. On Render:
+- **Root Directory**: `backend`
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start`
+- **Environment Variables**: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (from
+  `backend/.env.example`), and `CORS_ORIGIN` set to your deployed frontend's
+  URL (e.g. `https://your-app.vercel.app`) — no secret/service-role key
+  needed.
+
+Railway needs no special config file — just set the same Root Directory
+and environment variables; it auto-detects the Node app from `package.json`.
+
+### After both are live
+
+1. Update the backend's `CORS_ORIGIN` to the real Vercel frontend URL.
+2. Update the frontend's `VITE_API_URL` to the real backend URL, then
+   redeploy the frontend so the new env var is baked into the build.
+
