@@ -118,3 +118,87 @@ Postgres RLS are the real gate.
   (or someone with direct database access) manually inserts a `user_roles`
   row with `role = 'admin'` for your user ID. There is no self-service way to
   become an admin from the UI.
+
+---
+
+## Live deployment (as of this writing)
+
+| Piece | Where | Notes |
+|---|---|---|
+| Frontend | [venue-location.vercel.app](https://venue-location.vercel.app) | Vercel, auto-deploys on push to `main`, root directory `frontend` |
+| Backend | `venue-location.onrender.com` | Render, auto-deploys on push to `main`, root directory `backend` |
+| Database | Supabase project `ycgtzabcmvnhwetfyckw` | Free tier — auto-pauses after ~7 days of zero API activity; must be manually restored from the Supabase dashboard if that happens |
+| Keep-alive | `.github/workflows/keep-alive.yml` | Pings the backend's `/health` every 10 min so Render's free tier doesn't cold-start on real visitors |
+| Repo | [github.com/deepakbhanushali6666-sys/Venue-location](https://github.com/deepakbhanushali6666-sys/Venue-location) | Contains only `Venue Business/` — this is the deployed source of truth |
+
+**Test accounts** (pre-confirmed via Supabase Admin API, real password required to change):
+- Owner: `owner.test@venueslocation.com` / `VenueTest#2026`
+- Admin: `info@venueslocation.com` / `VenueAdmin#2026`
+
+---
+
+## Known gaps / pending work (read this before continuing the project)
+
+If you're picking this project up, these are the known incomplete or
+placeholder pieces — none of them block the core flows above from working,
+but all need attention before a real public launch:
+
+1. **Payment details are placeholders.** `frontend/src/data/business.ts` →
+   `PAYMENT_DETAILS` has a non-functional UPI ID (`omslocation@upi`) and
+   blank bank account/IFSC (`"—"`). Since subscription payments are fully
+   manual (owner pays via UPI/bank transfer, admin verifies the reference
+   number), **there is currently no real account for owners to actually pay
+   into.** Needs the real business UPI ID and bank details.
+2. **`BUSINESS.gstin` and `BUSINESS.pan` are blank** — shown on the tax
+   invoice generated after a payment is verified.
+3. **Only one test venue exists** ("Test Grand Resort") — no real venue
+   content has been seeded yet.
+4. **No custom domain** — running on `*.vercel.app` / `*.onrender.com`
+   subdomains, not a branded domain like `venueslocation.com`.
+5. **No rate limiting** on public/anonymous endpoints (`POST /api/leads`,
+   review submission, Supabase sign-up) — fine pre-launch, worth adding
+   before real public traffic to prevent spam/abuse.
+6. **No error monitoring** (e.g. Sentry) on either frontend or backend — if
+   something breaks in production, you won't know unless a user reports it.
+7. **No automated test suite** — every flow in this document was verified
+   via manual browser testing during development, not via unit/integration
+   tests. There is no CI test gate on pull requests.
+8. **Supabase free-tier auto-pause** — if the project sits idle (no API
+   calls) for about a week, it pauses and every API call fails with a DNS
+   resolution error until manually restored from the Supabase dashboard.
+   The GitHub Actions keep-alive cron pings the *backend*, not Supabase
+   itself, so it does **not** prevent this — Supabase pauses based on its
+   own API traffic, not the backend's uptime.
+9. **AWS deployment path exists but isn't live** — `backend/Dockerfile` and
+   `backend/render.yaml` are both in the repo; only Render is actually
+   deployed. See `decisions.md` #15 if you want to pick up the AWS ECS
+   Express Mode path later.
+10. **Backend service-role key is unused by design** (see `decisions.md` #6)
+    — if a future feature genuinely needs to bypass RLS (e.g. a background
+    job with no user session), it'll need the `SUPABASE_SECRET_KEY` slot
+    already reserved in `backend/.env.example`, plus new code to use it.
+
+---
+
+## Live deployment (as of now)
+
+| Layer | Where | Notes |
+|---|---|---|
+| Frontend | [venue-location.vercel.app](https://venue-location.vercel.app) | Vercel, auto-deploys on push to `main`, Root Directory = `frontend` |
+| Backend | [venue-location.onrender.com](https://venue-location.onrender.com) | Render, auto-deploys on push to `main`, Root Directory = `backend` |
+| Database | Supabase project `ycgtzabcmvnhwetfyckw` | Postgres + Auth + Storage; schema applied via `supabase/migration.sql` |
+| Source | [github.com/deepakbhanushali6666-sys/Venue-location](https://github.com/deepakbhanushali6666-sys/Venue-location) | Single repo, both apps deploy from subdirectories of the same `main` branch |
+
+**Request flow**: browser → Vercel (static SPA) → `fetch` to Render (`VITE_API_URL`) →
+Render's Express app forwards the caller's Supabase JWT → Supabase Postgres
+(RLS enforces authorization) / Supabase Auth (login) / Supabase Storage
+(photo uploads, called directly from the browser, bypassing the backend).
+
+**Keeping the backend warm**: Render's free tier spins the service down after
+~15 minutes idle, causing a slow (30-50s) first request afterwards.
+`.github/workflows/keep-alive.yml` pings `/health` every 10 minutes via
+GitHub Actions (free, no third-party account) to prevent this.
+
+**Google sign-in**: uses a real Google Cloud OAuth client, configured
+directly in Supabase's Auth provider settings — confirmed working end-to-end
+(redirects to Google, back through Supabase's callback, into the app).

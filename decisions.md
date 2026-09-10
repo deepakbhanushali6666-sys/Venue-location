@@ -182,3 +182,83 @@ utilities.
 values when an equivalent standard utility exists (Tailwind v4's numeric
 spacing scale supports these directly) — purely a lint-cleanliness fix, no
 behavior change.
+
+## 13. Replaced Lovable Cloud Auth's Google sign-in with direct Supabase OAuth
+
+**Decision:** removed `@lovable.dev/cloud-auth-js` and the
+`src/integrations/lovable/` wrapper entirely. "Continue with Google" now
+calls `supabase.auth.signInWithOAuth({ provider: "google" })` directly.
+
+**Why:** the Lovable SDK proxies OAuth through Lovable's own cloud
+infrastructure, which only works while a project stays connected to
+Lovable. Since this clone runs fully standalone, that flow would silently
+fail. Supabase has first-class Google OAuth support once a Google Cloud
+OAuth client is configured in the Supabase dashboard — no proxy needed, and
+one fewer external dependency. Verified working end-to-end in production
+after the user created the Google Cloud OAuth client and enabled the
+provider in Supabase.
+
+## 14. Deployment split: Vercel (frontend) + Render (backend), not one platform
+
+**Decision:** the frontend (static Vite SPA) deploys to Vercel; the backend
+(Express REST API) deploys to Render, as two independent services glued
+together by `VITE_API_URL` (frontend → backend) and `CORS_ORIGIN` (backend
+→ frontend).
+
+**Why:** Vercel doesn't run a persistent Node/Express process — only
+serverless functions — so it's not a natural fit for the backend as
+written. Render runs Express as-is with zero code changes. Splitting by
+platform strength (static hosting vs. long-running API) is simpler than
+adapting the backend into a serverless handler.
+
+## 15. AWS ECS Express Mode was prepared but not used — Render was faster to unblock on
+
+**Decision:** a production-ready `backend/Dockerfile` (multi-stage Node
+build) was created and validated locally (`docker build` + `docker run` +
+`/health` check) for a possible AWS deployment via **ECS Express Mode** —
+AWS's officially recommended replacement now that **App Runner is closed to
+new customers** (confirmed via AWS's own docs during this work). The
+Dockerfile is kept in the repo for future use, but the actual production
+backend was deployed to Render instead, because AWS's IAM role
+creation/propagation was taking too long to be worth blocking on at the
+time.
+
+**Why keep the Dockerfile anyway:** it's a small, self-contained artifact
+that makes an AWS (or any container-based) migration a quick follow-up
+later without redoing the work, and it was already validated to build and
+run correctly against the real Supabase project.
+
+## 16. Backend kept warm on Render's free tier via a GitHub Actions cron job
+
+**Decision:** added `.github/workflows/keep-alive.yml` — a scheduled
+GitHub Actions workflow that pings `/health` on the deployed backend every
+10 minutes.
+
+**Why:** Render's free tier spins a service down after ~15 minutes of
+inactivity; the first request afterward pays a 30-50 second cold-start
+penalty, which real visitors would experience as a broken/empty site.
+GitHub Actions cron triggers are free (public repos: unlimited; private
+repos: well within the free monthly minutes for a job this small) and
+require no third-party account, unlike an external uptime monitor.
+
+## 17. Separate, dedicated GitHub repository containing only `Venue Business/`
+
+**Decision:** `Venue Business/` was pushed to its own new repository
+(`Venue-location`), not to the original Lovable-connected repository at the
+workspace root, and only the two sub-projects + migration + docs were
+included — not the original monolith's `src/`, `supabase/migrations/`
+history, or Lovable-specific files.
+
+**Why:** the original root project stays connected to Lovable (per its
+`AGENTS.md`) and pushing/rewriting there risked interfering with that sync.
+The new repo's scope was deliberately kept to "everything needed to run
+this standalone app," confirmed against the original project for anything
+worth carrying over (nothing functionally important was missing — the
+consolidated migration already captured the full schema).
+
+**Security note acted on:** before the first commit, `frontend/.gitignore`
+was found to be missing a `.env` exclusion (the backend's already had one).
+Fixed before `git add .` — verified via `git status --short` that only
+`.env.example` files were staged, never the real `.env` files containing
+Supabase keys.
+
