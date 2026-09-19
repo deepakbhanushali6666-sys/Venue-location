@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping backend health endpoint
         run: |
-          curl -fsS --max-time 60 https://venue-location.onrender.com/health
+          curl -fsS --max-time 60 https://api.venueslocation.com/health
