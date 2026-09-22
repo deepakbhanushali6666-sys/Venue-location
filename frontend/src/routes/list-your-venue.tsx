@@ -62,6 +62,10 @@ function ListYourVenue() {
     e.preventDefault();
     const formEl = e.currentTarget;
     const data = Object.fromEntries(new FormData(formEl)) as Record<string, string>;
+    if (data["acceptTerms"] !== "on") {
+      toast.error("Please accept the Terms & Conditions and Privacy Policy to continue");
+      return;
+    }
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
       const next: Record<string, string> = {};
@@ -251,6 +255,25 @@ function ListYourVenue() {
               className={field}
               maxLength={600}
             />
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                name="acceptTerms"
+                type="checkbox"
+                required
+                className="mt-0.5 size-4 shrink-0 accent-gold"
+              />
+              <span>
+                I have read and agree to the VenuesLocation{" "}
+                <Link to="/terms" target="_blank" className="font-bold text-navy hover:text-gold">
+                  Terms &amp; Conditions
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" target="_blank" className="font-bold text-navy hover:text-gold">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
             <button
               type="submit"
               disabled={busy}

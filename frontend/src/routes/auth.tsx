@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/site/Logo";
@@ -45,9 +45,14 @@ function AuthPage() {
     const password = String(form.get("password") ?? "");
     const fullName = String(form.get("fullName") ?? "").trim();
     const mobile = String(form.get("mobile") ?? "").trim();
+    const acceptedTerms = form.get("acceptTerms") === "on";
 
     if (!email || password.length < 6) {
       toast.error("Enter a valid email and a password of at least 6 characters");
+      return;
+    }
+    if (mode === "signup" && !acceptedTerms) {
+      toast.error("Please accept the Terms & Conditions and Privacy Policy to continue");
       return;
     }
 
@@ -109,6 +114,27 @@ function AuthPage() {
             )}
             <input name="email" type="email" placeholder="Email Address" className={field} maxLength={120} />
             <input name="password" type="password" placeholder="Password" className={field} maxLength={72} />
+            {mode === "signup" && (
+              <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                <input
+                  name="acceptTerms"
+                  type="checkbox"
+                  required
+                  className="mt-0.5 size-4 shrink-0 accent-gold"
+                />
+                <span>
+                  I have read and agree to the VenuesLocation{" "}
+                  <Link to="/terms" target="_blank" className="font-bold text-navy hover:text-gold">
+                    Terms &amp; Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" target="_blank" className="font-bold text-navy hover:text-gold">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+            )}
             <button
               type="submit"
               disabled={busy}

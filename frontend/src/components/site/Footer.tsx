@@ -191,6 +191,7 @@ export function Footer() {
           <Link to="/terms" className="hover:text-gold">Terms of Service</Link>
           <Link to="/privacy" className="hover:text-gold">Privacy Policy</Link>
           <Link to="/refund-policy" className="hover:text-gold">Refund & Cancellation</Link>
+          <Link to="/faq" className="hover:text-gold">FAQ</Link>
         </div>
         <div className="mt-3">© {new Date().getFullYear()} VENUES LOCATION. All rights reserved.</div>
       </div>

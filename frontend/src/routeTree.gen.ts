@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FilmLocationsRouteImport } from './routes/film-locations'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as ListYourVenueRouteImport } from './routes/list-your-venue'
@@ -48,6 +49,11 @@ const AuthRoute = AuthRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FilmLocationsRoute = FilmLocationsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
   '/list-your-venue': typeof ListYourVenueRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
   '/list-your-venue': typeof ListYourVenueRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
   '/list-your-venue': typeof ListYourVenueRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/film-locations'
     | '/founder'
     | '/list-your-venue'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/film-locations'
     | '/founder'
     | '/list-your-venue'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/film-locations'
     | '/founder'
     | '/list-your-venue'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   FilmLocationsRoute: typeof FilmLocationsRoute
   FounderRoute: typeof FounderRoute
   ListYourVenueRoute: typeof ListYourVenueRoute
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/film-locations': {
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   FilmLocationsRoute: FilmLocationsRoute,
   FounderRoute: FounderRoute,
   ListYourVenueRoute: ListYourVenueRoute,
