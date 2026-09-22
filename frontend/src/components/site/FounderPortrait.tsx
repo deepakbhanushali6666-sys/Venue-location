@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import w320jpg from "@/assets/deepak-bhanushali-320.jpg.asset.json";
 import w640jpg from "@/assets/deepak-bhanushali-640.jpg.asset.json";
 import w960jpg from "@/assets/deepak-bhanushali-960.jpg.asset.json";
@@ -26,6 +27,22 @@ const FALLBACK_SRC =
     </svg>`,
   );
 
+// Probe the Lovable-hosted portrait once at module load. Dev servers (and non-Lovable
+// deploys) return HTML for the /__l5e/... path, so an image with 200 OK still has
+// naturalWidth 0. Detecting that up-front avoids per-instance load flicker.
+let portraitAvailablePromise: Promise<boolean> | null = null;
+function probePortrait(): Promise<boolean> {
+  if (portraitAvailablePromise) return portraitAvailablePromise;
+  portraitAvailablePromise = new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    const probe = new Image();
+    probe.onload = () => resolve(probe.naturalWidth > 0);
+    probe.onerror = () => resolve(false);
+    probe.src = w320jpg.url;
+  });
+  return portraitAvailablePromise;
+}
+
 type Props = {
   /** Descriptive alternative text for this specific placement. */
   alt: string;
@@ -39,6 +56,30 @@ type Props = {
 };
 
 export function FounderPortrait({ alt, sizes, className, priority = false, width = 960, height = 960 }: Props) {
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    probePortrait().then((ok) => {
+      if (!cancelled) setAvailable(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (available === false) {
+    return (
+      <img
+        src={FALLBACK_SRC}
+        alt={alt}
+        width={width}
+        height={height}
+        className={className}
+      />
+    );
+  }
+
   return (
     <picture>
       <source type="image/webp" srcSet={webpSet} sizes={sizes} />
@@ -53,13 +94,6 @@ export function FounderPortrait({ alt, sizes, className, priority = false, width
         decoding={priority ? "sync" : "async"}
         fetchPriority={priority ? "high" : "auto"}
         className={className}
-        onError={(e) => {
-          const img = e.currentTarget;
-          if (img.src !== FALLBACK_SRC) {
-            img.srcset = "";
-            img.src = FALLBACK_SRC;
-          }
-        }}
       />
     </picture>
   );
