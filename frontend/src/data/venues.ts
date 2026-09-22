@@ -45,20 +45,77 @@ export const categories: Category[] = [
 
 export const categoryBySlug = (slug: string) => categories.find((c) => c.slug === slug);
 
-export const states = ["Maharashtra", "Goa", "Rajasthan", "Karnataka", "Gujarat", "Delhi NCR"];
+// Flip to true to re-enable other states/cities across India.
+const ENABLE_OTHER_STATES = false;
 
-export const cities = [
+const MAHARASHTRA_CITIES = [
   "Mumbai",
+  "Navi Mumbai",
+  "Thane",
+  "Kalyan",
+  "Dombivli",
+  "Bhiwandi",
+  "Ulhasnagar",
+  "Panvel",
+  "Vasai-Virar",
+  "Palghar",
+  "Mira-Bhayandar",
   "Pune",
+  "Pimpri-Chinchwad",
   "Lonavala",
+  "Khandala",
+  "Karjat",
   "Alibaug",
-  "Panjim",
-  "Jaipur",
-  "Udaipur",
-  "Bengaluru",
-  "Ahmedabad",
-  "Delhi",
+  "Raigad",
+  "Nashik",
+  "Igatpuri",
+  "Trimbak",
+  "Malegaon",
+  "Shirdi",
+  "Ahmednagar",
+  "Aurangabad",
+  "Jalna",
+  "Beed",
+  "Latur",
+  "Nanded",
+  "Parbhani",
+  "Hingoli",
+  "Osmanabad",
+  "Nagpur",
+  "Wardha",
+  "Chandrapur",
+  "Gadchiroli",
+  "Bhandara",
+  "Gondia",
+  "Amravati",
+  "Akola",
+  "Yavatmal",
+  "Washim",
+  "Buldhana",
+  "Kolhapur",
+  "Sangli",
+  "Miraj",
+  "Ichalkaranji",
+  "Satara",
+  "Solapur",
+  "Pandharpur",
+  "Ratnagiri",
+  "Sindhudurg",
+  "Mahabaleshwar",
+  "Panchgani",
+  "Dhule",
+  "Nandurbar",
+  "Jalgaon",
 ];
+
+const OTHER_STATES = ["Goa", "Rajasthan", "Karnataka", "Gujarat", "Delhi NCR"];
+const OTHER_CITIES = ["Panjim", "Jaipur", "Udaipur", "Bengaluru", "Ahmedabad", "Delhi"];
+
+export const states = ENABLE_OTHER_STATES ? ["Maharashtra", ...OTHER_STATES] : ["Maharashtra"];
+
+export const cities = ENABLE_OTHER_STATES
+  ? [...MAHARASHTRA_CITIES, ...OTHER_CITIES]
+  : MAHARASHTRA_CITIES;
 
 export const eventTypes = [
   "Film Shoot",
