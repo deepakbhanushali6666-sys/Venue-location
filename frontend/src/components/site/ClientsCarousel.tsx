@@ -30,7 +30,8 @@ export function ClientsCarousel() {
             <img
               src={logo.src}
               alt={logo.alt}
-              loading="lazy"
+              loading="eager"
+              decoding="async"
               width={224}
               height={128}
               className="max-h-full max-w-full object-contain"
