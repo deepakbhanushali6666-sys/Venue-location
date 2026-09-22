@@ -16,7 +16,7 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
         .order("created_at", { ascending: false }),
       client
         .from("leads")
-        .select("id, lead_code, customer_name, mobile, purpose, budget, status, venue_name, venue_id, created_at")
+        .select("id, lead_code, customer_name, mobile, email, purpose, budget, status, venue_name, venue_id, message, created_at")
         .order("created_at", { ascending: false }),
       client.from("subscriptions").select("id, owner_id, status, expires_on, invoice_number"),
       client.from("payments").select("*").order("created_at", { ascending: false }),

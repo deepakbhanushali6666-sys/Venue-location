@@ -37,11 +37,13 @@ type LeadRow = {
   lead_code: string;
   customer_name: string;
   mobile: string;
+  email: string;
   purpose: string;
   budget: string;
   status: string;
   venue_name: string;
   venue_id: string | null;
+  message: string;
   created_at: string;
 };
 
@@ -804,6 +806,7 @@ function AdminPanel() {
                   <th>Mobile</th>
                   <th>Venue</th>
                   <th>Purpose</th>
+                  <th>Details</th>
                   <th>Budget</th>
                   <th>Status</th>
                 </tr>
@@ -816,13 +819,17 @@ function AdminPanel() {
                     <td>{l.mobile}</td>
                     <td>{l.venue_name || "—"}</td>
                     <td>{l.purpose}</td>
+                    <td className="max-w-70 whitespace-pre-line text-xs text-muted-foreground" title={l.message || undefined}>
+                      {l.email ? `${l.email}\n` : ""}
+                      {l.message || "—"}
+                    </td>
                     <td>{l.budget || "—"}</td>
                     <td>{l.status}</td>
                   </tr>
                 ))}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-4 text-muted-foreground">
+                    <td colSpan={8} className="py-4 text-muted-foreground">
                       No leads yet.
                     </td>
                   </tr>
