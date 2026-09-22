@@ -9,7 +9,7 @@ export function VenueCard({ venue }: { venue: Venue }) {
       params={{ slug: venue.slug }}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1"
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-4/3 overflow-hidden">
         <img
           src={venue.images[0]}
           alt={venue.name}
