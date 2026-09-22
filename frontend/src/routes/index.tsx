@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import heroImage from "@/assets/hero-venue.jpg";
+import { ClientsCarousel } from "@/components/site/ClientsCarousel";
 import { FounderPortrait } from "@/components/site/FounderPortrait";
 import { SearchPanel } from "@/components/site/SearchPanel";
 import { VenueCard } from "@/components/site/VenueCard";
@@ -80,7 +81,7 @@ function Home() {
           height={1088}
           className="absolute inset-0 size-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/10 md:to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-background via-background/85 to-background/10 md:to-transparent" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-14 lg:grid-cols-2 lg:py-20">
           <div>
             <h1 className="font-display text-4xl font-extrabold leading-tight text-navy sm:text-5xl">
@@ -130,6 +131,19 @@ function Home() {
         </div>
       </section>
 
+      {/* Our Clients */}
+      <section className="bg-sand py-16">
+        <div className="mx-auto max-w-7xl px-4">
+          <SectionHeading title="Our Clients" />
+          <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-foreground/70">
+            Trusted by leading brands, production houses and studios across India.
+          </p>
+          <div className="mt-8">
+            <ClientsCarousel />
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
       <section className="mx-auto max-w-7xl px-4 py-16">
         <SectionHeading title="Explore Venues" />
@@ -147,7 +161,7 @@ function Home() {
                 loading="lazy"
                 width={800}
                 height={600}
-                className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="aspect-4/3 w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-navy/85 px-3 py-2.5">
                 <Building2 className="size-4 shrink-0 text-gold" />

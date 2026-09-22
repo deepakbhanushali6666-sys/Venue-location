@@ -148,3 +148,17 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+@theme {
+  --animate-clients-marquee: clients-marquee 60s linear infinite;
+
+  @keyframes clients-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      /* Track contains the logo list twice; shift by half to loop seamlessly. */
+      transform: translateX(-50%);
+    }
+  }
+}
