@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
-import { categories, cities, states } from "@/data/venues";
+import { categories, cities, locationTypes, states } from "@/data/venues";
 import { createVenue, submitLead } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -54,7 +54,13 @@ function ListYourVenue() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [selectedLocationTypes, setSelectedLocationTypes] = useState<string[]>([]);
   const { user } = useAuth();
+  const toggleLocationType = (type: string) => {
+    setSelectedLocationTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
   const navigate = useNavigate();
   const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
 
@@ -83,6 +89,12 @@ function ListYourVenue() {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
+      const description = [
+        d.notes ?? "",
+        selectedLocationTypes.length ? `Location type: ${selectedLocationTypes.join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
       try {
         await createVenue({
           name: d.venueName,
@@ -91,7 +103,7 @@ function ListYourVenue() {
           city: d.city,
           state: d.state,
           address: d.address,
-          description: d.notes ?? "",
+          description,
           gst_number: d.gst ?? "",
           photos,
           map_query: `${d.venueName}, ${d.city}`,
@@ -101,6 +113,7 @@ function ListYourVenue() {
         });
         formEl.reset();
         setPhotos([]);
+        setSelectedLocationTypes([]);
         void navigate({ to: "/dashboard" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Could not submit venue");
@@ -120,6 +133,7 @@ function ListYourVenue() {
         message: [
           `Category: ${d.category}`,
           `Location: ${d.address}, ${d.city}, ${d.state}`,
+          selectedLocationTypes.length ? `Location type: ${selectedLocationTypes.join(", ")}` : "",
           d.gst ? `GST: ${d.gst}` : "",
           d.notes ?? "",
         ]
@@ -130,6 +144,7 @@ function ListYourVenue() {
         description: "Create your owner account to add photos and manage enquiries.",
       });
       formEl.reset();
+      setSelectedLocationTypes([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit registration");
     } finally {
@@ -230,6 +245,22 @@ function ListYourVenue() {
                 ))}
               </select>
               {err("category")}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-navy">Type of location / space (optional, select all that apply)</p>
+              <div className="mt-2 grid max-h-40 grid-cols-2 gap-x-3 gap-y-1 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3">
+                {locationTypes.map((type) => (
+                  <label key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      className="size-3.5 accent-gold"
+                      checked={selectedLocationTypes.includes(type)}
+                      onChange={() => toggleLocationType(type)}
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
             </div>
             <div>
               <input name="address" placeholder="Location / Address*" className={field} maxLength={240} />
