@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const TEN_YEARS = 60 * 60 * 24 * 3650;
 const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_PHOTOS = 20;
 
 export function PhotoUploader({
   userId,
@@ -19,9 +20,18 @@ export function PhotoUploader({
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const remaining = MAX_PHOTOS - value.length;
+    if (remaining <= 0) {
+      toast.error(`You can upload up to ${MAX_PHOTOS} photos`);
+      return;
+    }
     setBusy(true);
     const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
+    const selected = Array.from(files);
+    if (selected.length > remaining) {
+      toast.error(`Only ${remaining} more photo${remaining > 1 ? "s" : ""} allowed (max ${MAX_PHOTOS})`);
+    }
+    for (const file of selected.slice(0, remaining)) {
       if (!file.type.startsWith("image/")) {
         toast.error(`${file.name} is not an image`);
         continue;
@@ -86,13 +96,15 @@ export function PhotoUploader({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || value.length >= MAX_PHOTOS}
           onClick={() => inputRef.current?.click()}
           className="rounded-md border border-navy px-4 py-2 font-display text-xs font-extrabold uppercase tracking-wide text-navy disabled:opacity-60"
         >
           {busy ? "Uploading…" : "Upload photos"}
         </button>
-        <span className="text-xs text-muted-foreground">JPG or PNG, up to 8 MB each. First photo is the cover.</span>
+        <span className="text-xs text-muted-foreground">
+          JPG or PNG, up to 8 MB each. First photo is the cover. {value.length}/{MAX_PHOTOS} photos.
+        </span>
       </div>
 
       <input
