@@ -317,7 +317,6 @@ function Home() {
                 allowFullScreen
               />
             </div>
-            <p className="px-5 py-3 text-sm font-semibold text-navy">Watch what our clients have to say</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
             {testimonials.map((t) => (
