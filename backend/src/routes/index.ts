@@ -6,6 +6,7 @@ import { paymentsRouter } from "./payments.routes.js";
 import { reviewsRouter } from "./reviews.routes.js";
 import { adminRouter } from "./admin.routes.js";
 import { profilesRouter } from "./profiles.routes.js";
+import { categoriesRouter } from "./categories.routes.js";
 
 export const apiRouter = Router();
 
@@ -16,3 +17,4 @@ apiRouter.use("/payments", paymentsRouter);
 apiRouter.use("/reviews", reviewsRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/profiles", profilesRouter);
+apiRouter.use("/categories", categoriesRouter);

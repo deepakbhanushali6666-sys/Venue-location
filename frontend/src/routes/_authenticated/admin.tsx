@@ -1,17 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminOverview, getAuditLog, rejectPayment as apiRejectPayment, setVenueFeatured, setVenueStatus, verifyPayment as apiVerifyPayment } from "@/lib/api";
+import {
+  deleteVenue,
+  getAdminOverview,
+  getAuditLog,
+  rejectPayment as apiRejectPayment,
+  setVenueFeatured,
+  setVenueStatus,
+  verifyPayment as apiVerifyPayment,
+} from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
+import { CategoriesPanel } from "@/components/site/CategoriesPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Admin Panel | VENUES LOCATION" },
-      { name: "description", content: "VENUES LOCATION admin panel for venues, leads, owners and subscriptions." },
+      {
+        name: "description",
+        content: "VENUES LOCATION admin panel for venues, leads, owners and subscriptions.",
+      },
       { property: "og:title", content: "Admin Panel | VENUES LOCATION" },
       { property: "og:description", content: "Manage venues, leads, owners and subscriptions." },
       { property: "og:type", content: "website" },
@@ -49,7 +62,13 @@ type LeadRow = {
 
 type Breakdown = { key: string; enquiries: number; booked: number; rate: number };
 
-type SubRow = { id: string; owner_id: string; status: string; expires_on: string | null; invoice_number: string };
+type SubRow = {
+  id: string;
+  owner_id: string;
+  status: string;
+  expires_on: string | null;
+  invoice_number: string;
+};
 
 type PaymentRow = {
   id: string;
@@ -64,7 +83,6 @@ type PaymentRow = {
   invoice_number: string;
   created_at: string;
 };
-
 
 type AuditRow = {
   id: string;
@@ -109,7 +127,13 @@ function AdminPanel() {
 
   const loadAll = async () => {
     try {
-      const { venues: v, leads: l, subscriptions: s, payments: p, audit: a } = await getAdminOverview();
+      const {
+        venues: v,
+        leads: l,
+        subscriptions: s,
+        payments: p,
+        audit: a,
+      } = await getAdminOverview();
       setVenues(v as unknown as VenueRow[]);
       setLeads(l as unknown as LeadRow[]);
       setSubs(s as unknown as SubRow[]);
@@ -123,7 +147,6 @@ function AdminPanel() {
   useEffect(() => {
     if (!isAdmin) return;
     void loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
   const verifyPayment = async (id: string) => {
@@ -147,10 +170,12 @@ function AdminPanel() {
     }
   };
 
-
   const pipeline = useMemo(() => {
     const order = ["New", "Contacted", "Negotiation", "Site Visit", "Booked", "Closed"];
-    return order.map((status) => ({ status, count: leads.filter((l) => l.status === status).length }));
+    return order.map((status) => ({
+      status,
+      count: leads.filter((l) => l.status === status).length,
+    }));
   }, [leads]);
 
   const byPurpose = useMemo(() => {
@@ -163,8 +188,12 @@ function AdminPanel() {
     const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const recent = audit.filter((a) => new Date(a.created_at).getTime() >= since);
     return {
-      approvals: recent.filter((a) => a.action === "venue_status_changed" && a.to_value === "approved").length,
-      rejections: recent.filter((a) => a.action === "venue_status_changed" && a.to_value === "rejected").length,
+      approvals: recent.filter(
+        (a) => a.action === "venue_status_changed" && a.to_value === "approved",
+      ).length,
+      rejections: recent.filter(
+        (a) => a.action === "venue_status_changed" && a.to_value === "rejected",
+      ).length,
       enquiries: recent.filter((a) => a.action === "lead_created").length,
       statusChanges: recent.filter((a) => a.action === "lead_status_changed").length,
     };
@@ -188,17 +217,27 @@ function AdminPanel() {
       map.set(key, entry);
     });
     return [...map.entries()]
-      .map(([key, v]) => ({ key, ...v, rate: v.enquiries ? Math.round((v.booked / v.enquiries) * 100) : 0 }))
+      .map(([key, v]) => ({
+        key,
+        ...v,
+        rate: v.enquiries ? Math.round((v.booked / v.enquiries) * 100) : 0,
+      }))
       .sort((a, b) => b.enquiries - a.enquiries);
   };
 
   const byCategory = useMemo(
-    () => buildBreakdown(rangedLeads, (l) => (l.venue_id ? (venueById.get(l.venue_id)?.category ?? "") : "")),
+    () =>
+      buildBreakdown(rangedLeads, (l) =>
+        l.venue_id ? (venueById.get(l.venue_id)?.category ?? "") : "",
+      ),
     [rangedLeads, venueById],
   );
 
   const byCity = useMemo(
-    () => buildBreakdown(rangedLeads, (l) => (l.venue_id ? (venueById.get(l.venue_id)?.city ?? "") : "")),
+    () =>
+      buildBreakdown(rangedLeads, (l) =>
+        l.venue_id ? (venueById.get(l.venue_id)?.city ?? "") : "",
+      ),
     [rangedLeads, venueById],
   );
 
@@ -256,7 +295,9 @@ function AdminPanel() {
       <div className="grid min-h-[70vh] place-items-center bg-sand px-4 text-center">
         <div>
           <h1 className="font-display text-2xl font-extrabold text-navy">Admin access required</h1>
-          <p className="mt-2 text-sm text-muted-foreground">This account does not have admin privileges.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This account does not have admin privileges.
+          </p>
           <Link to="/dashboard" className="mt-4 inline-block font-bold text-gold">
             Back to dashboard
           </Link>
@@ -286,6 +327,18 @@ function AdminPanel() {
     }
   };
 
+  const removeVenue = async (id: string, name: string) => {
+    if (!window.confirm(`Delete venue "${name}"? This cannot be undone.`)) return;
+    try {
+      await deleteVenue(id);
+      setVenues((prev) => prev.filter((v) => v.id !== id));
+      toast.success("Venue deleted");
+      void refreshAudit();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete venue");
+    }
+  };
+
   const stamp = new Date().toISOString().slice(0, 10);
 
   const exportAudit = () =>
@@ -307,14 +360,29 @@ function AdminPanel() {
     downloadCsv(
       `oms-leads-${stamp}.csv`,
       ["Lead ID", "Name", "Mobile", "Venue", "Purpose", "Budget", "Status"],
-      leads.map((l) => [l.lead_code, l.customer_name, l.mobile, l.venue_name, l.purpose, l.budget, l.status]),
+      leads.map((l) => [
+        l.lead_code,
+        l.customer_name,
+        l.mobile,
+        l.venue_name,
+        l.purpose,
+        l.budget,
+        l.status,
+      ]),
     );
 
   const exportVenues = () =>
     downloadCsv(
       `oms-venues-${stamp}.csv`,
       ["Venue", "City", "Category", "Status", "Featured", "Created"],
-      venues.map((v) => [v.name, v.city, v.category, v.status, v.featured ? "Yes" : "No", new Date(v.created_at).toLocaleDateString("en-IN")]),
+      venues.map((v) => [
+        v.name,
+        v.city,
+        v.category,
+        v.status,
+        v.featured ? "Yes" : "No",
+        new Date(v.created_at).toLocaleDateString("en-IN"),
+      ]),
     );
 
   const rangeLabel = rangeDays === 0 ? "all time" : `last ${rangeDays} days`;
@@ -335,7 +403,10 @@ function AdminPanel() {
         [`Enquiries (${rangeLabel})`, conversion.enquiries],
         [`Booked (${rangeLabel})`, conversion.booked],
         [`Open leads (${rangeLabel})`, conversion.open],
-        ...monthlyTrend.map((m) => [`Trend · ${m.label}`, `${m.enquiries} enquiries / ${m.booked} booked`]),
+        ...monthlyTrend.map((m) => [
+          `Trend · ${m.label}`,
+          `${m.enquiries} enquiries / ${m.booked} booked`,
+        ]),
       ],
     );
 
@@ -345,7 +416,6 @@ function AdminPanel() {
       [title, "Enquiries", "Booked", "Conversion %"],
       rows.map((r) => [r.key, r.enquiries, r.booked, r.rate]),
     );
-
 
   const stats = [
     { label: "Total Venues", value: venues.length },
@@ -361,21 +431,32 @@ function AdminPanel() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-display text-3xl font-extrabold text-navy">Admin Panel</h1>
           <div className="flex flex-wrap gap-2">
-            <button onClick={exportVenues} className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy">
+            <button
+              onClick={exportVenues}
+              className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
+            >
               Export venues CSV
             </button>
-            <button onClick={exportLeads} className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy">
+            <button
+              onClick={exportLeads}
+              className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
+            >
               Export leads CSV
             </button>
-            <button onClick={exportAnalytics} className="rounded-md bg-gold px-4 py-2 text-sm font-bold text-navy">
+            <button
+              onClick={exportAnalytics}
+              className="rounded-md bg-gold px-4 py-2 text-sm font-bold text-navy"
+            >
               Export analytics CSV
             </button>
-            <Link to="/dashboard" className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy">
+            <Link
+              to="/dashboard"
+              className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
+            >
               Owner Dashboard
             </Link>
           </div>
         </div>
-
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {stats.map((s) => (
@@ -396,7 +477,10 @@ function AdminPanel() {
                 ["New enquiries", activity30d.enquiries],
                 ["Lead status changes", activity30d.statusChanges],
               ].map(([label, value]) => (
-                <div key={String(label)} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                <div
+                  key={String(label)}
+                  className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+                >
                   <dt className="text-muted-foreground">{label}</dt>
                   <dd className="font-display font-extrabold text-navy">{value}</dd>
                 </div>
@@ -428,12 +512,17 @@ function AdminPanel() {
             <h2 className="font-display text-lg font-extrabold text-navy">Enquiries by purpose</h2>
             <ul className="mt-4 space-y-2 text-sm">
               {byPurpose.map(([purpose, count]) => (
-                <li key={purpose} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                <li
+                  key={purpose}
+                  className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+                >
                   <span className="text-muted-foreground">{purpose}</span>
                   <span className="font-display font-extrabold text-navy">{count}</span>
                 </li>
               ))}
-              {byPurpose.length === 0 && <li className="text-muted-foreground">No enquiries yet.</li>}
+              {byPurpose.length === 0 && (
+                <li className="text-muted-foreground">No enquiries yet.</li>
+              )}
             </ul>
           </div>
         </section>
@@ -462,7 +551,9 @@ function AdminPanel() {
             ].map((c) => (
               <div key={c.label} className="rounded-lg border border-border bg-sand/60 p-4">
                 <div className="font-display text-2xl font-extrabold text-navy">{c.value}</div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">{c.label}</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {c.label}
+                </div>
               </div>
             ))}
           </div>
@@ -558,7 +649,10 @@ function AdminPanel() {
               <h3 className="font-display text-sm font-extrabold uppercase tracking-wide text-navy">
                 Top venues by enquiries
               </h3>
-              <button onClick={() => exportBreakdown("top-venues", "Venue", topVenues)} className="text-xs font-bold text-gold">
+              <button
+                onClick={() => exportBreakdown("top-venues", "Venue", topVenues)}
+                className="text-xs font-bold text-gold"
+              >
                 Export CSV
               </button>
             </div>
@@ -598,7 +692,9 @@ function AdminPanel() {
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-display text-xl font-extrabold text-navy">Subscription Payments</h2>
+              <h2 className="font-display text-xl font-extrabold text-navy">
+                Subscription Payments
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Verify a payment to activate or extend the owner's annual plan and issue an invoice.
               </p>
@@ -653,7 +749,11 @@ function AdminPanel() {
                     <td className="font-bold capitalize text-navy">{p.status}</td>
                     <td>
                       {p.status === "verified" ? (
-                        <Link to="/invoice/$paymentId" params={{ paymentId: p.id }} className="font-bold text-gold">
+                        <Link
+                          to="/invoice/$paymentId"
+                          params={{ paymentId: p.id }}
+                          className="font-bold text-gold"
+                        >
                           {p.invoice_number || "View"}
                         </Link>
                       ) : (
@@ -663,10 +763,16 @@ function AdminPanel() {
                     <td>
                       {p.status === "pending" ? (
                         <div className="flex gap-2">
-                          <button onClick={() => verifyPayment(p.id)} className="text-sm font-bold text-gold">
+                          <button
+                            onClick={() => verifyPayment(p.id)}
+                            className="text-sm font-bold text-gold"
+                          >
                             Verify
                           </button>
-                          <button onClick={() => rejectPayment(p.id)} className="text-sm font-bold text-muted-foreground">
+                          <button
+                            onClick={() => rejectPayment(p.id)}
+                            className="text-sm font-bold text-muted-foreground"
+                          >
                             Reject
                           </button>
                         </div>
@@ -688,7 +794,6 @@ function AdminPanel() {
           </div>
         </section>
 
-
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-xl font-extrabold text-navy">Audit Log</h2>
@@ -705,7 +810,10 @@ function AdminPanel() {
                   </option>
                 ))}
               </select>
-              <button onClick={exportAudit} className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-sand">
+              <button
+                onClick={exportAudit}
+                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-sand"
+              >
                 Export audit CSV
               </button>
             </div>
@@ -724,7 +832,9 @@ function AdminPanel() {
               <tbody>
                 {filteredAudit.map((a) => (
                   <tr key={a.id} className="border-t border-border">
-                    <td className="py-3 whitespace-nowrap">{new Date(a.created_at).toLocaleString("en-IN")}</td>
+                    <td className="py-3 whitespace-nowrap">
+                      {new Date(a.created_at).toLocaleString("en-IN")}
+                    </td>
                     <td className="font-bold text-navy">{ACTION_LABELS[a.action] ?? a.action}</td>
                     <td>{a.entity_label || "—"}</td>
                     <td>{a.from_value || "—"}</td>
@@ -772,11 +882,24 @@ function AdminPanel() {
                       />
                     </td>
                     <td className="space-x-3">
-                      <button onClick={() => setStatus(v.id, "approved")} className="font-bold text-gold">
+                      <button
+                        onClick={() => setStatus(v.id, "approved")}
+                        className="font-bold text-gold"
+                      >
                         Approve
                       </button>
-                      <button onClick={() => setStatus(v.id, "rejected")} className="font-bold text-destructive">
+                      <button
+                        onClick={() => setStatus(v.id, "rejected")}
+                        className="font-bold text-destructive"
+                      >
                         Reject
+                      </button>
+                      <button
+                        onClick={() => void removeVenue(v.id, v.name)}
+                        aria-label={`Delete ${v.name}`}
+                        className="inline-flex align-middle text-destructive"
+                      >
+                        <Trash2 className="size-4" />
                       </button>
                     </td>
                   </tr>
@@ -793,7 +916,12 @@ function AdminPanel() {
           </div>
         </section>
 
-        <ReviewsPanel mode="admin" venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))} />
+        <ReviewsPanel
+          mode="admin"
+          venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
+        />
+
+        <CategoriesPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>
@@ -819,7 +947,10 @@ function AdminPanel() {
                     <td>{l.mobile}</td>
                     <td>{l.venue_name || "—"}</td>
                     <td>{l.purpose}</td>
-                    <td className="max-w-70 whitespace-pre-line text-xs text-muted-foreground" title={l.message || undefined}>
+                    <td
+                      className="max-w-70 whitespace-pre-line text-xs text-muted-foreground"
+                      title={l.message || undefined}
+                    >
                       {l.email ? `${l.email}\n` : ""}
                       {l.message || "—"}
                     </td>

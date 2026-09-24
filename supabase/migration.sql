@@ -208,6 +208,40 @@ alter table public.venue_reviews enable row level security;
 create index if not exists venue_reviews_venue_idx on public.venue_reviews (venue_id, status);
 create index if not exists venue_reviews_status_idx on public.venue_reviews (status, created_at desc);
 
+-- VENUE CATEGORIES --------------------------------------------------------
+-- Admin-managed list of top-level venue categories (replaces the hardcoded
+-- frontend enum). Public read-only, writes restricted to admins.
+create table if not exists public.venue_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  slug text not null unique,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.venue_categories enable row level security;
+create index if not exists idx_venue_categories_sort on public.venue_categories(sort_order);
+
+-- VENUE SUBCATEGORIES ------------------------------------------------------
+-- Admin-managed subcategories nested under a category (e.g. Haveli, Studio
+-- Sets under "Film Shooting Locations"). Replaces the old flat "type of
+-- location" checklist on the listing form.
+create table if not exists public.venue_subcategories (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.venue_categories(id) on delete cascade,
+  name text not null,
+  slug text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (category_id, slug)
+);
+alter table public.venue_subcategories enable row level security;
+create index if not exists idx_venue_subcategories_category on public.venue_subcategories(category_id);
+
+-- venues.subcategory holds the chosen subcategory name for a listing.
+alter table public.venues add column if not exists subcategory text not null default '';
+
 -- =====================================================================
 -- FUNCTIONS
 -- =====================================================================
@@ -506,6 +540,16 @@ create trigger venue_reviews_audit_update
 after update on public.venue_reviews
 for each row execute function public.log_review_moderation();
 
+drop trigger if exists venue_categories_set_updated_at on public.venue_categories;
+create trigger venue_categories_set_updated_at
+before update on public.venue_categories
+for each row execute function public.set_updated_at();
+
+drop trigger if exists venue_subcategories_set_updated_at on public.venue_subcategories;
+create trigger venue_subcategories_set_updated_at
+before update on public.venue_subcategories
+for each row execute function public.set_updated_at();
+
 -- =====================================================================
 -- ROW LEVEL SECURITY POLICIES
 -- =====================================================================
@@ -664,6 +708,28 @@ create policy "Reviewers and admins can delete reviews"
   on public.venue_reviews for delete to authenticated
   using (auth.uid() = reviewer_id or public.has_role(auth.uid(), 'admin'));
 
+-- venue_categories
+drop policy if exists "Venue categories are public" on public.venue_categories;
+create policy "Venue categories are public"
+  on public.venue_categories for select to anon, authenticated
+  using (true);
+drop policy if exists "Admins can manage venue categories" on public.venue_categories;
+create policy "Admins can manage venue categories"
+  on public.venue_categories for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+-- venue_subcategories
+drop policy if exists "Venue subcategories are public" on public.venue_subcategories;
+create policy "Venue subcategories are public"
+  on public.venue_subcategories for select to anon, authenticated
+  using (true);
+drop policy if exists "Admins can manage venue subcategories" on public.venue_subcategories;
+create policy "Admins can manage venue subcategories"
+  on public.venue_subcategories for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
 -- =====================================================================
 -- TABLE / SEQUENCE / FUNCTION GRANTS (final least-privilege state)
 -- =====================================================================
@@ -698,6 +764,64 @@ grant update on public.payments to authenticated;
 grant all on public.payments to service_role;
 
 grant all on public.admin_bootstrap_emails to service_role;
+
+grant select on public.venue_categories to anon;
+grant select, insert, update, delete on public.venue_categories to authenticated;
+grant all on public.venue_categories to service_role;
+
+grant select on public.venue_subcategories to anon;
+grant select, insert, update, delete on public.venue_subcategories to authenticated;
+grant all on public.venue_subcategories to service_role;
+
+-- =====================================================================
+-- SEED DATA — venue categories & subcategories (safe to re-run)
+-- =====================================================================
+
+insert into public.venue_categories (name, slug, sort_order) values
+  ('Resorts', 'resorts', 1),
+  ('Hotels', 'hotels', 2),
+  ('Farmhouses', 'farmhouses', 3),
+  ('Banquet Halls', 'banquet-halls', 4),
+  ('Villas', 'villas', 5),
+  ('Studios', 'studios', 6),
+  ('Lawns', 'lawns', 7),
+  ('Film Shooting Locations', 'film-shooting-locations', 8),
+  ('Restaurants', 'restaurants', 9),
+  ('Cafes', 'cafes', 10),
+  ('Corporate Event Venues', 'corporate-event-venues', 11),
+  ('Wedding Venues', 'wedding-venues', 12)
+on conflict (slug) do nothing;
+
+-- Migrates the old flat "type of location" checklist into subcategories
+-- under Film Shooting Locations.
+insert into public.venue_subcategories (category_id, name, slug, sort_order)
+select c.id, s.name, s.slug, s.sort_order
+from public.venue_categories c
+join (values
+  ('Airports', 'airports', 1), ('Apartments', 'apartments', 2), ('Arc Structure', 'arc-structure', 3),
+  ('Auditorium', 'auditorium', 4), ('Bank', 'bank', 5), ('Bank Locker', 'bank-locker', 6),
+  ('Banquets', 'banquets', 7), ('Bar & Restaurant', 'bar-restaurant', 8), ('Bridge', 'bridge', 9),
+  ('Buildings', 'buildings', 10), ('Bungalows', 'bungalows', 11), ('Cafe & Bar', 'cafe-bar', 12),
+  ('Canteen', 'canteen', 13), ('Car Garages', 'car-garages', 14), ('Chawls', 'chawls', 15),
+  ('Cinema Hall', 'cinema-hall', 16), ('Clubs', 'clubs', 17), ('College', 'college', 18),
+  ('Conference Room', 'conference-room', 19), ('Container Yards', 'container-yards', 20),
+  ('Dance Studio', 'dance-studio', 21), ('Disco & Pub', 'disco-pub', 22), ('Factories', 'factories', 23),
+  ('Farm House', 'farm-house', 24), ('Floors', 'floors', 25), ('Glass Building', 'glass-building', 26),
+  ('Govt Building', 'govt-building', 27), ('Govt Office', 'govt-office', 28),
+  ('Gym Changing Room', 'gym-changing-room', 29), ('Gymnasium', 'gymnasium', 30), ('Haveli', 'haveli', 31),
+  ('Hospital', 'hospital', 32), ('Hotel', 'hotel-location', 33), ('Jail', 'jail', 34),
+  ('Joggers Park', 'joggers-park', 35), ('Junk Yard', 'junk-yard', 36), ('Kitchen', 'kitchen', 37),
+  ('Labs', 'labs', 38), ('Library', 'library', 39), ('Malls', 'malls', 40), ('Markets', 'markets', 41),
+  ('Mills', 'mills', 42), ('Office', 'office', 43), ('Palace', 'palace', 44), ('Parking Lot', 'parking-lot', 45),
+  ('Petrol Pumps', 'petrol-pumps', 46), ('Ponds & Lakes', 'ponds-lakes', 47),
+  ('Recording Studios', 'recording-studios', 48), ('Resort', 'resort-location', 49),
+  ('Restaurant', 'restaurant-location', 50), ('Row Houses', 'row-houses', 51), ('School', 'school', 52),
+  ('Shops & Stores', 'shops-stores', 53), ('Stadium', 'stadium', 54), ('Studio Sets', 'studio-sets', 55),
+  ('Supermarkets', 'supermarkets', 56), ('Swimming Pool', 'swimming-pool', 57),
+  ('Tennis Courts', 'tennis-courts', 58), ('Villages', 'villages', 59)
+) as s(name, slug, sort_order) on true
+where c.slug = 'film-shooting-locations'
+on conflict (category_id, slug) do nothing;
 
 revoke all on function public.handle_new_user() from public, anon, authenticated;
 revoke all on function public.set_updated_at() from public, anon, authenticated;

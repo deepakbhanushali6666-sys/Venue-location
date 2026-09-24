@@ -148,3 +148,14 @@ venuesRouter.patch("/:id/featured", requireAuth, requireAdmin, async (req: Authe
   }
 });
 
+// Admin: permanently delete a venue.
+venuesRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const { error } = await req.client!.from("venues").delete().eq("id", req.params.id);
+    if (error) throw error;
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+

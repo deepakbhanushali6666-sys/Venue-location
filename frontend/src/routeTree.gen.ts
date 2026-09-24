@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdvisorsRouteImport } from './routes/advisors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -20,6 +21,7 @@ import { Route as FounderRouteImport } from './routes/founder'
 import { Route as ListYourVenueRouteImport } from './routes/list-your-venue'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -39,6 +41,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvisorsRoute = AdvisorsRouteImport.update({
+  id: '/advisors',
+  path: '/advisors',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -81,6 +88,11 @@ const RefundPolicyRoute = RefundPolicyRouteImport.update({
   path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -116,6 +128,7 @@ const AuthenticatedInvoicePaymentIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -124,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -134,6 +148,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -142,6 +157,7 @@ export interface FileRoutesByTo {
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -154,6 +170,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -162,6 +179,7 @@ export interface FileRoutesById {
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -174,6 +192,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/advisors'
     | '/auth'
     | '/contact'
     | '/faq'
@@ -182,6 +201,7 @@ export interface FileRouteTypes {
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/team'
     | '/terms'
     | '/admin'
     | '/dashboard'
@@ -192,6 +212,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/advisors'
     | '/auth'
     | '/contact'
     | '/faq'
@@ -200,6 +221,7 @@ export interface FileRouteTypes {
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/team'
     | '/terms'
     | '/admin'
     | '/dashboard'
@@ -211,6 +233,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/about'
+    | '/advisors'
     | '/auth'
     | '/contact'
     | '/faq'
@@ -219,6 +242,7 @@ export interface FileRouteTypes {
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/team'
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
@@ -231,6 +255,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AdvisorsRoute: typeof AdvisorsRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
@@ -239,6 +264,7 @@ export interface RootRouteChildren {
   ListYourVenueRoute: typeof ListYourVenueRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  TeamRoute: typeof TeamRoute
   TermsRoute: typeof TermsRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
   VenuesIndexRoute: typeof VenuesIndexRoute
@@ -265,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisors': {
+      id: '/advisors'
+      path: '/advisors'
+      fullPath: '/advisors'
+      preLoaderRoute: typeof AdvisorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -321,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/refund-policy'
       fullPath: '/refund-policy'
       preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -387,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  AdvisorsRoute: AdvisorsRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
@@ -395,6 +436,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListYourVenueRoute: ListYourVenueRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  TeamRoute: TeamRoute,
   TermsRoute: TermsRoute,
   VenuesSlugRoute: VenuesSlugRoute,
   VenuesIndexRoute: VenuesIndexRoute,
