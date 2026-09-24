@@ -317,6 +317,26 @@ function Home() {
                 allowFullScreen
               />
             </div>
+            <div className="bg-navy px-6 py-6 text-navy-foreground">
+              <p className="section-title text-sm text-gold">Trusted across the industry</p>
+              <h3 className="mt-2 font-display text-xl font-extrabold">
+                Trusted by 100+ celebrities, producers and production teams
+              </h3>
+              <div className="mt-5 grid grid-cols-3 gap-3 border-t border-navy-foreground/20 pt-4 text-center">
+                <div>
+                  <p className="font-display text-lg font-extrabold text-gold">7,000+</p>
+                  <p className="text-[11px] text-navy-foreground/70">Shoots facilitated</p>
+                </div>
+                <div>
+                  <p className="font-display text-lg font-extrabold text-gold">150+</p>
+                  <p className="text-[11px] text-navy-foreground/70">Feature films</p>
+                </div>
+                <div>
+                  <p className="font-display text-lg font-extrabold text-gold">25+</p>
+                  <p className="text-[11px] text-navy-foreground/70">Years of experience</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
             {testimonials.map((t) => (
