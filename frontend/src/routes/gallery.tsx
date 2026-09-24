@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Images } from "lucide-react";
 import heroImage from "@/assets/hero-venue.jpg";
@@ -7,15 +8,17 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 
 // Any image dropped into these folders shows up automatically — no code changes needed.
+// NOTE: import.meta.glob does not reliably resolve "@/..." aliases, so these must stay relative.
 const testimonialModules = import.meta.glob<{ default: string }>(
-  "@/assets/gallery/testimonials/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}",
+  "../assets/gallery/testimonials/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}",
   { eager: true },
 );
 const celebrityModules = import.meta.glob<{ default: string }>(
-  "@/assets/gallery/celebrities/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}",
+  "../assets/gallery/celebrities/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}",
   { eager: true },
 );
 
@@ -46,6 +49,14 @@ export const Route = createFileRoute("/gallery")({
 });
 
 function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: string }[]; emptyLabel: string }) {
+  const [api, setApi] = useState<CarouselApi>();
+
+  useEffect(() => {
+    if (!api) return;
+    const id = setInterval(() => api.scrollNext(), 3000);
+    return () => clearInterval(id);
+  }, [api]);
+
   if (images.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-foreground/70">
@@ -55,7 +66,7 @@ function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: st
   }
 
   return (
-    <Carousel opts={{ align: "start", loop: true }} className="px-2 sm:px-10">
+    <Carousel setApi={setApi} opts={{ align: "start", loop: true }} className="px-2 sm:px-10">
       <CarouselContent>
         {images.map((image) => (
           <CarouselItem key={image.path} className="basis-1/2 sm:basis-1/3 lg:basis-1/4">
