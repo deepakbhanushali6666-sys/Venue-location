@@ -18,6 +18,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FilmLocationsRouteImport } from './routes/film-locations'
 import { Route as FounderRouteImport } from './routes/founder'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ListYourVenueRouteImport } from './routes/list-your-venue'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -71,6 +72,11 @@ const FilmLocationsRoute = FilmLocationsRouteImport.update({
 const FounderRoute = FounderRouteImport.update({
   id: '/founder',
   path: '/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListYourVenueRoute = ListYourVenueRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
+  '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
+  '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
   '/founder': typeof FounderRoute
+  '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/film-locations'
     | '/founder'
+    | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/film-locations'
     | '/founder'
+    | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/film-locations'
     | '/founder'
+    | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   FilmLocationsRoute: typeof FilmLocationsRoute
   FounderRoute: typeof FounderRoute
+  GalleryRoute: typeof GalleryRoute
   ListYourVenueRoute: typeof ListYourVenueRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/founder'
       fullPath: '/founder'
       preLoaderRoute: typeof FounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/list-your-venue': {
@@ -433,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   FilmLocationsRoute: FilmLocationsRoute,
   FounderRoute: FounderRoute,
+  GalleryRoute: GalleryRoute,
   ListYourVenueRoute: ListYourVenueRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
