@@ -144,3 +144,20 @@ export const createSubcategory = (
 export const updateSubcategory = (id: string, payload: { name?: string; sort_order?: number }) =>
   patch<{ subcategory: SubcategoryRecord }>(`/categories/subcategories/${id}`, payload);
 export const deleteSubcategory = (id: string) => del<void>(`/categories/subcategories/${id}`);
+
+// Gallery (admin-managed photos & video links for the /gallery page)
+export type GallerySection = "testimonial" | "celebrity";
+export type GalleryItem = {
+  id: string;
+  section: GallerySection;
+  media_type: "photo" | "video";
+  url: string;
+  sort_order: number;
+};
+export const listGalleryItems = () => get<{ items: GalleryItem[] }>("/gallery");
+export const createGalleryItem = (payload: {
+  section: GallerySection;
+  media_type: "photo" | "video";
+  url: string;
+}) => post<{ item: GalleryItem }>("/gallery", payload);
+export const deleteGalleryItem = (id: string) => del<void>(`/gallery/${id}`);

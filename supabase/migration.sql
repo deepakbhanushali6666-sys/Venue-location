@@ -878,3 +878,59 @@ drop policy if exists "Owners can delete their venue photos" on storage.objects;
 create policy "Owners can delete their venue photos"
 on storage.objects for delete to authenticated
 using (bucket_id = 'venue-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =====================================================================
+-- GALLERY ITEMS (admin-managed photos & video links for the /gallery page)
+-- =====================================================================
+create table if not exists public.gallery_items (
+  id uuid primary key default gen_random_uuid(),
+  section text not null check (section in ('testimonial', 'celebrity')),
+  media_type text not null default 'photo' check (media_type in ('photo', 'video')),
+  url text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.gallery_items enable row level security;
+create index if not exists idx_gallery_items_section on public.gallery_items(section, sort_order);
+
+drop policy if exists "Gallery items are public" on public.gallery_items;
+create policy "Gallery items are public"
+  on public.gallery_items for select to anon, authenticated
+  using (true);
+drop policy if exists "Admins can manage gallery items" on public.gallery_items;
+create policy "Admins can manage gallery items"
+  on public.gallery_items for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+grant select on public.gallery_items to anon;
+grant select, insert, update, delete on public.gallery_items to authenticated;
+grant all on public.gallery_items to service_role;
+
+-- =====================================================================
+-- STORAGE (gallery media) — public bucket so photos render without signed URLs
+-- =====================================================================
+insert into storage.buckets (id, name, public)
+values ('gallery-media', 'gallery-media', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Anyone can view gallery media" on storage.objects;
+create policy "Anyone can view gallery media"
+on storage.objects for select to anon, authenticated
+using (bucket_id = 'gallery-media');
+
+drop policy if exists "Admins can upload gallery media" on storage.objects;
+create policy "Admins can upload gallery media"
+on storage.objects for insert to authenticated
+with check (bucket_id = 'gallery-media' and public.has_role(auth.uid(), 'admin'));
+
+drop policy if exists "Admins can update gallery media" on storage.objects;
+create policy "Admins can update gallery media"
+on storage.objects for update to authenticated
+using (bucket_id = 'gallery-media' and public.has_role(auth.uid(), 'admin'))
+with check (bucket_id = 'gallery-media' and public.has_role(auth.uid(), 'admin'));
+
+drop policy if exists "Admins can delete gallery media" on storage.objects;
+create policy "Admins can delete gallery media"
+on storage.objects for delete to authenticated
+using (bucket_id = 'gallery-media' and public.has_role(auth.uid(), 'admin'));

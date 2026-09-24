@@ -48,7 +48,7 @@ function Founder() {
             priority
             alt="Portrait of Deepak Bhanushali, film location expert and founder of VENUES LOCATION, with 25+ years of experience"
             sizes="(min-width: 1024px) 40vw, 100vw"
-            className="aspect-4/3 w-full rounded-xl object-cover object-top"
+            className="aspect-4/3 w-full rounded-xl object-cover object-[center_30%]"
           />
 
         </div>

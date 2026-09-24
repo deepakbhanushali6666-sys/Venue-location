@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Images } from "lucide-react";
+import { toast } from "sonner";
 import heroImage from "@/assets/hero-venue.jpg";
+import { listGalleryItems, type GalleryItem } from "@/lib/api";
 import {
   Carousel,
   CarouselContent,
@@ -22,14 +24,34 @@ const celebrityModules = import.meta.glob<{ default: string }>(
   { eager: true },
 );
 
-function toImages(modules: Record<string, { default: string }>) {
+type MediaItem = { key: string; kind: "photo"; src: string } | { key: string; kind: "video"; embedSrc: string };
+
+function toStaticPhotos(modules: Record<string, { default: string }>): MediaItem[] {
   return Object.entries(modules)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([path, mod]) => ({ src: mod.default, path }));
+    .map(([path, mod]) => ({ key: path, kind: "photo" as const, src: mod.default }));
 }
 
-const testimonialImages = toImages(testimonialModules);
-const celebrityImages = toImages(celebrityModules);
+// Supports youtube.com/watch?v=, youtu.be/ and already-embedded URLs.
+function toYouTubeEmbed(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
+
+function toDbMediaItems(items: GalleryItem[]): MediaItem[] {
+  return items
+    .map((item): MediaItem | null => {
+      if (item.media_type === "video") {
+        const embedSrc = toYouTubeEmbed(item.url);
+        return embedSrc ? { key: item.id, kind: "video", embedSrc } : null;
+      }
+      return { key: item.id, kind: "photo", src: item.url };
+    })
+    .filter((item): item is MediaItem => item !== null);
+}
+
+const staticTestimonialPhotos = toStaticPhotos(testimonialModules);
+const staticCelebrityPhotos = toStaticPhotos(celebrityModules);
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -48,7 +70,7 @@ export const Route = createFileRoute("/gallery")({
   component: Gallery,
 });
 
-function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: string }[]; emptyLabel: string }) {
+function MediaCarousel({ items, emptyLabel }: { items: MediaItem[]; emptyLabel: string }) {
   const [api, setApi] = useState<CarouselApi>();
 
   useEffect(() => {
@@ -57,7 +79,7 @@ function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: st
     return () => clearInterval(id);
   }, [api]);
 
-  if (images.length === 0) {
+  if (items.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-foreground/70">
         {emptyLabel}
@@ -68,16 +90,27 @@ function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: st
   return (
     <Carousel setApi={setApi} opts={{ align: "start", loop: true }} className="px-2 sm:px-10">
       <CarouselContent>
-        {images.map((image) => (
-          <CarouselItem key={image.path} className="basis-1/2 sm:basis-1/3 lg:basis-1/4">
-            <div className="aspect-square overflow-hidden rounded-lg border border-border bg-card">
-              <img
-                src={image.src}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="size-full object-cover transition-transform hover:scale-105"
-              />
+        {items.map((item) => (
+          <CarouselItem key={item.key} className="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+            <div className="aspect-video overflow-hidden rounded-lg border border-border bg-card">
+              {item.kind === "photo" ? (
+                <img
+                  src={item.src}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="size-full object-cover object-top transition-transform hover:scale-105"
+                />
+              ) : (
+                <iframe
+                  src={item.embedSrc}
+                  title="Celebrity or testimonial video"
+                  className="size-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
             </div>
           </CarouselItem>
         ))}
@@ -89,6 +122,23 @@ function PhotoCarousel({ images, emptyLabel }: { images: { src: string; path: st
 }
 
 function Gallery() {
+  const [dbItems, setDbItems] = useState<GalleryItem[]>([]);
+
+  useEffect(() => {
+    listGalleryItems()
+      .then(({ items }) => setDbItems(items))
+      .catch(() => toast.error("Could not load gallery items"));
+  }, []);
+
+  const testimonialItems = [
+    ...staticTestimonialPhotos,
+    ...toDbMediaItems(dbItems.filter((i) => i.section === "testimonial")),
+  ];
+  const celebrityItems = [
+    ...staticCelebrityPhotos,
+    ...toDbMediaItems(dbItems.filter((i) => i.section === "celebrity")),
+  ];
+
   return (
     <div className="bg-sand">
       <section className="relative bg-navy text-navy-foreground">
@@ -114,7 +164,7 @@ function Gallery() {
           <h2 className="section-title text-2xl text-navy">Client Testimonials</h2>
         </div>
         <div className="mt-6">
-          <PhotoCarousel images={testimonialImages} emptyLabel="Client testimonial photos coming soon." />
+          <MediaCarousel items={testimonialItems} emptyLabel="Client testimonial photos coming soon." />
         </div>
       </section>
 
@@ -124,7 +174,7 @@ function Gallery() {
           <h2 className="section-title text-2xl text-navy">Celebrity Collaborations</h2>
         </div>
         <div className="mt-6">
-          <PhotoCarousel images={celebrityImages} emptyLabel="Celebrity collaboration photos coming soon." />
+          <MediaCarousel items={celebrityItems} emptyLabel="Celebrity collaboration photos coming soon." />
         </div>
       </section>
     </div>

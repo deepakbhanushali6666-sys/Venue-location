@@ -16,6 +16,7 @@ import { useIsAdmin } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
 import { CategoriesPanel } from "@/components/site/CategoriesPanel";
+import { GalleryPanel } from "@/components/site/GalleryPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -922,6 +923,8 @@ function AdminPanel() {
         />
 
         <CategoriesPanel />
+
+        <GalleryPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>
