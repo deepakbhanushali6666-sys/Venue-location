@@ -52,6 +52,13 @@ function toDbMediaItems(items: GalleryItem[]): MediaItem[] {
 
 const staticTestimonialPhotos = toStaticPhotos(testimonialModules);
 const staticCelebrityPhotos = toStaticPhotos(celebrityModules);
+const staticTestimonialVideos: MediaItem[] = [
+  {
+    key: "testimonial-video-ysauei-el-nxa",
+    kind: "video",
+    embedSrc: "https://www.youtube.com/embed/YsaueiElNXA",
+  },
+];
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -132,6 +139,7 @@ function Gallery() {
 
   const testimonialItems = [
     ...staticTestimonialPhotos,
+    ...staticTestimonialVideos,
     ...toDbMediaItems(dbItems.filter((i) => i.section === "testimonial")),
   ];
   const celebrityItems = [

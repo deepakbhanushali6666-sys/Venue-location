@@ -305,17 +305,32 @@ function Home() {
       {/* Testimonials */}
       <section className="mx-auto max-w-7xl px-4 py-16">
         <SectionHeading title="Client Testimonials" />
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <figure key={t.name} className="rounded-xl border border-border bg-card p-6 shadow-card">
-              <Quote className="size-7 text-gold" />
-              <blockquote className="mt-3 text-sm leading-relaxed text-foreground/85">"{t.quote}"</blockquote>
-              <figcaption className="mt-4 border-t border-border pt-3">
-                <p className="font-display text-sm font-bold text-navy">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
-              </figcaption>
-            </figure>
-          ))}
+        <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_1fr]">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <div className="aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/YsaueiElNXA"
+                title="Client testimonial video"
+                className="size-full"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <p className="px-5 py-3 text-sm font-semibold text-navy">Watch what our clients have to say</p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+            {testimonials.map((t) => (
+              <figure key={t.name} className="rounded-xl border border-border bg-card p-6 shadow-card">
+                <Quote className="size-7 text-gold" />
+                <blockquote className="mt-3 text-sm leading-relaxed text-foreground/85">"{t.quote}"</blockquote>
+                <figcaption className="mt-4 border-t border-border pt-3">
+                  <p className="font-display text-sm font-bold text-navy">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 
