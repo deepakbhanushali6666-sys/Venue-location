@@ -52,7 +52,7 @@ function Advisors() {
           <div className="mb-8 grid gap-5 sm:grid-cols-2">
             {profiles.map((profile) => (
               <article key={profile.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-                {profile.photo_url && <img src={profile.photo_url} alt={profile.name} className="aspect-[4/3] w-full object-cover object-top" />}
+                {profile.photo_url && <img src={profile.photo_url} alt={profile.name} className="aspect-4/3 w-full object-cover object-top" />}
                 <div className="p-6">
                   <h2 className="font-display text-xl font-extrabold text-navy">{profile.name}</h2>
                   <p className="mt-1 text-sm font-semibold text-gold">{profile.title}</p>
