@@ -1005,13 +1005,13 @@ function AdminPanel() {
         </section>
 
         <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
-          {[
+          {([
             ["admin-categories", "Categories"],
             ["admin-gallery", "Gallery"],
             ["admin-people", "Team & Advisors"],
             ["admin-amenities", "Amenities"],
             ["admin-locations", "Cities & States"],
-          ].map(([id, label]) => (
+          ] as const).map(([id, label]) => (
             <button
               key={id}
               type="button"
