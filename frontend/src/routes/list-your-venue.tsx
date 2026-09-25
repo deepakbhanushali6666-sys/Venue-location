@@ -237,6 +237,7 @@ function ListYourVenue() {
 
   const err = (k: string) =>
     errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>;
+  const allBookingsSelected = selectedPurposes.length === bookingPurposes.length;
 
   return (
     <div className="bg-sand">
@@ -410,15 +411,27 @@ function ListYourVenue() {
               <p className="mt-1 text-xs text-muted-foreground">Select all that apply.</p>
               <button
                 type="button"
+                role="switch"
+                aria-checked={allBookingsSelected}
+                aria-label="Select all suitable bookings"
                 onClick={() => setSelectedPurposes((current) => current.length === bookingPurposes.length ? [] : bookingPurposes.map(([, label]) => label))}
-                aria-pressed={selectedPurposes.length === bookingPurposes.length}
-                className={`mt-3 rounded-md px-3 py-2 text-xs font-bold text-white transition-colors ${
-                  selectedPurposes.length === bookingPurposes.length
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
+                className="mt-3 inline-flex items-center gap-3"
               >
-                {selectedPurposes.length === bookingPurposes.length ? "Clear all bookings" : "Select All Suitable Bookings"}
+                <span
+                  className={`relative inline-flex h-8 w-16 items-center rounded-full p-1 transition-colors ${
+                    allBookingsSelected ? "bg-green-500" : "bg-red-500"
+                  }`}
+                >
+                  <span
+                    className={`absolute size-6 rounded-full bg-white shadow transition-transform ${
+                      allBookingsSelected ? "translate-x-8" : "translate-x-0"
+                    }`}
+                  />
+                  <span className="relative z-10 w-full text-[10px] font-extrabold text-white">
+                    {allBookingsSelected ? "ON" : "OFF"}
+                  </span>
+                </span>
+                <span className="text-xs font-bold text-navy">Select All Suitable Bookings</span>
               </button>
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {bookingPurposes.map(([icon, label]) => (
