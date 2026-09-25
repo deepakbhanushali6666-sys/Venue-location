@@ -411,7 +411,12 @@ function ListYourVenue() {
               <button
                 type="button"
                 onClick={() => setSelectedPurposes((current) => current.length === bookingPurposes.length ? [] : bookingPurposes.map(([, label]) => label))}
-                className="mt-3 text-xs font-bold text-gold underline underline-offset-2"
+                aria-pressed={selectedPurposes.length === bookingPurposes.length}
+                className={`mt-3 rounded-md px-3 py-2 text-xs font-bold text-white transition-colors ${
+                  selectedPurposes.length === bookingPurposes.length
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
               >
                 {selectedPurposes.length === bookingPurposes.length ? "Clear all bookings" : "Select All Suitable Bookings"}
               </button>
