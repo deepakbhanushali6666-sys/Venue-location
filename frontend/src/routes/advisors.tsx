@@ -23,9 +23,24 @@ export const Route = createFileRoute("/advisors")({
 
 function Advisors() {
   const [profiles, setProfiles] = useState<PeopleProfile[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
+  const [profilesError, setProfilesError] = useState(false);
 
   useEffect(() => {
-    listPeopleProfiles().then(({ profiles: rows }) => setProfiles(rows.filter((profile) => profile.section === "advisor"))).catch(() => undefined);
+    let cancelled = false;
+    listPeopleProfiles()
+      .then(({ profiles: rows }) => {
+        if (!cancelled) setProfiles(rows.filter((profile) => profile.section === "advisor"));
+      })
+      .catch(() => {
+        if (!cancelled) setProfilesError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setProfilesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -48,6 +63,8 @@ function Advisors() {
       </section>
 
       <section className="mx-auto max-w-4xl px-4 py-14">
+        {profilesLoading && <p className="mb-8 text-center text-sm text-muted-foreground">Loading advisor profiles...</p>}
+        {profilesError && <p className="mb-8 rounded-md border border-border bg-card p-4 text-center text-sm text-muted-foreground">Advisor profiles are currently unavailable.</p>}
         {profiles.length > 0 && (
           <div className="mb-8 grid gap-5 sm:grid-cols-2">
             {profiles.map((profile) => (
@@ -56,7 +73,7 @@ function Advisors() {
                 <div className="p-6">
                   <h2 className="font-display text-xl font-extrabold text-navy">{profile.name}</h2>
                   <p className="mt-1 text-sm font-semibold text-gold">{profile.title}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-foreground/85">{profile.description}</p>
+                  {profile.description && <p className="mt-4 text-sm leading-relaxed text-foreground/85">{profile.description}</p>}
                 </div>
               </article>
             ))}
