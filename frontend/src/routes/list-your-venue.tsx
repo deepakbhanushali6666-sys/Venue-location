@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
 import { cities, states } from "@/data/venues";
-import { createVenue, listAmenities, listCategories, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
+import { createVenue, listAmenities, listCategories, listLocations, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 
@@ -121,6 +121,8 @@ function ListYourVenue() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
+  const [formStates, setFormStates] = useState<string[]>(states);
+  const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
   const { user } = useAuth();
 
@@ -131,6 +133,12 @@ function ListYourVenue() {
     listAmenities()
       .then(({ amenities: rows }) => setAmenities(rows))
       .catch(() => toast.error("Could not load venue amenities"));
+    listLocations()
+      .then(({ locations }) => {
+        setFormStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
+        setFormCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
+      })
+      .catch(() => undefined);
   }, []);
 
   const subcategoryOptions =
@@ -314,7 +322,7 @@ function ListYourVenue() {
               <div>
                 <select name="city" defaultValue="" className={field}>
                   <option value="">City*</option>
-                  {cities.map((c) => (
+                  {formCities.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
@@ -323,7 +331,7 @@ function ListYourVenue() {
               <div>
                 <select name="state" defaultValue="" className={field}>
                   <option value="">State*</option>
-                  {states.map((s) => (
+                  {formStates.map((s) => (
                     <option key={s}>{s}</option>
                   ))}
                 </select>

@@ -10,6 +10,7 @@ import { categoriesRouter } from "./categories.routes.js";
 import { galleryRouter } from "./gallery.routes.js";
 import { peopleRouter } from "./people.routes.js";
 import { amenitiesRouter } from "./amenities.routes.js";
+import { locationsRouter } from "./locations.routes.js";
 
 export const apiRouter = Router();
 
@@ -24,3 +25,4 @@ apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/gallery", galleryRouter);
 apiRouter.use("/people", peopleRouter);
 apiRouter.use("/amenities", amenitiesRouter);
+apiRouter.use("/locations", locationsRouter);

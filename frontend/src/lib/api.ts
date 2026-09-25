@@ -186,3 +186,10 @@ export const listAmenities = () => get<{ amenities: AmenityRecord[] }>("/ameniti
 export const createAmenity = (payload: { name: string; sort_order?: number }) =>
   post<{ amenity: AmenityRecord }>("/amenities", payload);
 export const deleteAmenity = (id: string) => del<void>(`/amenities/${id}`);
+
+// Venue state and city options (admin-managed)
+export type LocationRecord = { id: string; kind: "state" | "city"; name: string; sort_order: number };
+export const listLocations = () => get<{ locations: LocationRecord[] }>("/locations");
+export const createLocation = (payload: { kind: "state" | "city"; name: string; sort_order?: number }) =>
+  post<{ location: LocationRecord }>("/locations", payload);
+export const deleteLocation = (id: string) => del<void>(`/locations/${id}`);

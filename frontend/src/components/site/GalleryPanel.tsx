@@ -179,7 +179,7 @@ export function GalleryPanel() {
   }, []);
 
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id="admin-gallery" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">Gallery</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Upload photos or paste YouTube links for the public Gallery page. Photos are auto-cropped to fit the

@@ -127,7 +127,7 @@ export function PeoplePanel() {
   };
 
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id="admin-people" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">Team & Advisors</h2>
       <p className="mt-1 text-sm text-muted-foreground">Add names, photos, titles and descriptions shown on the public pages.</p>
       <div className="mt-4 grid gap-3 md:grid-cols-2">

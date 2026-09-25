@@ -1002,3 +1002,50 @@ insert into public.venue_amenities (name, sort_order) values
   ('Vanity Van Parking', 16), ('Crew Holding Area', 17), ('Nearby Hotels', 18),
   ('Public Transport Access', 19)
 on conflict (name) do nothing;
+
+-- =====================================================================
+-- VENUE LOCATIONS (admin-managed state and city options)
+-- =====================================================================
+create table if not exists public.venue_locations (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('state', 'city')),
+  name text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  unique (kind, name)
+);
+alter table public.venue_locations enable row level security;
+create index if not exists idx_venue_locations_kind on public.venue_locations(kind, sort_order, name);
+
+drop policy if exists "Venue locations are public" on public.venue_locations;
+create policy "Venue locations are public" on public.venue_locations for select to anon, authenticated using (true);
+drop policy if exists "Admins can manage venue locations" on public.venue_locations;
+create policy "Admins can manage venue locations" on public.venue_locations for all to authenticated
+  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+
+grant select on public.venue_locations to anon;
+grant select, insert, update, delete on public.venue_locations to authenticated;
+grant all on public.venue_locations to service_role;
+
+insert into public.venue_locations (kind, name, sort_order) values
+  ('state', 'Maharashtra', 1),
+  ('city', 'Mumbai', 1), ('city', 'Navi Mumbai', 2), ('city', 'Thane', 3),
+  ('city', 'Kalyan', 4), ('city', 'Dombivli', 5), ('city', 'Bhiwandi', 6),
+  ('city', 'Ulhasnagar', 7), ('city', 'Panvel', 8), ('city', 'Vasai-Virar', 9),
+  ('city', 'Palghar', 10), ('city', 'Mira-Bhayandar', 11), ('city', 'Pune', 12),
+  ('city', 'Pimpri-Chinchwad', 13), ('city', 'Lonavala', 14), ('city', 'Khandala', 15),
+  ('city', 'Karjat', 16), ('city', 'Alibaug', 17), ('city', 'Raigad', 18),
+  ('city', 'Nashik', 19), ('city', 'Igatpuri', 20), ('city', 'Trimbak', 21),
+  ('city', 'Malegaon', 22), ('city', 'Shirdi', 23), ('city', 'Ahmednagar', 24),
+  ('city', 'Aurangabad', 25), ('city', 'Jalna', 26), ('city', 'Beed', 27),
+  ('city', 'Latur', 28), ('city', 'Nanded', 29), ('city', 'Parbhani', 30),
+  ('city', 'Hingoli', 31), ('city', 'Osmanabad', 32), ('city', 'Nagpur', 33),
+  ('city', 'Wardha', 34), ('city', 'Chandrapur', 35), ('city', 'Gadchiroli', 36),
+  ('city', 'Bhandara', 37), ('city', 'Gondia', 38), ('city', 'Amravati', 39),
+  ('city', 'Akola', 40), ('city', 'Yavatmal', 41), ('city', 'Washim', 42),
+  ('city', 'Buldhana', 43), ('city', 'Kolhapur', 44), ('city', 'Sangli', 45),
+  ('city', 'Miraj', 46), ('city', 'Ichalkaranji', 47), ('city', 'Satara', 48),
+  ('city', 'Solapur', 49), ('city', 'Pandharpur', 50), ('city', 'Ratnagiri', 51),
+  ('city', 'Sindhudurg', 52), ('city', 'Mahabaleshwar', 53), ('city', 'Panchgani', 54),
+  ('city', 'Dhule', 55), ('city', 'Nandurbar', 56), ('city', 'Jalgaon', 57)
+on conflict (kind, name) do nothing;

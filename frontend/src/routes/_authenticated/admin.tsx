@@ -22,6 +22,7 @@ import { CategoriesPanel } from "@/components/site/CategoriesPanel";
 import { GalleryPanel } from "@/components/site/GalleryPanel";
 import { PeoplePanel } from "@/components/site/PeoplePanel";
 import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
+import { LocationsPanel } from "@/components/site/LocationsPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -1003,6 +1004,25 @@ function AdminPanel() {
           </div>
         </section>
 
+        <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
+          {[
+            ["admin-categories", "Categories"],
+            ["admin-gallery", "Gallery"],
+            ["admin-people", "Team & Advisors"],
+            ["admin-amenities", "Amenities"],
+            ["admin-locations", "Cities & States"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="rounded-md border border-border px-3 py-2 text-xs font-bold text-navy transition-colors hover:border-gold hover:bg-secondary"
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
         <ReviewsPanel
           mode="admin"
           venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
@@ -1015,6 +1035,8 @@ function AdminPanel() {
         <PeoplePanel />
 
         <AmenitiesPanel />
+
+        <LocationsPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>

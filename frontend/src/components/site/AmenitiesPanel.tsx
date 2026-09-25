@@ -48,7 +48,7 @@ export function AmenitiesPanel() {
   };
 
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id="admin-amenities" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">Venue Amenities</h2>
       <div className="mt-4 flex flex-wrap gap-2">
         <input

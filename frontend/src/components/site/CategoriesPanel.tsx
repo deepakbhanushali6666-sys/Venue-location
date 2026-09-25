@@ -101,7 +101,7 @@ export function CategoriesPanel() {
   };
 
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id="admin-categories" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">
         Venue Categories &amp; Subcategories
       </h2>
