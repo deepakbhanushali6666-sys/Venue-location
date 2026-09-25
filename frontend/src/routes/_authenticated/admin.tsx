@@ -10,13 +10,18 @@ import {
   rejectPayment as apiRejectPayment,
   setVenueFeatured,
   setVenueStatus,
+  updateVenue,
   verifyPayment as apiVerifyPayment,
 } from "@/lib/api";
+import { cities, states } from "@/data/venues";
+import { listCategories, type CategoryRecord } from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
 import { CategoriesPanel } from "@/components/site/CategoriesPanel";
 import { GalleryPanel } from "@/components/site/GalleryPanel";
+import { PeoplePanel } from "@/components/site/PeoplePanel";
+import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -40,7 +45,11 @@ type VenueRow = {
   id: string;
   name: string;
   city: string;
+  state: string;
   category: string;
+  subcategory: string;
+  booking_purposes: string[];
+  booking_restrictions: string[];
   status: string;
   featured: boolean;
   created_at: string;
@@ -118,6 +127,9 @@ function AdminPanel() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [auditFilter, setAuditFilter] = useState<string>("all");
   const [rangeDays, setRangeDays] = useState<number>(90);
+  const [categories, setCategories] = useState<CategoryRecord[]>([]);
+  const [editingVenue, setEditingVenue] = useState<string | null>(null);
+  const [savingVenue, setSavingVenue] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -148,6 +160,9 @@ function AdminPanel() {
   useEffect(() => {
     if (!isAdmin) return;
     void loadAll();
+    listCategories()
+      .then(({ categories: rows }) => setCategories(rows))
+      .catch(() => toast.error("Could not load venue categories"));
   }, [isAdmin]);
 
   const verifyPayment = async (id: string) => {
@@ -325,6 +340,31 @@ function AdminPanel() {
       void refreshAudit();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update featured status");
+    }
+  };
+
+  const saveVenueDetails = async (venue: VenueRow, form: HTMLFormElement) => {
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    const updates = {
+      city: data["city"]?.trim() ?? "",
+      state: data["state"]?.trim() ?? "",
+      category: data["category"]?.trim() ?? "",
+      subcategory: data["subcategory"]?.trim() ?? "",
+    };
+    if (!updates.city || !updates.state || !updates.category) {
+      toast.error("City, state and category are required");
+      return;
+    }
+    setSavingVenue(venue.id);
+    try {
+      await updateVenue(venue.id, updates);
+      setVenues((prev) => prev.map((item) => (item.id === venue.id ? { ...item, ...updates } : item)));
+      setEditingVenue(null);
+      toast.success("Venue details updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update venue details");
+    } finally {
+      setSavingVenue(null);
     }
   };
 
@@ -863,6 +903,8 @@ function AdminPanel() {
                   <th className="py-2">Venue</th>
                   <th>City</th>
                   <th>Category</th>
+                  <th>Accepted bookings</th>
+                  <th>Restrictions</th>
                   <th>Status</th>
                   <th>Featured</th>
                   <th>Actions</th>
@@ -872,8 +914,10 @@ function AdminPanel() {
                 {venues.map((v) => (
                   <tr key={v.id} className="border-t border-border">
                     <td className="py-3 font-bold text-navy">{v.name}</td>
-                    <td>{v.city}</td>
-                    <td className="capitalize">{v.category}</td>
+                    <td>{v.city}, {v.state}</td>
+                    <td className="capitalize">{v.category}{v.subcategory ? ` / ${v.subcategory}` : ""}</td>
+                    <td className="max-w-56 text-xs">{v.booking_purposes?.join(", ") || "None listed"}</td>
+                    <td className="max-w-48 text-xs">{v.booking_restrictions?.join(", ") || "None listed"}</td>
                     <td>{v.status}</td>
                     <td>
                       <input
@@ -883,6 +927,12 @@ function AdminPanel() {
                       />
                     </td>
                     <td className="space-x-3">
+                      <button
+                        onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
+                        className="font-bold text-navy"
+                      >
+                        Edit
+                      </button>
                       <button
                         onClick={() => setStatus(v.id, "approved")}
                         className="font-bold text-gold"
@@ -905,9 +955,45 @@ function AdminPanel() {
                     </td>
                   </tr>
                 ))}
+                {venues.map((v) => editingVenue === v.id && (
+                  <tr key={`${v.id}-editor`} className="border-t border-border bg-secondary/40">
+                    <td colSpan={8} className="py-3">
+                      <form
+                        className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void saveVenueDetails(v, event.currentTarget);
+                        }}
+                      >
+                        <select name="state" defaultValue={v.state} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
+                          {states.map((state) => <option key={state}>{state}</option>)}
+                        </select>
+                        <select name="city" defaultValue={v.city} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
+                          {cities.map((city) => <option key={city}>{city}</option>)}
+                        </select>
+                        <select name="category" defaultValue={v.category} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
+                          {categories.map((category) => <option key={category.id}>{category.name}</option>)}
+                        </select>
+                        <select name="subcategory" defaultValue={v.subcategory} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
+                          <option value="">No subcategory</option>
+                          {(categories.find((category) => category.name === v.category)?.subcategories ?? []).map((subcategory) => (
+                            <option key={subcategory.id}>{subcategory.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="submit"
+                          disabled={savingVenue === v.id}
+                          className="rounded-md bg-gold px-3 py-2 text-sm font-bold text-gold-foreground disabled:opacity-60"
+                        >
+                          {savingVenue === v.id ? "Saving..." : "Save details"}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
                 {venues.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-4 text-muted-foreground">
+                    <td colSpan={8} className="py-4 text-muted-foreground">
                       No venues submitted yet.
                     </td>
                   </tr>
@@ -925,6 +1011,10 @@ function AdminPanel() {
         <CategoriesPanel />
 
         <GalleryPanel />
+
+        <PeoplePanel />
+
+        <AmenitiesPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>

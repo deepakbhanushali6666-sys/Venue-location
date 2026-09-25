@@ -95,6 +95,8 @@ create table if not exists public.venues (
   updated_at timestamptz not null default now()
 );
 alter table public.venues enable row level security;
+alter table public.venues add column if not exists booking_purposes text[] not null default '{}';
+alter table public.venues add column if not exists booking_restrictions text[] not null default '{}';
 create index if not exists idx_venues_status on public.venues(status);
 create index if not exists idx_venues_owner on public.venues(owner_id);
 
@@ -934,3 +936,69 @@ drop policy if exists "Admins can delete gallery media" on storage.objects;
 create policy "Admins can delete gallery media"
 on storage.objects for delete to authenticated
 using (bucket_id = 'gallery-media' and public.has_role(auth.uid(), 'admin'));
+
+-- =====================================================================
+-- PEOPLE PROFILES (admin-managed team members and advisors)
+-- =====================================================================
+create table if not exists public.people_profiles (
+  id uuid primary key default gen_random_uuid(),
+  section text not null check (section in ('team', 'advisor')),
+  name text not null,
+  title text not null default '',
+  description text not null default '',
+  photo_url text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.people_profiles enable row level security;
+create index if not exists idx_people_profiles_section on public.people_profiles(section, sort_order);
+
+drop policy if exists "People profiles are public" on public.people_profiles;
+create policy "People profiles are public"
+  on public.people_profiles for select to anon, authenticated
+  using (true);
+drop policy if exists "Admins can manage people profiles" on public.people_profiles;
+create policy "Admins can manage people profiles"
+  on public.people_profiles for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+grant select on public.people_profiles to anon;
+grant select, insert, update, delete on public.people_profiles to authenticated;
+grant all on public.people_profiles to service_role;
+
+-- =====================================================================
+-- VENUE AMENITIES (admin-managed options for listing forms)
+-- =====================================================================
+create table if not exists public.venue_amenities (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.venue_amenities enable row level security;
+create index if not exists idx_venue_amenities_sort on public.venue_amenities(sort_order, name);
+
+drop policy if exists "Venue amenities are public" on public.venue_amenities;
+create policy "Venue amenities are public"
+  on public.venue_amenities for select to anon, authenticated
+  using (true);
+drop policy if exists "Admins can manage venue amenities" on public.venue_amenities;
+create policy "Admins can manage venue amenities"
+  on public.venue_amenities for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+grant select on public.venue_amenities to anon;
+grant select, insert, update, delete on public.venue_amenities to authenticated;
+grant all on public.venue_amenities to service_role;
+
+insert into public.venue_amenities (name, sort_order) values
+  ('Parking', 1), ('Power Backup', 2), ('Air Conditioning', 3), ('Wi-Fi', 4),
+  ('Washrooms', 5), ('Changing Rooms', 6), ('Makeup Rooms', 7), ('Catering/Kitchen', 8),
+  ('Accommodation', 9), ('Lift', 10), ('Wheelchair Access', 11), ('Generator', 12),
+  ('Security', 13), ('Fire Safety', 14), ('Equipment Loading Access', 15),
+  ('Vanity Van Parking', 16), ('Crew Holding Area', 17), ('Nearby Hotels', 18),
+  ('Public Transport Access', 19)
+on conflict (name) do nothing;

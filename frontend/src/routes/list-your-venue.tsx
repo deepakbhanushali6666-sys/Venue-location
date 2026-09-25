@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
 import { cities, states } from "@/data/venues";
-import { createVenue, listCategories, submitLead, type CategoryRecord } from "@/lib/api";
+import { createVenue, listAmenities, listCategories, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 
@@ -70,11 +70,57 @@ const benefits = [
   },
 ];
 
+const bookingPurposes = [
+  ["🎬", "Film / Movie Shoot"],
+  ["📺", "TV Serial Shoot"],
+  ["🎥", "Web Series / OTT Shoot"],
+  ["📢", "Advertisement / TVC Shoot"],
+  ["🎵", "Music Video Shoot"],
+  ["📸", "Photo Shoot"],
+  ["👗", "Fashion / Catalogue / E-commerce Shoot"],
+  ["💑", "Pre-Wedding Shoot"],
+  ["💍", "Wedding"],
+  ["🌴", "Destination Wedding"],
+  ["💒", "Engagement / Reception"],
+  ["🎂", "Birthday Party"],
+  ["🎉", "Private Party / Celebration"],
+  ["👶", "Baby Shower / Family Function"],
+  ["🏢", "Corporate Event"],
+  ["🧳", "Corporate Off-site"],
+  ["🤝", "Conference / Meeting"],
+  ["🎤", "Seminar / Workshop / Training"],
+  ["🚀", "Product / Brand Launch"],
+  ["🛍️", "Exhibition / Pop-up / Showcase"],
+  ["🎭", "Performance / Cultural Event"],
+  ["🧘", "Wellness / Yoga / Retreat"],
+  ["🏡", "Staycation / Weekend Stay"],
+  ["🏖️", "Holiday / Vacation Stay"],
+  ["🍽️", "Private Dining / Food Event"],
+  ["🎙️", "Podcast / Interview / Content Creation"],
+  ["🎬", "Reality Show / Digital Content"],
+  ["✨", "Other"],
+] as const;
+
+const bookingRestrictions = [
+  "No night shoots",
+  "No alcohol",
+  "No loud music",
+  "No weddings",
+  "No parties",
+  "No overnight stay",
+  "No large crews",
+  "Other restrictions",
+] as const;
+
 function ListYourVenue() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
+  const [amenities, setAmenities] = useState<AmenityRecord[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const { user } = useAuth();
 
@@ -82,6 +128,9 @@ function ListYourVenue() {
     listCategories()
       .then(({ categories: rows }) => setCategories(rows))
       .catch(() => toast.error("Could not load venue categories"));
+    listAmenities()
+      .then(({ amenities: rows }) => setAmenities(rows))
+      .catch(() => toast.error("Could not load venue amenities"));
   }, []);
 
   const subcategoryOptions =
@@ -128,6 +177,9 @@ function ListYourVenue() {
           description,
           gst_number: d.gst ?? "",
           photos,
+          amenities: selectedAmenities,
+          booking_purposes: selectedPurposes,
+          booking_restrictions: selectedRestrictions,
           map_query: `${d.venueName}, ${d.city}`,
         });
         toast.success("Venue submitted for approval", {
@@ -135,6 +187,9 @@ function ListYourVenue() {
         });
         formEl.reset();
         setPhotos([]);
+        setSelectedAmenities([]);
+        setSelectedPurposes([]);
+        setSelectedRestrictions([]);
         setSelectedCategory("");
         void navigate({ to: "/dashboard" });
       } catch (err) {
@@ -156,6 +211,9 @@ function ListYourVenue() {
           `Category: ${d.category}`,
           d.subcategory ? `Subcategory: ${d.subcategory}` : "",
           `Location: ${d.address}, ${d.city}, ${d.state}`,
+          selectedAmenities.length ? `Amenities: ${selectedAmenities.join(", ")}` : "",
+          selectedPurposes.length ? `Booking purposes accepted: ${selectedPurposes.join(", ")}` : "",
+          selectedRestrictions.length ? `Booking restrictions: ${selectedRestrictions.join(", ")}` : "",
           d.gst ? `GST: ${d.gst}` : "",
           d.notes ?? "",
         ]
@@ -166,6 +224,9 @@ function ListYourVenue() {
         description: "Create your owner account to add photos and manage enquiries.",
       });
       formEl.reset();
+      setSelectedAmenities([]);
+      setSelectedPurposes([]);
+      setSelectedRestrictions([]);
       setSelectedCategory("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit registration");
@@ -324,6 +385,66 @@ function ListYourVenue() {
                 to upload venue photos directly and manage your listing.
               </p>
             )}
+            {amenities.length > 0 && (
+              <fieldset className="rounded-md border border-border bg-background p-4">
+                <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">Amenities</legend>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {amenities.map((amenity) => (
+                    <label key={amenity.id} className="flex items-center gap-2 text-sm text-foreground/85">
+                      <input
+                        type="checkbox"
+                        checked={selectedAmenities.includes(amenity.name)}
+                        onChange={(event) => setSelectedAmenities((current) => event.target.checked ? [...current, amenity.name] : current.filter((item) => item !== amenity.name))}
+                        className="size-4 accent-gold"
+                      />
+                      {amenity.name}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            <fieldset className="rounded-md border border-border bg-background p-4">
+              <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
+                What types of bookings do you accept?
+              </legend>
+              <p className="mt-1 text-xs text-muted-foreground">Select all that apply.</p>
+              <button
+                type="button"
+                onClick={() => setSelectedPurposes((current) => current.length === bookingPurposes.length ? [] : bookingPurposes.map(([, label]) => label))}
+                className="mt-3 text-xs font-bold text-gold underline underline-offset-2"
+              >
+                {selectedPurposes.length === bookingPurposes.length ? "Clear all bookings" : "Select All Suitable Bookings"}
+              </button>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {bookingPurposes.map(([icon, label]) => (
+                  <label key={label} className="flex items-start gap-2 text-sm text-foreground/85">
+                    <input
+                      type="checkbox"
+                      checked={selectedPurposes.includes(label)}
+                      onChange={(event) => setSelectedPurposes((current) => event.target.checked ? [...current, label] : current.filter((item) => item !== label))}
+                      className="mt-0.5 size-4 shrink-0 accent-gold"
+                    />
+                    <span>{icon} {label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="rounded-md border border-border bg-background p-4">
+              <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">Booking restrictions</legend>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {bookingRestrictions.map((restriction) => (
+                  <label key={restriction} className="flex items-start gap-2 text-sm text-foreground/85">
+                    <input
+                      type="checkbox"
+                      checked={selectedRestrictions.includes(restriction)}
+                      onChange={(event) => setSelectedRestrictions((current) => event.target.checked ? [...current, restriction] : current.filter((item) => item !== restriction))}
+                      className="mt-0.5 size-4 shrink-0 accent-gold"
+                    />
+                    <span>{restriction}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <textarea
               name="notes"
               rows={3}

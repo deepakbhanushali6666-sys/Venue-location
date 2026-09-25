@@ -161,3 +161,28 @@ export const createGalleryItem = (payload: {
   url: string;
 }) => post<{ item: GalleryItem }>("/gallery", payload);
 export const deleteGalleryItem = (id: string) => del<void>(`/gallery/${id}`);
+
+// Team members and advisors (admin-managed)
+export type PeopleSection = "team" | "advisor";
+export type PeopleProfile = {
+  id: string;
+  section: PeopleSection;
+  name: string;
+  title: string;
+  description: string;
+  photo_url: string;
+  sort_order: number;
+};
+export const listPeopleProfiles = () => get<{ profiles: PeopleProfile[] }>("/people");
+export const createPeopleProfile = (payload: Omit<PeopleProfile, "id">) =>
+  post<{ profile: PeopleProfile }>("/people", payload);
+export const updatePeopleProfile = (id: string, payload: Partial<Omit<PeopleProfile, "id">>) =>
+  patch<{ profile: PeopleProfile }>(`/people/${id}`, payload);
+export const deletePeopleProfile = (id: string) => del<void>(`/people/${id}`);
+
+// Venue amenities (admin-managed options)
+export type AmenityRecord = { id: string; name: string; sort_order: number };
+export const listAmenities = () => get<{ amenities: AmenityRecord[] }>("/amenities");
+export const createAmenity = (payload: { name: string; sort_order?: number }) =>
+  post<{ amenity: AmenityRecord }>("/amenities", payload);
+export const deleteAmenity = (id: string) => del<void>(`/amenities/${id}`);

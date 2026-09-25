@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Users2 } from "lucide-react";
 import heroImage from "@/assets/hero-venue.jpg";
+import { listPeopleProfiles, type PeopleProfile } from "@/lib/api";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -24,6 +26,12 @@ export const Route = createFileRoute("/team")({
 });
 
 function Team() {
+  const [profiles, setProfiles] = useState<PeopleProfile[]>([]);
+
+  useEffect(() => {
+    listPeopleProfiles().then(({ profiles: rows }) => setProfiles(rows.filter((profile) => profile.section === "team"))).catch(() => undefined);
+  }, []);
+
   return (
     <div className="bg-sand">
       <section className="relative bg-navy text-navy-foreground">
@@ -45,6 +53,20 @@ function Team() {
       </section>
 
       <section className="mx-auto max-w-4xl px-4 py-14">
+        {profiles.length > 0 && (
+          <div className="mb-8 grid gap-5 sm:grid-cols-2">
+            {profiles.map((profile) => (
+              <article key={profile.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+                {profile.photo_url && <img src={profile.photo_url} alt={profile.name} className="aspect-[4/3] w-full object-cover object-top" />}
+                <div className="p-6">
+                  <h2 className="font-display text-xl font-extrabold text-navy">{profile.name}</h2>
+                  <p className="mt-1 text-sm font-semibold text-gold">{profile.title}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-foreground/85">{profile.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
         <div className="rounded-xl border border-border bg-card p-8">
           <Users2 className="size-8 text-gold" />
           <h2 className="mt-3 section-title text-2xl text-navy">

@@ -8,6 +8,8 @@ import { adminRouter } from "./admin.routes.js";
 import { profilesRouter } from "./profiles.routes.js";
 import { categoriesRouter } from "./categories.routes.js";
 import { galleryRouter } from "./gallery.routes.js";
+import { peopleRouter } from "./people.routes.js";
+import { amenitiesRouter } from "./amenities.routes.js";
 
 export const apiRouter = Router();
 
@@ -20,3 +22,5 @@ apiRouter.use("/admin", adminRouter);
 apiRouter.use("/profiles", profilesRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/gallery", galleryRouter);
+apiRouter.use("/people", peopleRouter);
+apiRouter.use("/amenities", amenitiesRouter);
