@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Trash2, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import {
   createGalleryItem,
   deleteGalleryItem,
@@ -74,6 +75,10 @@ function SectionEditor({
   const addVideo = async () => {
     const url = videoUrl.trim();
     if (!url) return;
+    if (!getYouTubeEmbedUrl(url)) {
+      toast.error("Enter a valid YouTube video link");
+      return;
+    }
     setBusy(true);
     try {
       await createGalleryItem({ section, media_type: "video", url });
