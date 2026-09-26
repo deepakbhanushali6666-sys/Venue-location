@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Images } from "lucide-react";
+import { Images, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import heroImage from "@/assets/hero-venue.jpg";
 import { listGalleryItems, type GalleryItem } from "@/lib/api";
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import {
   Carousel,
   CarouselContent,
@@ -24,7 +25,9 @@ const celebrityModules = import.meta.glob<{ default: string }>(
   { eager: true },
 );
 
-type MediaItem = { key: string; kind: "photo"; src: string } | { key: string; kind: "video"; embedSrc: string };
+type MediaItem =
+  | { key: string; kind: "photo"; src: string }
+  | { key: string; kind: "video"; embedSrc: string; thumbnail: string };
 
 function toStaticPhotos(modules: Record<string, { default: string }>): MediaItem[] {
   return Object.entries(modules)
@@ -32,18 +35,15 @@ function toStaticPhotos(modules: Record<string, { default: string }>): MediaItem
     .map(([path, mod]) => ({ key: path, kind: "photo" as const, src: mod.default }));
 }
 
-// Supports youtube.com/watch?v=, youtu.be/ and already-embedded URLs.
-function toYouTubeEmbed(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-}
-
 function toDbMediaItems(items: GalleryItem[]): MediaItem[] {
   return items
     .map((item): MediaItem | null => {
       if (item.media_type === "video") {
-        const embedSrc = toYouTubeEmbed(item.url);
-        return embedSrc ? { key: item.id, kind: "video", embedSrc } : null;
+        const embedSrc = getYouTubeEmbedUrl(item.url);
+        const videoId = embedSrc?.split("/").pop();
+        return embedSrc && videoId
+          ? { key: item.id, kind: "video", embedSrc, thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` }
+          : null;
       }
       return { key: item.id, kind: "photo", src: item.url };
     })
@@ -57,6 +57,7 @@ const staticTestimonialVideos: MediaItem[] = [
     key: "testimonial-video-ysauei-el-nxa",
     kind: "video",
     embedSrc: "https://www.youtube.com/embed/YsaueiElNXA",
+    thumbnail: "https://img.youtube.com/vi/YsaueiElNXA/hqdefault.jpg",
   },
 ];
 
@@ -77,46 +78,54 @@ export const Route = createFileRoute("/gallery")({
   component: Gallery,
 });
 
-function MediaCarousel({ items, emptyLabel }: { items: MediaItem[]; emptyLabel: string }) {
+function PhotoCarousel({ items, paused, onSelect }: { items: MediaItem[]; paused: boolean; onSelect: (src: string) => void }) {
   const [api, setApi] = useState<CarouselApi>();
 
   useEffect(() => {
-    if (!api) return;
+    if (!api || paused || items.length < 2) return;
     const id = setInterval(() => api.scrollNext(), 3000);
     return () => clearInterval(id);
-  }, [api]);
+  }, [api, items.length, paused]);
 
-  if (items.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-foreground/70">
-        {emptyLabel}
-      </p>
-    );
-  }
+  if (items.length === 0) return <p className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-foreground/70">Photos coming soon.</p>;
 
   return (
     <Carousel setApi={setApi} opts={{ align: "start", loop: true }} className="px-2 sm:px-10">
       <CarouselContent>
         {items.map((item) => (
-          <CarouselItem key={item.key} className="basis-1/2 sm:basis-1/3 lg:basis-1/4">
-            <div className="aspect-video overflow-hidden rounded-lg border border-border bg-card">
-              {item.kind === "photo" ? (
-                <img
-                  src={item.src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="size-full object-cover object-top transition-transform hover:scale-105"
-                />
+          item.kind === "photo" && <CarouselItem key={item.key} className="basis-4/5 sm:basis-1/2 lg:basis-1/3">
+            <button type="button" onClick={() => onSelect(item.src)} className="block aspect-video w-full overflow-hidden rounded-lg border border-border bg-card" aria-label="View larger photo">
+              <img src={item.src} alt="Gallery photo" loading="lazy" decoding="async" className="size-full object-cover object-top transition-transform hover:scale-105" />
+            </button>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious className="hidden sm:flex" />
+      <CarouselNext className="hidden sm:flex" />
+    </Carousel>
+  );
+}
+
+function VideoCarousel({ items, activeVideo, onPlay }: { items: MediaItem[]; activeVideo: string | null; onPlay: (key: string | null) => void }) {
+  const videoItems = items.filter((item): item is Extract<MediaItem, { kind: "video" }> => item.kind === "video");
+  if (videoItems.length === 0) return <p className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-foreground/70">Videos coming soon.</p>;
+
+  return (
+    <Carousel opts={{ align: "start", loop: true }} className="px-2 sm:px-10">
+      <CarouselContent>
+        {videoItems.map((video) => (
+          <CarouselItem key={video.key} className="basis-full md:basis-4/5 lg:basis-2/3">
+            <div className="aspect-video overflow-hidden rounded-lg border border-border bg-card shadow-card">
+              {activeVideo === video.key ? (
+                <div className="relative size-full">
+                  <iframe src={`${video.embedSrc}?autoplay=1`} title="Client or celebrity testimonial video" className="size-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                  <button type="button" onClick={() => onPlay(null)} className="absolute right-2 top-2 rounded-full bg-black/70 p-2 text-white" aria-label="Close video"><X className="size-4" /></button>
+                </div>
               ) : (
-                <iframe
-                  src={item.embedSrc}
-                  title="Celebrity or testimonial video"
-                  className="size-full"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <button type="button" onClick={() => onPlay(video.key)} className="group relative size-full" aria-label="Play video">
+                  <img src={video.thumbnail} alt="Video preview" loading="lazy" className="size-full object-cover" />
+                  <span className="absolute inset-0 grid place-items-center bg-black/20 transition-colors group-hover:bg-black/40"><span className="grid size-14 place-items-center rounded-full bg-red-600 text-white"><Play className="ml-1 size-6 fill-current" /></span></span>
+                </button>
               )}
             </div>
           </CarouselItem>
@@ -130,11 +139,28 @@ function MediaCarousel({ items, emptyLabel }: { items: MediaItem[]; emptyLabel: 
 
 function Gallery() {
   const [dbItems, setDbItems] = useState<GalleryItem[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
   useEffect(() => {
-    listGalleryItems()
-      .then(({ items }) => setDbItems(items))
-      .catch(() => toast.error("Could not load gallery items"));
+    let active = true;
+    const refresh = () => {
+      listGalleryItems()
+        .then(({ items }) => {
+          if (active) setDbItems(items);
+        })
+        .catch(() => {
+          if (active) toast.error("Could not load gallery items");
+        });
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
 
   const testimonialItems = [
@@ -171,8 +197,15 @@ function Gallery() {
           <Images className="size-6 text-gold" />
           <h2 className="section-title text-2xl text-navy">Client Testimonials</h2>
         </div>
-        <div className="mt-6">
-          <MediaCarousel items={testimonialItems} emptyLabel="Client testimonial photos coming soon." />
+        <div className="mt-6 space-y-10">
+          <div>
+            <h3 className="mb-4 font-display text-lg font-bold text-navy">Photos</h3>
+            <PhotoCarousel items={testimonialItems.filter((item) => item.kind === "photo")} paused={activeVideo !== null} onSelect={setPhotoPreview} />
+          </div>
+          <div>
+            <h3 className="mb-4 font-display text-lg font-bold text-navy">Videos</h3>
+            <VideoCarousel items={testimonialItems} activeVideo={activeVideo} onPlay={setActiveVideo} />
+          </div>
         </div>
       </section>
 
@@ -181,10 +214,23 @@ function Gallery() {
           <Images className="size-6 text-gold" />
           <h2 className="section-title text-2xl text-navy">Celebrity Collaborations</h2>
         </div>
-        <div className="mt-6">
-          <MediaCarousel items={celebrityItems} emptyLabel="Celebrity collaboration photos coming soon." />
+        <div className="mt-6 space-y-10">
+          <div>
+            <h3 className="mb-4 font-display text-lg font-bold text-navy">Photos</h3>
+            <PhotoCarousel items={celebrityItems.filter((item) => item.kind === "photo")} paused={activeVideo !== null} onSelect={setPhotoPreview} />
+          </div>
+          <div>
+            <h3 className="mb-4 font-display text-lg font-bold text-navy">Videos</h3>
+            <VideoCarousel items={celebrityItems} activeVideo={activeVideo} onPlay={setActiveVideo} />
+          </div>
         </div>
       </section>
+      {photoPreview && (
+        <div className="fixed inset-0 z-100 grid place-items-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-label="Expanded gallery photo" onClick={() => setPhotoPreview(null)}>
+          <button type="button" onClick={() => setPhotoPreview(null)} className="absolute right-4 top-4 rounded-full bg-white/15 p-3 text-white" aria-label="Close expanded photo"><X className="size-5" /></button>
+          <img src={photoPreview} alt="Expanded gallery" className="max-h-[90vh] max-w-[95vw] object-contain" onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
