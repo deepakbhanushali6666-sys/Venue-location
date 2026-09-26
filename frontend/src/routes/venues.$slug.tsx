@@ -95,6 +95,14 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
   const [active, setActive] = useState(0);
   const similar = venues.filter((v) => v.category === venue.category && v.slug !== venue.slug).slice(0, 3);
 
+  useEffect(() => {
+    if (venue.images.length < 2) return;
+    const interval = window.setInterval(() => {
+      setActive((current) => (current + 1) % venue.images.length);
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [venue.images]);
+
   const waText = encodeURIComponent(
     `Hi VENUES LOCATION, I'm interested in ${venue.name} (${venue.city}). Please share availability and pricing.`,
   );
@@ -112,7 +120,7 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-card">
               <img
                 src={venue.images[active]}
                 alt={`${venue.name} photo ${active + 1}`}
@@ -120,18 +128,11 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
                 height={800}
                 className="aspect-16/10 w-full object-cover"
               />
-              <div className="flex gap-2 p-3">
-                {venue.images.map((img, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setActive(i)}
-                    className={`overflow-hidden rounded-md border-2 ${i === active ? "border-gold" : "border-transparent"}`}
-                  >
-                    <img src={img} alt="" loading="lazy" width={160} height={110} className="h-16 w-24 object-cover" />
-                  </button>
-                ))}
-              </div>
+              {venue.images.length > 1 && (
+                <span className="absolute bottom-3 right-3 rounded bg-navy/80 px-2 py-1 text-xs font-semibold text-primary-foreground">
+                  {active + 1} / {venue.images.length}
+                </span>
+              )}
             </div>
 
             <div className="mt-6 rounded-xl border border-border bg-card p-6">

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const TEN_YEARS = 60 * 60 * 24 * 3650;
 const MAX_BYTES = 8 * 1024 * 1024;
-const MAX_PHOTOS = 20;
+const MAX_PHOTOS = 10;
 
 export function PhotoUploader({
   userId,
