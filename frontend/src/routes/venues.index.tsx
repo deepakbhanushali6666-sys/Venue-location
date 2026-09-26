@@ -90,9 +90,11 @@ function VenuesPage() {
     navigate({ to: "/venues", search: next });
   };
 
+  const hasCategoryVenues = !search.category || liveVenues.some((venue) => venue.category === search.category);
+
   const results = liveVenues.filter((v) => {
-    if (search["category"] && v.category !== search["category"]) return false;
-    if (search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
+    if (hasCategoryVenues && search["category"] && v.category !== search["category"]) return false;
+    if (hasCategoryVenues && search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
     if (search["city"] && v.city !== search["city"]) return false;
     if (search["state"] && v.state !== search["state"]) return false;
     if (search["event"] && !(v.bookingPurposes ?? v.suitableFor).includes(search["event"])) return false;
@@ -205,6 +207,11 @@ function VenuesPage() {
         </aside>
 
         <section>
+          {!hasCategoryVenues && search.category && (
+            <p className="mb-4 rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+              No approved venues are listed in this category yet. Showing all venues; you can narrow the results with the filters.
+            </p>
+          )}
           <p className="mb-4 text-sm text-muted-foreground">
             Showing <span className="font-bold text-navy">{results.length}</span> venue
             {results.length === 1 ? "" : "s"}
