@@ -11,6 +11,7 @@ import { galleryRouter } from "./gallery.routes.js";
 import { peopleRouter } from "./people.routes.js";
 import { amenitiesRouter } from "./amenities.routes.js";
 import { locationsRouter } from "./locations.routes.js";
+import { purposesRouter } from "./purposes.routes.js";
 
 export const apiRouter = Router();
 
@@ -26,3 +27,4 @@ apiRouter.use("/gallery", galleryRouter);
 apiRouter.use("/people", peopleRouter);
 apiRouter.use("/amenities", amenitiesRouter);
 apiRouter.use("/locations", locationsRouter);
+apiRouter.use("/purposes", purposesRouter);

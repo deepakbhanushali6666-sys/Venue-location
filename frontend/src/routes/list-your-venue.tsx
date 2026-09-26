@@ -1,10 +1,10 @@
+import { createVenue, listAmenities, listCategories, listLocations, listPurposes, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
 import { cities, states } from "@/data/venues";
-import { createVenue, listAmenities, listCategories, listLocations, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 
@@ -120,6 +120,7 @@ function ListYourVenue() {
   const [amenities, setAmenities] = useState<AmenityRecord[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
+  const [bookingOptions, setBookingOptions] = useState<string[]>(bookingPurposes.map(([, label]) => label));
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [formStates, setFormStates] = useState<string[]>(states);
   const [formCities, setFormCities] = useState<string[]>(cities);
@@ -138,6 +139,9 @@ function ListYourVenue() {
         setFormStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
         setFormCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
       })
+      .catch(() => undefined);
+    listPurposes()
+      .then(({ purposes: rows }) => setBookingOptions(rows.map((purpose) => purpose.name)))
       .catch(() => undefined);
   }, []);
 
@@ -245,7 +249,7 @@ function ListYourVenue() {
 
   const err = (k: string) =>
     errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>;
-  const allBookingsSelected = selectedPurposes.length === bookingPurposes.length;
+  const allBookingsSelected = bookingOptions.length > 0 && selectedPurposes.length === bookingOptions.length;
 
   return (
     <div className="bg-sand">
@@ -422,7 +426,7 @@ function ListYourVenue() {
                 role="switch"
                 aria-checked={allBookingsSelected}
                 aria-label="Select all suitable bookings"
-                onClick={() => setSelectedPurposes((current) => current.length === bookingPurposes.length ? [] : bookingPurposes.map(([, label]) => label))}
+                onClick={() => setSelectedPurposes((current) => current.length === bookingOptions.length ? [] : bookingOptions)}
                 className="mt-3 inline-flex items-center gap-3"
               >
                 <span
@@ -442,15 +446,15 @@ function ListYourVenue() {
                 <span className="text-xs font-bold text-navy">Select All Suitable Bookings</span>
               </button>
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {bookingPurposes.map(([icon, label]) => (
-                  <label key={label} className="flex items-start gap-2 text-sm text-foreground/85">
+                {bookingOptions.map((purpose) => (
+                  <label key={purpose} className="flex items-start gap-2 text-sm text-foreground/85">
                     <input
                       type="checkbox"
-                      checked={selectedPurposes.includes(label)}
-                      onChange={(event) => setSelectedPurposes((current) => event.target.checked ? [...current, label] : current.filter((item) => item !== label))}
+                      checked={selectedPurposes.includes(purpose)}
+                      onChange={(event) => setSelectedPurposes((current) => event.target.checked ? [...current, purpose] : current.filter((item) => item !== purpose))}
                       className="mt-0.5 size-4 shrink-0 accent-gold"
                     />
-                    <span>{icon} {label}</span>
+                    <span>{bookingPurposes.find(([, label]) => label === purpose)?.[0] ?? "✨"} {purpose}</span>
                   </label>
                 ))}
               </div>

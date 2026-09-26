@@ -193,3 +193,12 @@ export const listLocations = () => get<{ locations: LocationRecord[] }>("/locati
 export const createLocation = (payload: { kind: "state" | "city"; name: string; sort_order?: number }) =>
   post<{ location: LocationRecord }>("/locations", payload);
 export const deleteLocation = (id: string) => del<void>(`/locations/${id}`);
+
+// Lead purposes (admin-managed options)
+export type PurposeRecord = { id: string; name: string; sort_order: number };
+export const listPurposes = () => get<{ purposes: PurposeRecord[] }>("/purposes");
+export const createPurpose = (payload: { name: string; sort_order?: number }) =>
+  post<{ purpose: PurposeRecord }>("/purposes", payload);
+export const updatePurpose = (id: string, payload: { name?: string; sort_order?: number }) =>
+  patch<{ purpose: PurposeRecord }>(`/purposes/${id}`, payload);
+export const deletePurpose = (id: string) => del<void>(`/purposes/${id}`);

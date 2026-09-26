@@ -209,6 +209,7 @@ export type Venue = {
   slug: string;
   name: string;
   category: CategorySlug;
+  subcategory?: string;
   city: string;
   state: string;
   area: string;
@@ -218,6 +219,7 @@ export type Venue = {
   rating: number;
   featured: boolean;
   suitableFor: string[];
+  bookingPurposes?: string[];
   amenities: string[];
   description: string;
   images: string[];

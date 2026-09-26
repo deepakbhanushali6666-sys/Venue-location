@@ -4,18 +4,19 @@ import { SlidersHorizontal } from "lucide-react";
 import {
   budgetBands,
   capacityBands,
-  categories,
+  categories as defaultCategories,
   cities,
   eventTypes,
   states,
   type Venue,
 } from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
-import { listVenues } from "@/lib/api";
+import { listCategories, listLocations, listPurposes, listVenues, type CategoryRecord } from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 type VenueSearch = {
   category?: string;
+  subcategory?: string;
   city?: string;
   state?: string;
   event?: string;
@@ -26,7 +27,7 @@ type VenueSearch = {
 export const Route = createFileRoute("/venues/")({
   validateSearch: (search: Record<string, unknown>): VenueSearch => {
     const out: VenueSearch = {};
-    const keys = ["category", "city", "state", "event", "budget", "capacity"] as const;
+    const keys = ["category", "subcategory", "city", "state", "event", "budget", "capacity"] as const;
     for (const key of keys) {
       const value = search[key];
       if (typeof value === "string" && value) out[key] = value;
@@ -57,6 +58,10 @@ function VenuesPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [liveVenues, setLiveVenues] = useState<Venue[]>([]);
+  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(defaultCategories.map((category, sort_order) => ({ ...category, id: category.slug, sort_order, subcategories: [] })));
+  const [locationCities, setLocationCities] = useState(cities);
+  const [locationStates, setLocationStates] = useState(states);
+  const [purposes, setPurposes] = useState(eventTypes);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,8 +73,18 @@ function VenuesPage() {
     };
   }, []);
 
+  useEffect(() => {
+    listCategories().then(({ categories: rows }) => setVenueCategories(rows)).catch(() => undefined);
+    listLocations().then(({ locations }) => {
+      setLocationCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
+      setLocationStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
+    }).catch(() => undefined);
+    listPurposes().then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name))).catch(() => undefined);
+  }, []);
+
   const update = (key: keyof VenueSearch, value: string) => {
     const next: VenueSearch = { ...search };
+    if (key === "category") delete next.subcategory;
     if (value) next[key] = value;
     else delete next[key];
     navigate({ to: "/venues", search: next });
@@ -77,9 +92,10 @@ function VenuesPage() {
 
   const results = liveVenues.filter((v) => {
     if (search["category"] && v.category !== search["category"]) return false;
+    if (search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
     if (search["city"] && v.city !== search["city"]) return false;
     if (search["state"] && v.state !== search["state"]) return false;
-    if (search["event"] && !v.suitableFor.includes(search["event"])) return false;
+    if (search["event"] && !(v.bookingPurposes ?? v.suitableFor).includes(search["event"])) return false;
     if (search["budget"]) {
       const band = budgetBands.find((b) => b.label === search["budget"]);
       if (band && (v.startingPrice < band.min || v.startingPrice > band.max)) return false;
@@ -114,17 +130,30 @@ function VenuesPage() {
             <Filter label="Venue Type">
               <select className={select} value={search["category"] ?? ""} onChange={(e) => update("category", e.target.value)}>
                 <option value="">All categories</option>
-                {categories.map((c) => (
+                {venueCategories.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.name}
                   </option>
                 ))}
               </select>
             </Filter>
+            <Filter label="Subcategory">
+              <select
+                className={select}
+                value={search["subcategory"] ?? ""}
+                onChange={(e) => update("subcategory", e.target.value)}
+                disabled={!search["category"]}
+              >
+                <option value="">All subcategories</option>
+                {venueCategories.find((category) => category.slug === search["category"])?.subcategories.map((subcategory) => (
+                  <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
+                ))}
+              </select>
+            </Filter>
             <Filter label="City">
               <select className={select} value={search["city"] ?? ""} onChange={(e) => update("city", e.target.value)}>
                 <option value="">All cities</option>
-                {cities.map((c) => (
+                {locationCities.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
@@ -132,7 +161,7 @@ function VenuesPage() {
             <Filter label="State">
               <select className={select} value={search["state"] ?? ""} onChange={(e) => update("state", e.target.value)}>
                 <option value="">All states</option>
-                {states.map((s) => (
+                {locationStates.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
@@ -140,7 +169,7 @@ function VenuesPage() {
             <Filter label="Event Type">
               <select className={select} value={search["event"] ?? ""} onChange={(e) => update("event", e.target.value)}>
                 <option value="">Any event</option>
-                {eventTypes.map((e) => (
+                {purposes.map((e) => (
                   <option key={e}>{e}</option>
                 ))}
               </select>

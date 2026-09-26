@@ -1049,3 +1049,42 @@ insert into public.venue_locations (kind, name, sort_order) values
   ('city', 'Sindhudurg', 52), ('city', 'Mahabaleshwar', 53), ('city', 'Panchgani', 54),
   ('city', 'Dhule', 55), ('city', 'Nandurbar', 56), ('city', 'Jalgaon', 57)
 on conflict (kind, name) do nothing;
+
+-- =====================================================================
+-- ENQUIRY PURPOSES (admin-managed options used by search and lead forms)
+-- =====================================================================
+create table if not exists public.venue_purposes (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.venue_purposes enable row level security;
+create index if not exists idx_venue_purposes_sort on public.venue_purposes(sort_order, name);
+
+drop policy if exists "Venue purposes are public" on public.venue_purposes;
+create policy "Venue purposes are public"
+  on public.venue_purposes for select to anon, authenticated using (true);
+drop policy if exists "Admins can manage venue purposes" on public.venue_purposes;
+create policy "Admins can manage venue purposes"
+  on public.venue_purposes for all to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+grant select on public.venue_purposes to anon;
+grant select, insert, update, delete on public.venue_purposes to authenticated;
+grant all on public.venue_purposes to service_role;
+
+insert into public.venue_purposes (name, sort_order) values
+  ('Film / Movie Shoot', 1), ('TV Serial Shoot', 2), ('Web Series / OTT Shoot', 3),
+  ('Advertisement / TVC Shoot', 4), ('Music Video Shoot', 5), ('Photo Shoot', 6),
+  ('Fashion / Catalogue / E-commerce Shoot', 7), ('Pre-Wedding Shoot', 8), ('Wedding', 9),
+  ('Destination Wedding', 10), ('Engagement / Reception', 11), ('Birthday Party', 12),
+  ('Private Party / Celebration', 13), ('Baby Shower / Family Function', 14), ('Corporate Event', 15),
+  ('Corporate Off-site', 16), ('Conference / Meeting', 17), ('Seminar / Workshop / Training', 18),
+  ('Product / Brand Launch', 19), ('Exhibition / Pop-up / Showcase', 20),
+  ('Performance / Cultural Event', 21), ('Wellness / Yoga / Retreat', 22),
+  ('Staycation / Weekend Stay', 23), ('Holiday / Vacation Stay', 24),
+  ('Private Dining / Food Event', 25), ('Podcast / Interview / Content Creation', 26),
+  ('Reality Show / Digital Content', 27), ('Other', 28)
+on conflict (name) do nothing;

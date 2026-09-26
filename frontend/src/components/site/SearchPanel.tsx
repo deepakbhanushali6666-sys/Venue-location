@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Building2, CalendarDays, Clapperboard, Compass, IndianRupee, MapPin, Search, Users } from "lucide-react";
-import { budgetBands, capacityBands, categories, cities, eventTypes } from "@/data/venues";
+import { budgetBands, capacityBands, categories as defaultCategories, cities as defaultCities, eventTypes } from "@/data/venues";
+import { listCategories, listLocations, listPurposes, type CategoryRecord } from "@/lib/api";
 
 const tabs = [
   { id: "book", label: "Book a Venue", icon: CalendarDays },
@@ -18,11 +19,11 @@ type Field = {
 };
 
 const fields: Field[] = [
-  { icon: MapPin, placeholder: "Location / City", key: "city", options: cities },
+  { icon: MapPin, placeholder: "Location / City", key: "city" },
   { icon: CalendarDays, placeholder: "Event / Shoot Date", key: "date", type: "date" },
-  { icon: Building2, placeholder: "Venue Type / Category", key: "category", options: categories.map((c) => c.name) },
+  { icon: Building2, placeholder: "Venue Type / Category", key: "category" },
   { icon: Users, placeholder: "Guest Capacity", key: "capacity", options: capacityBands.map((b) => b.label) },
-  { icon: Compass, placeholder: "Purpose", key: "event", options: eventTypes },
+  { icon: Compass, placeholder: "Purpose", key: "event" },
   { icon: IndianRupee, placeholder: "Budget", key: "budget", options: budgetBands.map((b) => b.label) },
 ];
 
@@ -30,18 +31,35 @@ export function SearchPanel() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("book");
   const [values, setValues] = useState<Partial<Record<Field["key"], string>>>({});
+  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>([]);
+  const [locationCities, setLocationCities] = useState<string[]>(defaultCities);
+  const [purposes, setPurposes] = useState<string[]>(eventTypes);
+
+  useEffect(() => {
+    listCategories()
+      .then(({ categories: rows }) => setVenueCategories(rows))
+      .catch(() => setVenueCategories(defaultCategories.map((category, sort_order) => ({ ...category, id: category.slug, sort_order, subcategories: [] }))));
+    listLocations()
+      .then(({ locations }) => setLocationCities(locations.filter((location) => location.kind === "city").map((location) => location.name)))
+      .catch(() => setLocationCities(defaultCities));
+    listPurposes()
+      .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
+      .catch(() => setPurposes(eventTypes));
+  }, []);
 
   const set = (key: Field["key"], value: string) => setValues((v) => ({ ...v, [key]: value }));
 
   const submit = () => {
-    const category =
-      tab === "film"
-        ? "film-shooting-locations"
-        : categories.find((c) => c.name === values["category"])?.slug;
+    const categorySelection = values["category"] ?? "";
+    const [selectionType, selectedCategory, selectedSubcategory] = categorySelection.split(":");
+    const category = tab === "film" ? "film-shooting-locations" : selectedCategory;
     navigate({
       to: "/venues",
       search: {
         ...(category ? { category } : {}),
+        ...(tab !== "film" && selectionType === "subcategory" && selectedSubcategory
+          ? { subcategory: selectedSubcategory }
+          : {}),
         ...(values["city"] ? { city: values["city"] } : {}),
         ...(values["capacity"] ? { capacity: values["capacity"] } : {}),
         ...(values["event"] ? { event: values["event"] } : {}),
@@ -72,7 +90,7 @@ export function SearchPanel() {
         {fields.map((f) => (
           <label key={f.key} className="flex items-center gap-2 rounded-md bg-background px-3 py-2.5">
             <f.icon className="size-4 shrink-0 text-navy" />
-            {f.options ? (
+            {f.options || f.key === "city" || f.key === "event" || f.key === "category" ? (
               <select
                 aria-label={f.placeholder}
                 value={values[f.key] ?? ""}
@@ -80,11 +98,19 @@ export function SearchPanel() {
                 className="w-full bg-transparent text-sm text-foreground outline-none"
               >
                 <option value="">{f.placeholder}</option>
-                {f.options.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
+                {f.key === "city" && locationCities.map((city) => <option key={city}>{city}</option>)}
+                {f.key === "event" && purposes.map((purpose) => <option key={purpose}>{purpose}</option>)}
+                {f.key === "category" && venueCategories.map((category) => (
+                  <optgroup key={category.id} label={category.name}>
+                    <option value={`category:${category.slug}`}>{category.name}</option>
+                    {category.subcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={`subcategory:${category.slug}:${subcategory.name}`}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
+                {f.options?.map((option) => <option key={option}>{option}</option>)}
               </select>
             ) : (
               <input

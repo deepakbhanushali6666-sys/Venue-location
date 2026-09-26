@@ -6,6 +6,7 @@ export type VenueRow = {
   slug: string;
   name: string;
   category: string;
+  subcategory?: string;
   city: string;
   state: string;
   area: string;
@@ -15,6 +16,7 @@ export type VenueRow = {
   description: string;
   amenities: string[];
   suitable_for: string[];
+    booking_purposes?: string[];
   photos: string[];
   video_url: string;
   map_query: string;
@@ -35,11 +37,13 @@ export function rowToVenue(row: VenueRow): Venue {
     rating: 4.5,
     featured: row.featured,
     suitableFor: row.suitable_for,
+      ...(row.booking_purposes ? { bookingPurposes: row.booking_purposes } : {}),
     amenities: row.amenities,
     description: row.description,
     images: row.photos.length > 0 ? row.photos : [fallbackImage],
     videoId: extractYouTubeId(row.video_url),
     mapQuery: row.map_query || `${row.area} ${row.city}`,
+    ...(row.subcategory ? { subcategory: row.subcategory } : {}),
   };
 }
 

@@ -23,6 +23,7 @@ import { GalleryPanel } from "@/components/site/GalleryPanel";
 import { PeoplePanel } from "@/components/site/PeoplePanel";
 import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 import { LocationsPanel } from "@/components/site/LocationsPanel";
+import { PurposesPanel } from "@/components/site/PurposesPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -1037,6 +1038,7 @@ function AdminPanel() {
         <AmenitiesPanel />
 
         <LocationsPanel />
+        <PurposesPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>

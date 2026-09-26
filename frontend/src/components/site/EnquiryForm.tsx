@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { eventTypes } from "@/data/venues";
 import { submitLead } from "@/lib/api";
+import { listPurposes } from "@/lib/api";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(80),
@@ -25,6 +26,13 @@ export function EnquiryForm({
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [purposes, setPurposes] = useState<string[]>(eventTypes);
+
+  useEffect(() => {
+    listPurposes()
+      .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
+      .catch(() => setPurposes(eventTypes));
+  }, []);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -87,7 +95,7 @@ export function EnquiryForm({
         <div>
           <select name="purpose" defaultValue="" className={field}>
             <option value="">Purpose*</option>
-            {eventTypes.map((t) => (
+            {purposes.map((t) => (
               <option key={t} value={t}>
                 {t}
               </option>
