@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import Cropper, { type Area } from "react-easy-crop";
 import { toast } from "sonner";
-import { Trash2, Video } from "lucide-react";
+import { Check, Trash2, Video, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
+import "react-easy-crop/react-easy-crop.css";
 import {
   createGalleryItem,
   deleteGalleryItem,
@@ -18,6 +20,26 @@ const sections: { key: GallerySection; label: string }[] = [
   { key: "celebrity", label: "Celebrity Collaborations" },
 ];
 
+async function createCroppedJpeg(file: File, area: Area): Promise<Blob> {
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = imageUrl;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = 1600;
+    canvas.height = 900;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not prepare cropped image");
+    context.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not export cropped image")), "image/jpeg", 0.9);
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 function SectionEditor({
   section,
   label,
@@ -31,44 +53,83 @@ function SectionEditor({
 }) {
   const [busy, setBusy] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [cropFiles, setCropFiles] = useState<File[]>([]);
+  const [cropIndex, setCropIndex] = useState(0);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
+  const [cropImage, setCropImage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const uploadPhotos = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setBusy(true);
-    let uploaded = 0;
-    for (const file of Array.from(files)) {
+  useEffect(() => {
+    const file = cropFiles[cropIndex];
+    if (!file) {
+      setCropImage(null);
+      return;
+    }
+    const imageUrl = URL.createObjectURL(file);
+    setCropImage(imageUrl);
+    return () => URL.revokeObjectURL(imageUrl);
+  }, [cropFiles, cropIndex]);
+
+  const choosePhotos = (files: FileList | null) => {
+    if (!files?.length) return;
+    const validFiles = Array.from(files).filter((file) => {
       if (!file.type.startsWith("image/")) {
         toast.error(`${file.name} is not an image`);
-        continue;
+        return false;
       }
       if (file.size > MAX_BYTES) {
         toast.error(`${file.name} is larger than 8 MB`);
-        continue;
+        return false;
       }
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const path = `${section}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("gallery-media").upload(path, file, {
-        cacheControl: "31536000",
-        contentType: file.type,
-      });
-      if (error) {
-        toast.error(error.message);
-        continue;
-      }
-      const { data } = supabase.storage.from("gallery-media").getPublicUrl(path);
-      try {
-        await createGalleryItem({ section, media_type: "photo", url: data.publicUrl });
-        uploaded += 1;
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Could not save photo");
-      }
+      return true;
+    });
+    if (validFiles.length) {
+      setCropFiles(validFiles);
+      setCropIndex(0);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedArea(null);
     }
-    setBusy(false);
+  };
+
+  const cancelCrop = () => {
+    setCropFiles([]);
+    setCropIndex(0);
+    setCroppedArea(null);
     if (inputRef.current) inputRef.current.value = "";
-    if (uploaded) {
-      toast.success(`${uploaded} photo${uploaded > 1 ? "s" : ""} added`);
-      onChanged();
+  };
+
+  const saveCrop = async () => {
+    const file = cropFiles[cropIndex];
+    if (!file || !croppedArea) return;
+    setBusy(true);
+    try {
+      const croppedFile = await createCroppedJpeg(file, croppedArea);
+      const path = `${section}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error } = await supabase.storage.from("gallery-media").upload(path, croppedFile, {
+        cacheControl: "31536000",
+        contentType: "image/jpeg",
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("gallery-media").getPublicUrl(path);
+      await createGalleryItem({ section, media_type: "photo", url: data.publicUrl });
+      const nextIndex = cropIndex + 1;
+      if (nextIndex >= cropFiles.length) {
+        toast.success(`${cropFiles.length} photo${cropFiles.length > 1 ? "s" : ""} cropped and added`);
+        cancelCrop();
+        onChanged();
+      } else {
+        setCropIndex(nextIndex);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setCroppedArea(null);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not upload cropped photo");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -122,7 +183,7 @@ function SectionEditor({
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => void uploadPhotos(e.target.files)}
+          onChange={(e) => choosePhotos(e.target.files)}
         />
         <input
           value={videoUrl}
@@ -161,6 +222,41 @@ function SectionEditor({
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {cropFiles[cropIndex] && (
+        <div className="fixed inset-0 z-100 grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Crop gallery photo">
+          <div className="w-full max-w-3xl rounded-lg bg-card p-5 shadow-panel">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="font-display text-lg font-extrabold text-navy">Crop photo</h4>
+                <p className="text-sm text-muted-foreground">Photo {cropIndex + 1} of {cropFiles.length}. Drag to position, then adjust zoom.</p>
+              </div>
+              <button type="button" onClick={cancelCrop} disabled={busy} className="rounded-md p-2 text-navy hover:bg-secondary" aria-label="Cancel photo crop"><X className="size-5" /></button>
+            </div>
+            <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-md bg-black">
+              <Cropper
+                image={cropImage ?? ""}
+                crop={crop}
+                zoom={zoom}
+                aspect={16 / 9}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, pixels) => setCroppedArea(pixels)}
+              />
+            </div>
+            <label className="mt-4 flex items-center gap-3 text-sm font-semibold text-navy">
+              Zoom
+              <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(event) => setZoom(Number(event.target.value))} className="w-full accent-gold" />
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={cancelCrop} disabled={busy} className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={() => void saveCrop()} disabled={busy || !croppedArea} className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-bold text-gold-foreground disabled:opacity-50">
+                <Check className="size-4" /> {busy ? "Uploading…" : cropIndex + 1 < cropFiles.length ? "Crop & Next" : "Crop & Upload"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
