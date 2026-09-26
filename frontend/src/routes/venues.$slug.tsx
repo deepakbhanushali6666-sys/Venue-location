@@ -1,10 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Car, MapPin, MessageCircle, Phone, Star, Users } from "lucide-react";
+import { CheckCircle2, Car, MapPin, Maximize2, MessageCircle, Phone, Star, Users } from "lucide-react";
 import { CONTACT, categoryBySlug, formatINR, venueBySlug, venues, type Venue } from "@/data/venues";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { VenueCard } from "@/components/site/VenueCard";
 import { VenueReviews } from "@/components/site/VenueReviews";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getVenueBySlug } from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
@@ -92,16 +101,7 @@ function VenueDetailRoute() {
 }
 
 function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
-  const [active, setActive] = useState(0);
   const similar = venues.filter((v) => v.category === venue.category && v.slug !== venue.slug).slice(0, 3);
-
-  useEffect(() => {
-    if (venue.images.length < 2) return;
-    const interval = window.setInterval(() => {
-      setActive((current) => (current + 1) % venue.images.length);
-    }, 4000);
-    return () => window.clearInterval(interval);
-  }, [venue.images]);
 
   const waText = encodeURIComponent(
     `Hi VENUES LOCATION, I'm interested in ${venue.name} (${venue.city}). Please share availability and pricing.`,
@@ -120,20 +120,7 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
-            <div className="relative overflow-hidden rounded-xl border border-border bg-card">
-              <img
-                src={venue.images[active]}
-                alt={`${venue.name} photo ${active + 1}`}
-                width={1200}
-                height={800}
-                className="aspect-16/10 w-full object-cover"
-              />
-              {venue.images.length > 1 && (
-                <span className="absolute bottom-3 right-3 rounded bg-navy/80 px-2 py-1 text-xs font-semibold text-primary-foreground">
-                  {active + 1} / {venue.images.length}
-                </span>
-              )}
-            </div>
+            <VenuePhotoCarousel venue={venue} />
 
             <div className="mt-6 rounded-xl border border-border bg-card p-6">
               <span className="rounded bg-gold px-2 py-1 text-[11px] font-bold uppercase text-gold-foreground">
@@ -244,5 +231,88 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+function VenuePhotoCarousel({ venue }: { venue: Venue }) {
+  const [api, setApi] = useState<CarouselApi>();
+  const [active, setActive] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!api) return;
+    const updateActive = () => setActive(api.selectedScrollSnap());
+    updateActive();
+    api.on("select", updateActive);
+    api.on("reInit", updateActive);
+    return () => {
+      api.off("select", updateActive);
+      api.off("reInit", updateActive);
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!api || previewOpen || venue.images.length < 2) return;
+    const interval = window.setInterval(() => api.scrollNext(), 4000);
+    return () => window.clearInterval(interval);
+  }, [api, previewOpen, venue.images.length]);
+
+  return (
+    <>
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Carousel setApi={setApi} opts={{ loop: true }}>
+          <CarouselContent className="ml-0">
+            {venue.images.map((image, index) => (
+              <CarouselItem key={`${image}-${index}`} className="pl-0">
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  aria-label={`View larger photo ${index + 1} of ${venue.name}`}
+                  className="group relative block w-full cursor-zoom-in overflow-hidden"
+                >
+                  <img
+                    src={image}
+                    alt={`${venue.name} photo ${index + 1}`}
+                    width={1200}
+                    height={800}
+                    className="aspect-16/10 w-full object-cover"
+                  />
+                  <span className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-navy/75 text-white opacity-90 transition-opacity group-hover:opacity-100">
+                    <Maximize2 className="size-4" />
+                  </span>
+                </button>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          {venue.images.length > 1 && (
+            <>
+              <CarouselPrevious className="left-3 border-0 bg-navy/75 text-white hover:bg-navy" />
+              <CarouselNext className="right-3 border-0 bg-navy/75 text-white hover:bg-navy" />
+              <span className="pointer-events-none absolute bottom-3 right-3 rounded bg-navy/80 px-2 py-1 text-xs font-semibold text-white">
+                {active + 1} / {venue.images.length}
+              </span>
+            </>
+          )}
+        </Carousel>
+      </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="h-[94dvh] w-[96vw] max-w-none grid-rows-[auto_1fr_auto] gap-2 border-0 bg-navy p-3 text-white sm:p-6">
+          <DialogTitle className="sr-only">{venue.name} photo {active + 1}</DialogTitle>
+          <div className="grid min-h-0 flex-1 place-items-center">
+            <img
+              src={venue.images[active]}
+              alt={`${venue.name} photo ${active + 1}`}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+          {venue.images.length > 1 && (
+            <p className="text-center text-xs font-semibold text-white/80">
+              {active + 1} / {venue.images.length}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
