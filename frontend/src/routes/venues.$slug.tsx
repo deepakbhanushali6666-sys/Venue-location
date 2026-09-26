@@ -236,6 +236,7 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
 function VenuePhotoCarousel({ venue }: { venue: Venue }) {
   const [api, setApi] = useState<CarouselApi>();
+  const [previewApi, setPreviewApi] = useState<CarouselApi>();
   const [active, setActive] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -250,6 +251,23 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
       api.off("reInit", updateActive);
     };
   }, [api]);
+
+  useEffect(() => {
+    if (!previewApi) return;
+    const updateActive = () => setActive(previewApi.selectedScrollSnap());
+    updateActive();
+    previewApi.on("select", updateActive);
+    previewApi.on("reInit", updateActive);
+    return () => {
+      previewApi.off("select", updateActive);
+      previewApi.off("reInit", updateActive);
+    };
+  }, [previewApi]);
+
+  useEffect(() => {
+    if (api && api.selectedScrollSnap() !== active) api.scrollTo(active);
+    if (previewApi && previewApi.selectedScrollSnap() !== active) previewApi.scrollTo(active);
+  }, [active, api, previewApi]);
 
   useEffect(() => {
     if (!api || previewOpen || venue.images.length < 2) return;
@@ -299,12 +317,26 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="h-[94dvh] w-[96vw] max-w-none grid-rows-[auto_1fr_auto] gap-2 border-0 bg-navy p-3 text-white sm:p-6">
           <DialogTitle className="sr-only">{venue.name} photo {active + 1}</DialogTitle>
-          <div className="grid min-h-0 flex-1 place-items-center">
-            <img
-              src={venue.images[active]}
-              alt={`${venue.name} photo ${active + 1}`}
-              className="max-h-full max-w-full object-contain"
-            />
+          <div className="min-h-0">
+            <Carousel setApi={setPreviewApi} opts={{ loop: true }} className="h-full">
+              <CarouselContent className="ml-0 h-full">
+                {venue.images.map((image, index) => (
+                  <CarouselItem key={`${image}-${index}`} className="grid h-full place-items-center pl-0">
+                    <img
+                      src={image}
+                      alt={`${venue.name} photo ${index + 1}`}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {venue.images.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-2 size-10 border-0 bg-white/15 text-white hover:bg-white/25 sm:left-4" />
+                  <CarouselNext className="right-2 size-10 border-0 bg-white/15 text-white hover:bg-white/25 sm:right-4" />
+                </>
+              )}
+            </Carousel>
           </div>
           {venue.images.length > 1 && (
             <p className="text-center text-xs font-semibold text-white/80">
