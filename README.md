@@ -29,6 +29,9 @@ once in the Supabase SQL editor before deploying the separate Film Locations
 category panel. It copies the current venue categories and subcategories as the
 initial film options. Fresh installations only need `migration.sql`.
 
+To enable admin-only enquiry deletion on an existing database, run
+[`supabase/admin_lead_delete.sql`](supabase/admin_lead_delete.sql) in the SQL editor.
+
 ### 2. Backend
 
 ```sh

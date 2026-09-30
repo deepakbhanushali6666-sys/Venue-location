@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createVenue, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
+import { createVenue, deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
-import { categories } from "@/data/venues";
+import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { SubscriptionPanel } from "@/components/site/SubscriptionPanel";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
@@ -92,6 +93,7 @@ function OwnerDashboard() {
   const [editing, setEditing] = useState<VenueRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [deletingLead, setDeletingLead] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -187,6 +189,20 @@ function OwnerDashboard() {
       toast.success("Lead status updated");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update lead");
+    }
+  };
+
+  const removeLead = async (lead: LeadRow) => {
+    if (!isAdmin || !window.confirm(`Delete enquiry ${lead.lead_code} for ${lead.customer_name}? This cannot be undone.`)) return;
+    setDeletingLead(lead.id);
+    try {
+      await deleteLead(lead.id);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      toast.success("Enquiry deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete enquiry");
+    } finally {
+      setDeletingLead(null);
     }
   };
 
@@ -345,6 +361,11 @@ function OwnerDashboard() {
         {/* Leads */}
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">Enquiries / Leads</h2>
+          {!isAdmin && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              To remove an enquiry, email its Lead ID to <a href={`mailto:${CONTACT.email}`} className="font-semibold text-navy underline hover:text-gold">the admin</a>.
+            </p>
+          )}
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-205 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -356,6 +377,7 @@ function OwnerDashboard() {
                   <th>Date</th>
                   <th>Budget</th>
                   <th>Status</th>
+                  {isAdmin && <th className="text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -380,11 +402,25 @@ function OwnerDashboard() {
                         ))}
                       </select>
                     </td>
+                    {isAdmin && (
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => void removeLead(l)}
+                          disabled={deletingLead === l.id}
+                          aria-label={`Delete enquiry ${l.lead_code}`}
+                          title={`Delete enquiry ${l.lead_code}`}
+                          className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-4 text-muted-foreground">
+                    <td colSpan={isAdmin ? 8 : 7} className="py-4 text-muted-foreground">
                       No enquiries yet.
                     </td>
                   </tr>

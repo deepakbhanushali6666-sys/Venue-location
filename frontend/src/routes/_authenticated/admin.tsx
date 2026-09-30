@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  deleteLead,
   deleteVenue,
   getAdminOverview,
   getAuditLog,
@@ -134,6 +135,7 @@ function AdminPanel() {
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
   const [savingVenue, setSavingVenue] = useState<string | null>(null);
+  const [deletingLead, setDeletingLead] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -384,6 +386,20 @@ function AdminPanel() {
       void refreshAudit();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete venue");
+    }
+  };
+
+  const removeLead = async (lead: LeadRow) => {
+    if (!window.confirm(`Delete enquiry ${lead.lead_code} for ${lead.customer_name}? This cannot be undone.`)) return;
+    setDeletingLead(lead.id);
+    try {
+      await deleteLead(lead.id);
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      toast.success("Enquiry deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete enquiry");
+    } finally {
+      setDeletingLead(null);
     }
   };
 
@@ -1064,6 +1080,7 @@ function AdminPanel() {
                   <th>Details</th>
                   <th>Budget</th>
                   <th>Status</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1083,11 +1100,23 @@ function AdminPanel() {
                     </td>
                     <td>{l.budget || "—"}</td>
                     <td>{l.status}</td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => void removeLead(l)}
+                        disabled={deletingLead === l.id}
+                        aria-label={`Delete enquiry ${l.lead_code}`}
+                        title={`Delete enquiry ${l.lead_code}`}
+                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-4 text-muted-foreground">
+                    <td colSpan={9} className="py-4 text-muted-foreground">
                       No leads yet.
                     </td>
                   </tr>

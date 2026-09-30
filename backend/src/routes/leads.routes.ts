@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { supabasePublic } from "../lib/supabasePublic.js";
-import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
 
 export const leadsRouter = Router();
 
@@ -107,6 +107,25 @@ leadsRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) => 
       .single();
     if (error) throw error;
     res.json({ lead: data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+leadsRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const { data, error } = await req.client!
+      .from("leads")
+      .delete()
+      .eq("id", req.params.id)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

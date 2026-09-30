@@ -627,6 +627,10 @@ create policy "Venue owners and admins can update leads"
     public.has_role(auth.uid(), 'admin')
     or exists (select 1 from public.venues v where v.id = leads.venue_id and v.owner_id = auth.uid())
   );
+drop policy if exists "Admins can delete leads" on public.leads;
+create policy "Admins can delete leads"
+  on public.leads for delete to authenticated
+  using (public.has_role(auth.uid(), 'admin'));
 
 -- subscriptions
 drop policy if exists "Owners and admins can view subscriptions" on public.subscriptions;
@@ -751,7 +755,7 @@ grant all on public.venue_reviews to service_role;
 
 grant usage on sequence public.lead_code_seq to anon, authenticated, service_role;
 grant insert on public.leads to anon;
-grant select, insert, update on public.leads to authenticated;
+grant select, insert, update, delete on public.leads to authenticated;
 grant all on public.leads to service_role;
 
 grant select, insert, update on public.subscriptions to authenticated;

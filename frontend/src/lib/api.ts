@@ -67,6 +67,7 @@ export const submitLead = (payload: Record<string, unknown>) =>
 export const listLeads = () => get<{ leads: Record<string, unknown>[] }>("/leads");
 export const updateLeadStatus = (id: string, status: string) =>
   patch<{ lead: Record<string, unknown> }>(`/leads/${id}`, { status });
+export const deleteLead = (id: string) => del<void>(`/leads/${id}`);
 
 // Subscriptions
 export const getMySubscription = () =>
