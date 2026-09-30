@@ -93,8 +93,13 @@ function VenuesPage() {
   const hasCategoryVenues = !search.category || liveVenues.some((venue) => venue.category === search.category);
 
   const results = liveVenues.filter((v) => {
-    if (hasCategoryVenues && search["category"] && v.category !== search["category"]) return false;
-    if (hasCategoryVenues && search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
+    const listingVisibility = v.suitableFor ?? [];
+    const browsingFilmLocations = search["category"] === "film-shooting-locations";
+    if (browsingFilmLocations) {
+      if (!listingVisibility.includes("Film Shooting Locations") && !listingVisibility.includes("Film Shoot") && !(listingVisibility.length === 0 && v.category === "film-shooting-locations")) return false;
+    } else if (listingVisibility.length > 0 && !listingVisibility.includes("Venue Bookings")) return false;
+    if (!browsingFilmLocations && hasCategoryVenues && search["category"] && v.category !== search["category"]) return false;
+    if (!browsingFilmLocations && hasCategoryVenues && search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
     if (search["city"] && v.city !== search["city"]) return false;
     if (search["state"] && v.state !== search["state"]) return false;
     if (search["event"] && !(v.bookingPurposes ?? v.suitableFor).includes(search["event"])) return false;

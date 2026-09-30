@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clapperboard, Film, Music, Tv } from "lucide-react";
-import { venues } from "@/data/venues";
+import type { Venue } from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import filmImage from "@/assets/cat-film.jpg";
+import { listVenues } from "@/lib/api";
+import { rowToVenue } from "@/lib/venue-mapping";
 
 export const Route = createFileRoute("/film-locations")({
   head: () => ({
@@ -34,7 +37,33 @@ const services = [
 ];
 
 function FilmLocations() {
-  const shootVenues = venues.filter((v) => v.suitableFor.includes("Film Shoot"));
+  const [shootVenues, setShootVenues] = useState<Venue[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listVenues()
+      .then(({ venues }) => {
+        if (cancelled) return;
+        const next = (venues as Record<string, unknown>[])
+          .map((row) => rowToVenue(row as never))
+          .filter((v) => {
+            const purposeValues = v.suitableFor ?? [];
+            return (
+              purposeValues.includes("Film Shooting Locations") ||
+              purposeValues.includes("Film Shoot") ||
+              (!purposeValues.length && v.category === "film-shooting-locations")
+            );
+          });
+        setShootVenues(next);
+      })
+      .catch(() => {
+        if (!cancelled) setShootVenues([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div>

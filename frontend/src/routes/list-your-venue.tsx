@@ -120,6 +120,7 @@ function ListYourVenue() {
   const [amenities, setAmenities] = useState<AmenityRecord[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
+  const [selectedListingPurposes, setSelectedListingPurposes] = useState<string[]>([]);
   const [bookingOptions, setBookingOptions] = useState<string[]>(bookingPurposes.map(([, label]) => label));
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [formStates, setFormStates] = useState<string[]>(states);
@@ -167,6 +168,10 @@ function ListYourVenue() {
       return;
     }
     setErrors({});
+    if (selectedListingPurposes.length === 0) {
+      toast.error("Select at least one listing purpose");
+      return;
+    }
     setBusy(true);
     const d = parsed.data;
 
@@ -178,7 +183,7 @@ function ListYourVenue() {
         .replace(/^-|-$/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
       const description = d.notes ?? "";
       try {
-        await createVenue({
+        const venuePayload = {
           name: d.venueName,
           slug,
           category: categorySlug,
@@ -190,10 +195,13 @@ function ListYourVenue() {
           gst_number: d.gst ?? "",
           photos,
           amenities: selectedAmenities,
+          suitable_for: selectedListingPurposes,
           booking_purposes: selectedPurposes,
           booking_restrictions: selectedRestrictions,
           map_query: `${d.venueName}, ${d.city}`,
-        });
+        };
+
+        await createVenue(venuePayload);
         toast.success("Venue submitted for approval", {
           description: "Track status and enquiries from your owner dashboard.",
         });
@@ -201,6 +209,7 @@ function ListYourVenue() {
         setPhotos([]);
         setSelectedAmenities([]);
         setSelectedPurposes([]);
+        setSelectedListingPurposes([]);
         setSelectedRestrictions([]);
         setSelectedCategory("");
         void navigate({ to: "/dashboard" });
@@ -238,6 +247,7 @@ function ListYourVenue() {
       formEl.reset();
       setSelectedAmenities([]);
       setSelectedPurposes([]);
+      setSelectedListingPurposes([]);
       setSelectedRestrictions([]);
       setSelectedCategory("");
     } catch (err) {
@@ -250,6 +260,9 @@ function ListYourVenue() {
   const err = (k: string) =>
     errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>;
   const allBookingsSelected = bookingOptions.length > 0 && selectedPurposes.length === bookingOptions.length;
+  const listingPurposeOptions = ["Venue Bookings", "Film Shooting Locations"] as const;
+  const allListingPurposesSelected =
+    listingPurposeOptions.length > 0 && selectedListingPurposes.length === listingPurposeOptions.length;
 
   return (
     <div className="bg-sand">
@@ -398,6 +411,44 @@ function ListYourVenue() {
                 to upload venue photos directly and manage your listing.
               </p>
             )}
+            <fieldset className="rounded-md border border-border bg-background p-4">
+              <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
+                For what purpose do you want to use this property?
+              </legend>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedListingPurposes((current) =>
+                      current.length === listingPurposeOptions.length ? [] : [...listingPurposeOptions],
+                    )
+                  }
+                  aria-pressed={allListingPurposesSelected}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+                    allListingPurposesSelected
+                      ? "border-gold bg-gold text-gold-foreground"
+                      : "border-border bg-background text-navy hover:bg-secondary"
+                  }`}
+                >
+                  {allListingPurposesSelected ? "Clear All" : "Select All"}
+                </button>
+                {listingPurposeOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm text-foreground/85">
+                    <input
+                      type="checkbox"
+                      checked={selectedListingPurposes.includes(option)}
+                      onChange={(event) =>
+                        setSelectedListingPurposes((current) =>
+                          event.target.checked ? [...current, option] : current.filter((item) => item !== option),
+                        )
+                      }
+                      className="size-4 accent-gold"
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             {amenities.length > 0 && (
               <fieldset className="rounded-md border border-border bg-background p-4">
                 <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">Amenities</legend>

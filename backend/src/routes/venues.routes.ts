@@ -64,9 +64,23 @@ venuesRouter.get("/:slug", async (req, res, next) => {
 // Auth: create a venue owned by the current user.
 venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
+    const { ownerName, mobile, email, venueName, gst, notes, ...rest } = req.body ?? {};
+    const payload = {
+      ...rest,
+      owner_id: req.user!.id,
+      status: "pending",
+      description: typeof rest.description === "string" ? rest.description : typeof notes === "string" ? notes : "",
+      gst_number: typeof rest.gst_number === "string" ? rest.gst_number : typeof gst === "string" ? gst : "",
+      photos: Array.isArray(rest.photos) ? rest.photos : [],
+      amenities: Array.isArray(rest.amenities) ? rest.amenities : [],
+      suitable_for: Array.isArray(rest.suitable_for) ? rest.suitable_for : [],
+      booking_purposes: Array.isArray(rest.booking_purposes) ? rest.booking_purposes : [],
+      booking_restrictions: Array.isArray(rest.booking_restrictions) ? rest.booking_restrictions : [],
+    };
+
     const { data, error } = await req.client!
       .from("venues")
-      .insert({ ...req.body, owner_id: req.user!.id })
+      .insert(payload)
       .select()
       .single();
     if (error) throw error;
