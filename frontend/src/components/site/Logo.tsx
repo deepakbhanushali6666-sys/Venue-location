@@ -17,7 +17,7 @@ export function Logo({ light = false }: { light?: boolean }) {
             light ? "text-navy-foreground/70" : "text-muted-foreground"
           }`}
         >
-          Venues • Locations • Memories
+          A venture By Once More Studios
         </span>
       </span>
     </div>
