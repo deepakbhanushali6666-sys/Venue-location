@@ -24,6 +24,11 @@ Run [`supabase/migration.sql`](supabase/migration.sql) once in your Supabase
 project's SQL editor. It creates every table, function, trigger, RLS policy
 and the `venue-photos` storage bucket.
 
+For an existing database, run [`supabase/film_categories.sql`](supabase/film_categories.sql)
+once in the Supabase SQL editor before deploying the separate Film Locations
+category panel. It copies the current venue categories and subcategories as the
+initial film options. Fresh installations only need `migration.sql`.
+
 ### 2. Backend
 
 ```sh

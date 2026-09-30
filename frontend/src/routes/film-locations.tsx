@@ -5,8 +5,8 @@ import type { Venue } from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import filmImage from "@/assets/cat-film.jpg";
-import { listVenues } from "@/lib/api";
-import { rowToVenue } from "@/lib/venue-mapping";
+import { listCategories, listVenues, type CategoryRecord } from "@/lib/api";
+import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 export const Route = createFileRoute("/film-locations")({
   head: () => ({
@@ -38,14 +38,17 @@ const services = [
 
 function FilmLocations() {
   const [shootVenues, setShootVenues] = useState<Venue[]>([]);
+  const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     listVenues()
       .then(({ venues }) => {
         if (cancelled) return;
-        const next = (venues as Record<string, unknown>[])
-          .map((row) => rowToVenue(row as never))
+        const next = (venues as unknown as VenueRow[])
+          .map(rowToVenue)
           .filter((v) => {
             const purposeValues = v.suitableFor ?? [];
             return (
@@ -64,6 +67,18 @@ function FilmLocations() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    listCategories("film")
+      .then(({ categories }) => setFilmCategories(categories))
+      .catch(() => undefined);
+  }, []);
+
+  const subcategories = filmCategories.find((category) => category.slug === selectedCategory)?.subcategories ?? [];
+  const visibleVenues = shootVenues.filter((venue) =>
+    (!selectedCategory || venue.category === selectedCategory) &&
+    (!selectedSubcategory || venue.subcategory === selectedSubcategory),
+  );
 
   return (
     <div>
@@ -101,8 +116,29 @@ function FilmLocations() {
       <section className="bg-sand py-14">
         <div className="mx-auto max-w-7xl px-4">
           <h2 className="section-title text-2xl text-navy">Shoot-ready locations</h2>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <select
+              value={selectedCategory}
+              onChange={(event) => { setSelectedCategory(event.target.value); setSelectedSubcategory(""); }}
+              aria-label="Film location category"
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">All film categories</option>
+              {filmCategories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
+            </select>
+            <select
+              value={selectedSubcategory}
+              onChange={(event) => setSelectedSubcategory(event.target.value)}
+              aria-label="Film location subcategory"
+              disabled={!selectedCategory}
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm disabled:opacity-60"
+            >
+              <option value="">All subcategories</option>
+              {subcategories.map((subcategory) => <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>)}
+            </select>
+          </div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {shootVenues.map((v) => (
+            {visibleVenues.map((v) => (
               <VenueCard key={v.slug} venue={v} />
             ))}
           </div>

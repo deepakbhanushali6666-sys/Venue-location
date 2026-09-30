@@ -131,8 +131,10 @@ export type CategoryRecord = {
   subcategories: SubcategoryRecord[];
 };
 
-export const listCategories = () => get<{ categories: CategoryRecord[] }>("/categories");
-export const createCategory = (payload: { name: string; sort_order?: number }) =>
+export type CategoryKind = "venue" | "film";
+export const listCategories = (kind: CategoryKind = "venue") =>
+  get<{ categories: CategoryRecord[] }>(`/categories?kind=${kind}`);
+export const createCategory = (payload: { name: string; sort_order?: number; kind?: CategoryKind }) =>
   post<{ category: CategoryRecord }>("/categories", payload);
 export const updateCategory = (id: string, payload: { name?: string; sort_order?: number }) =>
   patch<{ category: CategoryRecord }>(`/categories/${id}`, payload);

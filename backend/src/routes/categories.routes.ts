@@ -13,10 +13,11 @@ function slugify(input: string) {
 }
 
 // Public: all categories with their subcategories nested, ordered for display.
-categoriesRouter.get("/", async (_req, res, next) => {
+categoriesRouter.get("/", async (req, res, next) => {
   try {
+    const kind = req.query.kind === "film" ? "film" : "venue";
     const [categoriesRes, subcategoriesRes] = await Promise.all([
-      supabasePublic.from("venue_categories").select("*").order("sort_order").order("name"),
+      supabasePublic.from("venue_categories").select("*").eq("kind", kind).order("sort_order").order("name"),
       supabasePublic.from("venue_subcategories").select("*").order("sort_order").order("name"),
     ]);
     if (categoriesRes.error) throw categoriesRes.error;
@@ -35,14 +36,18 @@ categoriesRouter.get("/", async (_req, res, next) => {
 // Admin: create a category.
 categoriesRouter.post("/", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
-    const { name, sort_order } = req.body as { name?: string; sort_order?: number };
+    const { name, sort_order, kind } = req.body as { name?: string; sort_order?: number; kind?: string };
     if (!name?.trim()) {
       res.status(400).json({ error: "Category name is required" });
       return;
     }
+    if (kind !== undefined && kind !== "venue" && kind !== "film") {
+      res.status(400).json({ error: "Invalid category type" });
+      return;
+    }
     const { data, error } = await req.client!
       .from("venue_categories")
-      .insert({ name: name.trim(), slug: slugify(name), sort_order: sort_order ?? 0 })
+      .insert({ name: name.trim(), slug: slugify(name), kind: kind ?? "venue", sort_order: sort_order ?? 0 })
       .select()
       .single();
     if (error) throw error;

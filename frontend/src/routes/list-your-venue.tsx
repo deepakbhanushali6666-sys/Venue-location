@@ -40,7 +40,7 @@ const schema = z.object({
   venueName: z.string().trim().min(2, "Enter the venue name").max(120),
   city: z.string().min(1, "Select a city"),
   state: z.string().min(1, "Select a state"),
-  category: z.string().min(1, "Select a category"),
+  category: z.string().optional(),
   subcategory: z.string().trim().max(80).optional(),
   address: z.string().trim().min(5, "Enter the venue location").max(240),
   gst: z.string().trim().max(20).optional(),
@@ -117,6 +117,7 @@ function ListYourVenue() {
   const [busy, setBusy] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
+  const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [amenities, setAmenities] = useState<AmenityRecord[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedPurposes, setSelectedPurposes] = useState<string[]>([]);
@@ -132,6 +133,9 @@ function ListYourVenue() {
     listCategories()
       .then(({ categories: rows }) => setCategories(rows))
       .catch(() => toast.error("Could not load venue categories"));
+    listCategories("film")
+      .then(({ categories: rows }) => setFilmCategories(rows))
+      .catch(() => toast.error("Could not load film location categories"));
     listAmenities()
       .then(({ amenities: rows }) => setAmenities(rows))
       .catch(() => toast.error("Could not load venue amenities"));
@@ -146,8 +150,10 @@ function ListYourVenue() {
       .catch(() => undefined);
   }, []);
 
+  const filmOnly = selectedListingPurposes.includes("Film Shooting Locations") && !selectedListingPurposes.includes("Venue Bookings");
+  const categoryOptions = filmOnly ? filmCategories : categories;
   const subcategoryOptions =
-    categories.find((c) => c.name === selectedCategory)?.subcategories ?? [];
+    categoryOptions.find((c) => c.name === selectedCategory)?.subcategories ?? [];
   const navigate = useNavigate();
   const field =
     "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
@@ -172,11 +178,15 @@ function ListYourVenue() {
       toast.error("Select at least one listing purpose");
       return;
     }
+    const selectedCategoryRecord = categoryOptions.find((category) => category.name === parsed.data.category);
+    if (!selectedCategoryRecord) {
+      setErrors({ category: "Select a category" });
+      return;
+    }
     setBusy(true);
     const d = parsed.data;
 
     if (user) {
-      const categorySlug = categories.find((c) => c.name === d.category)?.slug ?? "resorts";
       const slug = `${d.venueName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -186,7 +196,7 @@ function ListYourVenue() {
         const venuePayload = {
           name: d.venueName,
           slug,
-          category: categorySlug,
+          category: selectedCategoryRecord.slug,
           subcategory: d.subcategory ?? "",
           city: d.city,
           state: d.state,
@@ -229,8 +239,9 @@ function ListYourVenue() {
         purpose: "Venue Listing",
         venue_name: d.venueName,
         message: [
-          `Category: ${d.category}`,
+          d.category ? `Category: ${d.category}` : "",
           d.subcategory ? `Subcategory: ${d.subcategory}` : "",
+          `Listing visibility: ${selectedListingPurposes.join(", ")}`,
           `Location: ${d.address}, ${d.city}, ${d.state}`,
           selectedAmenities.length ? `Amenities: ${selectedAmenities.join(", ")}` : "",
           selectedPurposes.length ? `Booking purposes accepted: ${selectedPurposes.join(", ")}` : "",
@@ -355,26 +366,66 @@ function ListYourVenue() {
                 {err("state")}
               </div>
             </div>
-            <div>
+            <fieldset className="rounded-md border border-border bg-background p-4">
+              <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
+                For what purpose do you want to use this property?
+              </legend>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("");
+                    setSelectedListingPurposes((current) =>
+                      current.length === listingPurposeOptions.length ? [] : [...listingPurposeOptions],
+                    );
+                  }}
+                  aria-pressed={allListingPurposesSelected}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+                    allListingPurposesSelected
+                      ? "border-gold bg-gold text-gold-foreground"
+                      : "border-border bg-background text-navy hover:bg-secondary"
+                  }`}
+                >
+                  {allListingPurposesSelected ? "Clear All" : "Select All"}
+                </button>
+                {listingPurposeOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm text-foreground/85">
+                    <input
+                      type="checkbox"
+                      checked={selectedListingPurposes.includes(option)}
+                      onChange={(event) => {
+                        setSelectedCategory("");
+                        setSelectedListingPurposes((current) =>
+                          event.target.checked ? [...current, option] : current.filter((item) => item !== option),
+                        );
+                      }}
+                      className="size-4 accent-gold"
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {selectedListingPurposes.length > 0 && <div>
               <select
                 name="category"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className={field}
               >
-                <option value="">Venue Category*</option>
-                {categories.map((c) => (
+                <option value="">{filmOnly ? "Film Location Category*" : "Venue Category*"}</option>
+                {categoryOptions.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
                   </option>
                 ))}
               </select>
               {err("category")}
-            </div>
-            {subcategoryOptions.length > 0 && (
+            </div>}
+            {selectedListingPurposes.length > 0 && subcategoryOptions.length > 0 && (
               <div>
-                <select name="subcategory" defaultValue="" className={field}>
-                  <option value="">Venue Sub category (optional)</option>
+                <select key={selectedCategory} name="subcategory" defaultValue="" className={field}>
+                  <option value="">{filmOnly ? "Film Location Subcategory (optional)" : "Venue Subcategory (optional)"}</option>
                   {subcategoryOptions.map((s) => (
                     <option key={s.id} value={s.name}>
                       {s.name}
@@ -411,44 +462,6 @@ function ListYourVenue() {
                 to upload venue photos directly and manage your listing.
               </p>
             )}
-            <fieldset className="rounded-md border border-border bg-background p-4">
-              <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
-                For what purpose do you want to use this property?
-              </legend>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedListingPurposes((current) =>
-                      current.length === listingPurposeOptions.length ? [] : [...listingPurposeOptions],
-                    )
-                  }
-                  aria-pressed={allListingPurposesSelected}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
-                    allListingPurposesSelected
-                      ? "border-gold bg-gold text-gold-foreground"
-                      : "border-border bg-background text-navy hover:bg-secondary"
-                  }`}
-                >
-                  {allListingPurposesSelected ? "Clear All" : "Select All"}
-                </button>
-                {listingPurposeOptions.map((option) => (
-                  <label key={option} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm text-foreground/85">
-                    <input
-                      type="checkbox"
-                      checked={selectedListingPurposes.includes(option)}
-                      onChange={(event) =>
-                        setSelectedListingPurposes((current) =>
-                          event.target.checked ? [...current, option] : current.filter((item) => item !== option),
-                        )
-                      }
-                      className="size-4 accent-gold"
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
             {amenities.length > 0 && (
               <fieldset className="rounded-md border border-border bg-background p-4">
                 <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">Amenities</legend>

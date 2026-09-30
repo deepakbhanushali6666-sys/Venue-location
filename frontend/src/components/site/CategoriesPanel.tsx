@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import {
@@ -10,33 +10,34 @@ import {
   listCategories,
   updateCategory,
   updateSubcategory,
+  type CategoryKind,
 } from "@/lib/api";
 
-export function CategoriesPanel() {
+export function CategoriesPanel({ kind = "venue" }: { kind?: CategoryKind }) {
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [newSubcategory, setNewSubcategory] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      const { categories: rows } = await listCategories();
+      const { categories: rows } = await listCategories(kind);
       setCategories(rows);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load categories");
     }
-  };
+  }, [kind]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const addCategory = async () => {
     const name = newCategory.trim();
     if (!name) return;
     setBusy(true);
     try {
-      await createCategory({ name });
+      await createCategory({ name, kind });
       setNewCategory("");
       toast.success("Category added");
       void load();
@@ -101,9 +102,9 @@ export function CategoriesPanel() {
   };
 
   return (
-    <section id="admin-categories" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id={kind === "film" ? "admin-film-categories" : "admin-categories"} className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">
-        Venue Categories &amp; Subcategories
+        {kind === "film" ? "Film Locations" : "Venue"} Categories &amp; Subcategories
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Manage the category and subcategory options shown on the listing form. Changes apply

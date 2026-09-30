@@ -50,6 +50,7 @@ type VenueRow = {
   state: string;
   category: string;
   subcategory: string;
+  suitable_for: string[];
   booking_purposes: string[];
   booking_restrictions: string[];
   status: string;
@@ -130,6 +131,7 @@ function AdminPanel() {
   const [auditFilter, setAuditFilter] = useState<string>("all");
   const [rangeDays, setRangeDays] = useState<number>(90);
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
+  const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
   const [savingVenue, setSavingVenue] = useState<string | null>(null);
 
@@ -165,6 +167,9 @@ function AdminPanel() {
     listCategories()
       .then(({ categories: rows }) => setCategories(rows))
       .catch(() => toast.error("Could not load venue categories"));
+    listCategories("film")
+      .then(({ categories: rows }) => setFilmCategories(rows))
+      .catch(() => toast.error("Could not load film location categories"));
   }, [isAdmin]);
 
   const verifyPayment = async (id: string) => {
@@ -974,11 +979,13 @@ function AdminPanel() {
                           {cities.map((city) => <option key={city}>{city}</option>)}
                         </select>
                         <select name="category" defaultValue={v.category} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
-                          {categories.map((category) => <option key={category.id}>{category.name}</option>)}
+                          {(v.suitable_for?.includes("Film Shooting Locations") && !v.suitable_for?.includes("Venue Bookings") ? filmCategories : categories).map((category) => (
+                            <option key={category.id} value={category.slug}>{category.name}</option>
+                          ))}
                         </select>
                         <select name="subcategory" defaultValue={v.subcategory} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
                           <option value="">No subcategory</option>
-                          {(categories.find((category) => category.name === v.category)?.subcategories ?? []).map((subcategory) => (
+                          {((v.suitable_for?.includes("Film Shooting Locations") && !v.suitable_for?.includes("Venue Bookings") ? filmCategories : categories).find((category) => category.slug === v.category)?.subcategories ?? []).map((subcategory) => (
                             <option key={subcategory.id}>{subcategory.name}</option>
                           ))}
                         </select>
@@ -1008,6 +1015,7 @@ function AdminPanel() {
         <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
           {([
             ["admin-categories", "Categories"],
+            ["admin-film-categories", "Film Categories"],
             ["admin-gallery", "Gallery"],
             ["admin-people", "Team & Advisors"],
             ["admin-amenities", "Amenities"],
@@ -1030,6 +1038,8 @@ function AdminPanel() {
         />
 
         <CategoriesPanel />
+
+        <CategoriesPanel kind="film" />
 
         <GalleryPanel />
 

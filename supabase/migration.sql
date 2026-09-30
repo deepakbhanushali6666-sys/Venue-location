@@ -222,6 +222,11 @@ create table if not exists public.venue_categories (
   updated_at timestamptz not null default now()
 );
 alter table public.venue_categories enable row level security;
+alter table public.venue_categories add column if not exists kind text not null default 'venue';
+alter table public.venue_categories drop constraint if exists venue_categories_name_key;
+alter table public.venue_categories drop constraint if exists venue_categories_slug_key;
+create unique index if not exists venue_categories_kind_name_key on public.venue_categories(kind, name);
+create unique index if not exists venue_categories_kind_slug_key on public.venue_categories(kind, slug);
 create index if not exists idx_venue_categories_sort on public.venue_categories(sort_order);
 
 -- VENUE SUBCATEGORIES ------------------------------------------------------
@@ -792,7 +797,7 @@ insert into public.venue_categories (name, slug, sort_order) values
   ('Cafes', 'cafes', 10),
   ('Corporate Event Venues', 'corporate-event-venues', 11),
   ('Wedding Venues', 'wedding-venues', 12)
-on conflict (slug) do nothing;
+on conflict (kind, slug) do nothing;
 
 -- Migrates the old flat "type of location" checklist into subcategories
 -- under Film Shooting Locations.
@@ -822,7 +827,19 @@ join (values
   ('Supermarkets', 'supermarkets', 56), ('Swimming Pool', 'swimming-pool', 57),
   ('Tennis Courts', 'tennis-courts', 58), ('Villages', 'villages', 59)
 ) as s(name, slug, sort_order) on true
-where c.slug = 'film-shooting-locations'
+where c.slug = 'film-shooting-locations' and c.kind = 'venue'
+on conflict (category_id, slug) do nothing;
+
+insert into public.venue_categories (name, slug, kind, sort_order)
+select name, slug, 'film', sort_order from public.venue_categories where kind = 'venue'
+on conflict (kind, slug) do nothing;
+
+insert into public.venue_subcategories (category_id, name, slug, sort_order)
+select film.id, sub.name, sub.slug, sub.sort_order
+from public.venue_categories venue
+join public.venue_categories film on film.slug = venue.slug and film.kind = 'film'
+join public.venue_subcategories sub on sub.category_id = venue.id
+where venue.kind = 'venue'
 on conflict (category_id, slug) do nothing;
 
 revoke all on function public.handle_new_user() from public, anon, authenticated;
