@@ -4,6 +4,7 @@ import { CheckCircle2, Car, MapPin, Maximize2, MessageCircle, Phone, Star, Users
 import { CONTACT, categoryBySlug, formatINR, venueBySlug, venues, type Venue } from "@/data/venues";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { VenueCard } from "@/components/site/VenueCard";
+import { VenuePhotoWatermark } from "@/components/site/VenuePhotoWatermark";
 import { VenueReviews } from "@/components/site/VenueReviews";
 import {
   Carousel,
@@ -286,7 +287,7 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
                   type="button"
                   onClick={() => setPreviewOpen(true)}
                   aria-label={`View larger photo ${index + 1} of ${venue.name}`}
-                  className="group relative block w-full cursor-zoom-in overflow-hidden"
+                  className="group relative block w-full cursor-zoom-in overflow-hidden [container-type:inline-size]"
                 >
                   <img
                     src={image}
@@ -295,6 +296,7 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
                     height={800}
                     className="aspect-16/10 w-full object-cover"
                   />
+                  <VenuePhotoWatermark src={image} />
                   <span className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-navy/75 text-white opacity-90 transition-opacity group-hover:opacity-100">
                     <Maximize2 className="size-4" />
                   </span>
@@ -322,11 +324,16 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
               <CarouselContent className="ml-0 h-full">
                 {venue.images.map((image, index) => (
                   <CarouselItem key={`${image}-${index}`} className="grid h-full place-items-center pl-0">
-                    <img
-                      src={image}
-                      alt={`${venue.name} photo ${index + 1}`}
-                      className="max-h-full max-w-full object-contain"
-                    />
+                    <div className="relative inline-block max-h-full max-w-full">
+                      <img
+                        src={image}
+                        alt={`${venue.name} photo ${index + 1}`}
+                        className="block max-h-[calc(94dvh-9rem)] max-w-full object-contain"
+                      />
+                      <div className="absolute inset-0 [container-type:inline-size]">
+                        <VenuePhotoWatermark src={image} />
+                      </div>
+                    </div>
                   </CarouselItem>
                 ))}
               </CarouselContent>
