@@ -287,7 +287,7 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
                   type="button"
                   onClick={() => setPreviewOpen(true)}
                   aria-label={`View larger photo ${index + 1} of ${venue.name}`}
-                  className="group relative block w-full cursor-zoom-in overflow-hidden [container-type:inline-size]"
+                  className="group relative block w-full cursor-zoom-in overflow-hidden @container"
                 >
                   <img
                     src={image}
@@ -330,7 +330,7 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
                         alt={`${venue.name} photo ${index + 1}`}
                         className="block max-h-[calc(94dvh-9rem)] max-w-full object-contain"
                       />
-                      <div className="absolute inset-0 [container-type:inline-size]">
+                      <div className="absolute inset-0 @container">
                         <VenuePhotoWatermark src={image} />
                       </div>
                     </div>

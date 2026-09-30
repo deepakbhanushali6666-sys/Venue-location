@@ -118,7 +118,7 @@ export function PhotoUploader({
       {value.length > 0 && (
         <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
           {value.map((url, i) => (
-            <div key={url} className="group relative overflow-hidden rounded-md border border-border [container-type:inline-size]">
+            <div key={url} className="group relative overflow-hidden rounded-md border border-border @container">
               <img src={url} alt={`Venue photo ${i + 1}`} loading="lazy" className="h-24 w-full object-cover" />
               <VenuePhotoWatermark src={url} />
               <button
