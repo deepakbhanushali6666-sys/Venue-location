@@ -1016,25 +1016,36 @@ function AdminPanel() {
                       />
                     </td>
                     <td className="px-2 py-4">
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                         <button
                           onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
                           className="font-bold text-navy"
                         >
                           Edit
                         </button>
-                        <button
-                          onClick={() => setStatus(v.id, "approved")}
-                          className="font-bold text-gold"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => setStatus(v.id, "rejected")}
-                          className="font-bold text-destructive"
-                        >
-                          Reject
-                        </button>
+
+                        {v.status === "approved" ? (
+                          <span className="font-bold text-emerald-700">Approved</span>
+                        ) : (
+                          <button
+                            onClick={() => setStatus(v.id, "approved")}
+                            className="font-bold text-gold"
+                          >
+                            Approve
+                          </button>
+                        )}
+
+                        {v.status === "rejected" ? (
+                          <span className="font-bold text-red-700">Rejected</span>
+                        ) : (
+                          <button
+                            onClick={() => setStatus(v.id, "rejected")}
+                            className="font-bold text-destructive"
+                          >
+                            Reject
+                          </button>
+                        )}
+
                         <button
                           onClick={() => void removeVenue(v.id, v.name)}
                           aria-label={`Delete ${v.name}`}
