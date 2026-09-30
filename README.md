@@ -31,6 +31,8 @@ initial film options. Fresh installations only need `migration.sql`.
 
 To enable admin-only enquiry deletion on an existing database, run
 [`supabase/admin_lead_delete.sql`](supabase/admin_lead_delete.sql) in the SQL editor.
+To restrict venue deletion to admins, also run
+[`supabase/admin_venue_delete.sql`](supabase/admin_venue_delete.sql).
 
 ### 2. Backend
 

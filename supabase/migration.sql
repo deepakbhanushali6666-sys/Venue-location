@@ -600,9 +600,10 @@ create policy "Owners can update their own venues"
   using (auth.uid() = owner_id or public.has_role(auth.uid(), 'admin'))
   with check (auth.uid() = owner_id or public.has_role(auth.uid(), 'admin'));
 drop policy if exists "Owners can delete their own venues" on public.venues;
-create policy "Owners can delete their own venues"
+drop policy if exists "Admins can delete venues" on public.venues;
+create policy "Admins can delete venues"
   on public.venues for delete to authenticated
-  using (auth.uid() = owner_id or public.has_role(auth.uid(), 'admin'));
+  using (public.has_role(auth.uid(), 'admin'));
 
 -- leads
 drop policy if exists "Anyone can submit an enquiry" on public.leads;

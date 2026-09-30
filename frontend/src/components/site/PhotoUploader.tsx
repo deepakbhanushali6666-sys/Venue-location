@@ -10,10 +10,12 @@ export function PhotoUploader({
   userId,
   value,
   onChange,
+  onBusyChange,
 }: {
   userId: string;
   value: string[];
   onChange: (next: string[]) => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,6 +28,7 @@ export function PhotoUploader({
       return;
     }
     setBusy(true);
+    onBusyChange?.(true);
     const uploaded: string[] = [];
     const selected = Array.from(files);
     if (selected.length > remaining) {
@@ -60,6 +63,7 @@ export function PhotoUploader({
       uploaded.push(data.signedUrl);
     }
     setBusy(false);
+    onBusyChange?.(false);
     if (inputRef.current) inputRef.current.value = "";
     if (uploaded.length) {
       onChange([...value, ...uploaded]);

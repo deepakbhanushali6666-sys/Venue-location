@@ -1,4 +1,4 @@
-import { createVenue, listAmenities, listCategories, listLocations, listPurposes, submitLead, type AmenityRecord, type CategoryRecord } from "@/lib/api";
+import { createVenue, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
 import { cities, states } from "@/data/venues";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/list-your-venue")({
   head: () => ({
@@ -115,6 +116,7 @@ const bookingRestrictions = [
 function ListYourVenue() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
@@ -127,7 +129,9 @@ function ListYourVenue() {
   const [formStates, setFormStates] = useState<string[]>(states);
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const { user } = useAuth();
+  const [newAccountId, setNewAccountId] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const ownerId = user?.id;
 
   useEffect(() => {
     listCategories()
@@ -160,6 +164,7 @@ function ListYourVenue() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (busy || authLoading || uploading) return;
     const formEl = e.currentTarget;
     const data = Object.fromEntries(new FormData(formEl)) as Record<string, string>;
     if (data["acceptTerms"] !== "on") {
@@ -183,86 +188,76 @@ function ListYourVenue() {
       setErrors({ category: "Select a category" });
       return;
     }
-    setBusy(true);
     const d = parsed.data;
 
-    if (user) {
-      const slug = `${d.venueName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
-      const description = d.notes ?? "";
+    if (!ownerId) {
+      const password = data["password"] ?? "";
+      if (password.length < 8) {
+        setErrors({ password: "Use at least 8 characters" });
+        return;
+      }
+      if (password !== data["confirmPassword"]) {
+        setErrors({ confirmPassword: "Passwords do not match" });
+        return;
+      }
+      setBusy(true);
       try {
-        const venuePayload = {
-          name: d.venueName,
-          slug,
-          category: selectedCategoryRecord.slug,
-          subcategory: d.subcategory ?? "",
-          city: d.city,
-          state: d.state,
-          address: d.address,
-          description,
-          gst_number: d.gst ?? "",
-          photos,
-          amenities: selectedAmenities,
-          suitable_for: selectedListingPurposes,
-          booking_purposes: selectedPurposes,
-          booking_restrictions: selectedRestrictions,
-          map_query: `${d.venueName}, ${d.city}`,
-        };
-
-        await createVenue(venuePayload);
-        toast.success("Venue submitted for approval", {
-          description: "Track status and enquiries from your owner dashboard.",
+        const { data: signup, error } = await supabase.auth.signUp({
+          email: d.email,
+          password,
+          options: { data: { full_name: d.ownerName, mobile: d.mobile } },
         });
-        formEl.reset();
-        setPhotos([]);
-        setSelectedAmenities([]);
-        setSelectedPurposes([]);
-        setSelectedListingPurposes([]);
-        setSelectedRestrictions([]);
-        setSelectedCategory("");
-        void navigate({ to: "/dashboard" });
+        if (error) throw error;
+        if (!signup.session) {
+          toast.error("Could not sign in automatically. Check your email or sign in with your existing account.");
+          return;
+        }
+        setNewAccountId(signup.session.user.id);
+        toast.success("Account created. Add your photos and submit your venue for approval.");
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Could not submit venue");
+        toast.error(err instanceof Error ? err.message : "Could not create account");
       } finally {
         setBusy(false);
       }
       return;
     }
 
+    setBusy(true);
+    const slug = `${d.venueName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
     try {
-      const { leadCode } = await submitLead({
-        customer_name: d.ownerName,
-        mobile: d.mobile,
-        email: d.email,
-        purpose: "Venue Listing",
-        venue_name: d.venueName,
-        message: [
-          d.category ? `Category: ${d.category}` : "",
-          d.subcategory ? `Subcategory: ${d.subcategory}` : "",
-          `Listing visibility: ${selectedListingPurposes.join(", ")}`,
-          `Location: ${d.address}, ${d.city}, ${d.state}`,
-          selectedAmenities.length ? `Amenities: ${selectedAmenities.join(", ")}` : "",
-          selectedPurposes.length ? `Booking purposes accepted: ${selectedPurposes.join(", ")}` : "",
-          selectedRestrictions.length ? `Booking restrictions: ${selectedRestrictions.join(", ")}` : "",
-          d.gst ? `GST: ${d.gst}` : "",
-          d.notes ?? "",
-        ]
-          .filter(Boolean)
-          .join("\n"),
+      await createVenue({
+        name: d.venueName,
+        slug,
+        category: selectedCategoryRecord.slug,
+        subcategory: d.subcategory ?? "",
+        city: d.city,
+        state: d.state,
+        address: d.address,
+        description: d.notes ?? "",
+        gst_number: d.gst ?? "",
+        photos,
+        amenities: selectedAmenities,
+        suitable_for: selectedListingPurposes,
+        booking_purposes: selectedPurposes,
+        booking_restrictions: selectedRestrictions,
+        map_query: `${d.venueName}, ${d.city}`,
       });
-      toast.success(`Registration received${leadCode ? ` (${leadCode})` : ""}`, {
-        description: "Create your owner account to add photos and manage enquiries.",
+      toast.success("Venue submitted for approval", {
+        description: "Track status and enquiries from your owner dashboard.",
       });
       formEl.reset();
+      setPhotos([]);
       setSelectedAmenities([]);
       setSelectedPurposes([]);
       setSelectedListingPurposes([]);
       setSelectedRestrictions([]);
       setSelectedCategory("");
+      void navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not submit registration");
+      toast.error(err instanceof Error ? err.message : "Could not submit venue");
     } finally {
       setBusy(false);
     }
@@ -342,6 +337,18 @@ function ListYourVenue() {
               <input name="email" placeholder="Email Address*" className={field} maxLength={120} />
               {err("email")}
             </div>
+            {!ownerId && !authLoading && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <input name="password" type="password" autoComplete="new-password" placeholder="Create Password*" className={field} minLength={8} required />
+                  {err("password")}
+                </div>
+                <div>
+                  <input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm Password*" className={field} minLength={8} required />
+                  {err("confirmPassword")}
+                </div>
+              </div>
+            )}
             <div>
               <input name="venueName" placeholder="Venue Name*" className={field} maxLength={120} />
               {err("venueName")}
@@ -450,16 +457,18 @@ function ListYourVenue() {
               className={field}
               maxLength={20}
             />
-            {user ? (
+            {ownerId ? (
               <div className="grid">
-                <PhotoUploader userId={user.id} value={photos} onChange={setPhotos} />
+                {newAccountId === ownerId && (
+                  <p role="status" className="mb-3 text-sm text-navy">
+                    Account created. Add photos, then submit your listing for admin approval.
+                  </p>
+                )}
+                <PhotoUploader userId={ownerId} value={photos} onChange={setPhotos} onBusyChange={setUploading} />
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">
-                <Link to="/auth" className="font-bold text-gold">
-                  Sign in or create an owner account
-                </Link>{" "}
-                to upload venue photos directly and manage your listing.
+                Already have an account? <Link to="/auth" className="font-bold text-gold">Sign in</Link> before listing your venue.
               </p>
             )}
             {amenities.length > 0 && (
@@ -567,10 +576,10 @@ function ListYourVenue() {
             </label>
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || authLoading || uploading}
               className="w-full rounded-md bg-gold px-6 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground hover:opacity-90 disabled:opacity-60"
             >
-              {busy ? "Submitting…" : "Submit for Approval"}
+              {uploading ? "Uploading photos…" : busy ? "Please wait…" : !ownerId ? "Create Account & Continue" : "Submit for Approval"}
             </button>
             <p className="text-center text-xs text-muted-foreground">
               Listings go live after admin verification. No payment is taken at this step.

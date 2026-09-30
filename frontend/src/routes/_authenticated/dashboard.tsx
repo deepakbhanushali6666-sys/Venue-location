@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createVenue, deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
+import { deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -75,14 +75,6 @@ type SubRow = {
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 60);
-}
-
 function OwnerDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
@@ -131,7 +123,7 @@ function OwnerDashboard() {
 
   const saveVenue = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!userId) return;
+    if (!userId || !editing) return;
     const f = new FormData(e.currentTarget);
     const name = String(f.get("name") ?? "").trim();
     if (!name) {
@@ -159,21 +151,11 @@ function OwnerDashboard() {
       map_query: String(f.get("map_query") ?? "").trim(),
     };
 
-    if (editing) {
-      try {
-        await updateVenue(editing.id, payload);
-        toast.success("Venue updated");
-      } catch (err) {
-        return void toast.error(err instanceof Error ? err.message : "Could not update venue");
-      }
-    } else {
-      const slug = `${slugify(name)}-${Math.random().toString(36).slice(2, 6)}`;
-      try {
-        await createVenue({ ...payload, slug });
-        toast.success("Venue submitted for admin approval");
-      } catch (err) {
-        return void toast.error(err instanceof Error ? err.message : "Could not submit venue");
-      }
+    try {
+      await updateVenue(editing.id, payload);
+      toast.success("Venue updated");
+    } catch (err) {
+      return void toast.error(err instanceof Error ? err.message : "Could not update venue");
     }
     setShowForm(false);
     setEditing(null);
@@ -252,21 +234,35 @@ function OwnerDashboard() {
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-xl font-extrabold text-navy">My Venues</h2>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setPhotos([]);
-                setShowForm((s) => !s);
-              }}
-
-              className="rounded-md bg-navy px-5 py-2 font-display text-sm font-extrabold uppercase tracking-wide text-navy-foreground"
-            >
-              {showForm ? "Close" : "Add Venue"}
-            </button>
+            <div className="flex items-center gap-2">
+              {showForm && editing && (
+                <button
+                  type="button"
+                  onClick={() => { setEditing(null); setShowForm(false); setPhotos([]); }}
+                  aria-label="Cancel editing venue"
+                  title="Cancel editing venue"
+                  className="rounded-md border border-border p-2 text-navy hover:bg-secondary"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+              <Link
+                to="/list-your-venue"
+                className="rounded-md bg-navy px-5 py-2 font-display text-sm font-extrabold uppercase tracking-wide text-navy-foreground"
+              >
+                Add Venue
+              </Link>
+            </div>
           </div>
 
-          {showForm && (
-            <form onSubmit={saveVenue} className="mt-5 grid gap-3 sm:grid-cols-2">
+          {!isAdmin && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              To remove a venue, email its name to <a href={`mailto:${CONTACT.email}`} className="font-semibold text-navy underline hover:text-gold">the admin</a>.
+            </p>
+          )}
+
+          {showForm && editing && (
+            <form key={editing.id} onSubmit={saveVenue} className="mt-5 grid gap-3 sm:grid-cols-2">
               <input name="name" placeholder="Venue name" defaultValue={editing?.name} className={input} />
               <select name="category" defaultValue={editing?.category ?? "resorts"} className={input}>
                 {categories.map((c) => (
@@ -308,7 +304,7 @@ function OwnerDashboard() {
                 type="submit"
                 className="rounded-md bg-gold px-6 py-2.5 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground sm:col-span-2"
               >
-                {editing ? "Save Changes" : "Submit for Approval"}
+                Save Changes
               </button>
             </form>
           )}
