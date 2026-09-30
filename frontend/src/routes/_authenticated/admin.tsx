@@ -930,63 +930,120 @@ function AdminPanel() {
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">Venues</h2>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-190 text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+            <table className="w-full min-w-260 table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-[8%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[13%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
+                <col className="w-[8%]" />
+                <col className="w-[7%]" />
+                <col className="w-[10%]" />
+              </colgroup>
+              <thead className="bg-secondary/60 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2">Code</th>
-                  <th>Venue</th>
-                  <th>City</th>
-                  <th>Category</th>
-                  <th>Accepted bookings</th>
-                  <th>Restrictions</th>
-                  <th>Status</th>
-                  <th>Featured</th>
-                  <th>Actions</th>
+                  <th className="px-2 py-3">Code</th>
+                  <th className="px-2 py-3">Venue</th>
+                  <th className="px-2 py-3">Location</th>
+                  <th className="px-2 py-3">Category</th>
+                  <th className="px-2 py-3">Booking types</th>
+                  <th className="px-2 py-3">Restrictions</th>
+                  <th className="px-2 py-3">Status</th>
+                  <th className="px-2 py-3 text-center">Featured</th>
+                  <th className="px-2 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {venues.map((v) => (
-                  <tr key={v.id} className="border-t border-border">
-                    <td className="py-3 font-bold text-navy">{v.property_code}</td>
-                    <td className="font-bold text-navy">{v.name}</td>
-                    <td>{v.city}, {v.state}</td>
-                    <td className="capitalize">{v.category}{v.subcategory ? ` / ${v.subcategory}` : ""}</td>
-                    <td className="max-w-56 text-xs">{v.booking_purposes?.join(", ") || "None listed"}</td>
-                    <td className="max-w-48 text-xs">{v.booking_restrictions?.join(", ") || "None listed"}</td>
-                    <td>{v.status}</td>
-                    <td>
+                  <tr key={v.id} className="border-t border-border align-top hover:bg-secondary/30">
+                    <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.property_code}</td>
+                    <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.name}</td>
+                    <td className="wrap-break-word px-2 py-4 text-sm">{v.city}, {v.state}</td>
+                    <td className="wrap-break-word px-2 py-4 text-sm capitalize">
+                      {v.category}{v.subcategory ? ` / ${v.subcategory}` : ""}
+                    </td>
+                    <td className="px-2 py-4 text-xs">
+                      {v.booking_purposes?.length ? (
+                        <details>
+                          <summary className="cursor-pointer font-semibold text-navy">
+                            {v.booking_purposes.length} booking types
+                          </summary>
+                          <ul className="mt-2 space-y-1 text-muted-foreground">
+                            {v.booking_purposes.map((purpose) => (
+                              <li key={purpose}>{purpose}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : (
+                        <span className="text-muted-foreground">None listed</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-4 text-xs">
+                      {v.booking_restrictions?.length ? (
+                        <details>
+                          <summary className="cursor-pointer font-semibold text-navy">
+                            {v.booking_restrictions.length} restrictions
+                          </summary>
+                          <ul className="mt-2 space-y-1 text-muted-foreground">
+                            {v.booking_restrictions.map((restriction) => (
+                              <li key={restriction}>{restriction}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : (
+                        <span className="text-muted-foreground">None listed</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-4">
+                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-bold capitalize ${
+                        v.status === "approved"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : v.status === "rejected"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-amber-50 text-amber-800"
+                      }`}>
+                        {v.status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-4 text-center">
                       <input
                         type="checkbox"
                         checked={v.featured}
+                        aria-label={`Feature ${v.name}`}
                         onChange={(e) => toggleFeatured(v.id, e.target.checked)}
                       />
                     </td>
-                    <td className="space-x-3">
-                      <button
-                        onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
-                        className="font-bold text-navy"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setStatus(v.id, "approved")}
-                        className="font-bold text-gold"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => setStatus(v.id, "rejected")}
-                        className="font-bold text-destructive"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => void removeVenue(v.id, v.name)}
-                        aria-label={`Delete ${v.name}`}
-                        className="inline-flex align-middle text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                    <td className="px-2 py-4">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                        <button
+                          onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
+                          className="font-bold text-navy"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setStatus(v.id, "approved")}
+                          className="font-bold text-gold"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => setStatus(v.id, "rejected")}
+                          className="font-bold text-destructive"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => void removeVenue(v.id, v.name)}
+                          aria-label={`Delete ${v.name}`}
+                          title={`Delete ${v.name}`}
+                          className="inline-flex items-center text-destructive"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
