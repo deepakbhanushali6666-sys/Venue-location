@@ -1024,9 +1024,7 @@ function AdminPanel() {
                           Edit
                         </button>
 
-                        {v.status === "approved" ? (
-                          <span className="font-bold text-emerald-700">Approved</span>
-                        ) : (
+                        {v.status !== "approved" && (
                           <button
                             onClick={() => setStatus(v.id, "approved")}
                             className="font-bold text-gold"
@@ -1035,9 +1033,7 @@ function AdminPanel() {
                           </button>
                         )}
 
-                        {v.status === "rejected" ? (
-                          <span className="font-bold text-red-700">Rejected</span>
-                        ) : (
+                        {v.status !== "rejected" && (
                           <button
                             onClick={() => setStatus(v.id, "rejected")}
                             className="font-bold text-destructive"
