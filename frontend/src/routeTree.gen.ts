@@ -26,6 +26,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedPropertyCodesRouteImport } from './routes/_authenticated/property-codes'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
 import { Route as AuthenticatedInvoicePaymentIdRouteImport } from './routes/_authenticated/invoice.$paymentId'
@@ -114,6 +115,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPropertyCodesRoute =
+  AuthenticatedPropertyCodesRouteImport.update({
+    id: '/property-codes',
+    path: '/property-codes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const VenuesIndexRoute = VenuesIndexRouteImport.update({
   id: '/venues/',
   path: '/venues/',
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues': typeof VenuesIndexRoute
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
@@ -192,6 +201,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
   '/_authenticated/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/dashboard'
+    | '/property-codes'
     | '/venues/$slug'
     | '/venues/'
     | '/invoice/$paymentId'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/dashboard'
+    | '/property-codes'
     | '/venues/$slug'
     | '/venues'
     | '/invoice/$paymentId'
@@ -258,6 +270,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/property-codes'
     | '/venues/$slug'
     | '/venues/'
     | '/_authenticated/invoice/$paymentId'
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/property-codes': {
+      id: '/_authenticated/property-codes'
+      path: '/property-codes'
+      fullPath: '/property-codes'
+      preLoaderRoute: typeof AuthenticatedPropertyCodesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/venues/': {
       id: '/venues/'
       path: '/venues'
@@ -431,12 +451,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPropertyCodesRoute: typeof AuthenticatedPropertyCodesRoute
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPropertyCodesRoute: AuthenticatedPropertyCodesRoute,
   AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
 }
 

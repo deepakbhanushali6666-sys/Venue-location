@@ -46,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 type VenueRow = {
   id: string;
+  property_code: string;
   name: string;
   city: string;
   state: string;
@@ -62,6 +63,7 @@ type VenueRow = {
 type LeadRow = {
   id: string;
   lead_code: string;
+  property_code: string;
   customer_name: string;
   mobile: string;
   email: string;
@@ -423,9 +425,10 @@ function AdminPanel() {
   const exportLeads = () =>
     downloadCsv(
       `oms-leads-${stamp}.csv`,
-      ["Lead ID", "Name", "Mobile", "Venue", "Purpose", "Budget", "Status"],
+      ["Lead ID", "Property Code", "Name", "Mobile", "Venue", "Purpose", "Budget", "Status"],
       leads.map((l) => [
         l.lead_code,
+        l.property_code,
         l.customer_name,
         l.mobile,
         l.venue_name,
@@ -438,8 +441,9 @@ function AdminPanel() {
   const exportVenues = () =>
     downloadCsv(
       `oms-venues-${stamp}.csv`,
-      ["Venue", "City", "Category", "Status", "Featured", "Created"],
+      ["Property Code", "Venue", "City", "Category", "Status", "Featured", "Created"],
       venues.map((v) => [
+        v.property_code,
         v.name,
         v.city,
         v.category,
@@ -513,6 +517,12 @@ function AdminPanel() {
             >
               Export analytics CSV
             </button>
+            <Link
+              to="/property-codes"
+              className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
+            >
+              Property Codes
+            </Link>
             <Link
               to="/dashboard"
               className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
@@ -923,7 +933,8 @@ function AdminPanel() {
             <table className="w-full min-w-190 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2">Venue</th>
+                  <th className="py-2">Code</th>
+                  <th>Venue</th>
                   <th>City</th>
                   <th>Category</th>
                   <th>Accepted bookings</th>
@@ -936,7 +947,8 @@ function AdminPanel() {
               <tbody>
                 {venues.map((v) => (
                   <tr key={v.id} className="border-t border-border">
-                    <td className="py-3 font-bold text-navy">{v.name}</td>
+                    <td className="py-3 font-bold text-navy">{v.property_code}</td>
+                    <td className="font-bold text-navy">{v.name}</td>
                     <td>{v.city}, {v.state}</td>
                     <td className="capitalize">{v.category}{v.subcategory ? ` / ${v.subcategory}` : ""}</td>
                     <td className="max-w-56 text-xs">{v.booking_purposes?.join(", ") || "None listed"}</td>
@@ -980,7 +992,7 @@ function AdminPanel() {
                 ))}
                 {venues.map((v) => editingVenue === v.id && (
                   <tr key={`${v.id}-editor`} className="border-t border-border bg-secondary/40">
-                    <td colSpan={8} className="py-3">
+                    <td colSpan={9} className="py-3">
                       <form
                         className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
                         onSubmit={(event) => {
@@ -1018,7 +1030,7 @@ function AdminPanel() {
                 ))}
                 {venues.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-4 text-muted-foreground">
+                    <td colSpan={9} className="py-4 text-muted-foreground">
                       No venues submitted yet.
                     </td>
                   </tr>
@@ -1073,6 +1085,7 @@ function AdminPanel() {
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-2">Lead ID</th>
+                  <th>Property Code</th>
                   <th>Name</th>
                   <th>Mobile</th>
                   <th>Venue</th>
@@ -1087,6 +1100,7 @@ function AdminPanel() {
                 {leads.map((l) => (
                   <tr key={l.id} className="border-t border-border">
                     <td className="py-3 font-bold text-navy">{l.lead_code}</td>
+                    <td className="font-semibold text-navy">{l.property_code || "—"}</td>
                     <td>{l.customer_name}</td>
                     <td>{l.mobile}</td>
                     <td>{l.venue_name || "—"}</td>
@@ -1116,7 +1130,7 @@ function AdminPanel() {
                 ))}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-4 text-muted-foreground">
+                    <td colSpan={10} className="py-4 text-muted-foreground">
                       No leads yet.
                     </td>
                   </tr>

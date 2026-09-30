@@ -64,7 +64,7 @@ venuesRouter.get("/:slug", async (req, res, next) => {
 // Auth: create a venue owned by the current user.
 venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
-    const { ownerName, mobile, email, venueName, gst, notes, ...rest } = req.body ?? {};
+    const { ownerName, mobile, email, venueName, gst, notes, property_code, ...rest } = req.body ?? {};
     const payload = {
       ...rest,
       owner_id: req.user!.id,
@@ -108,7 +108,7 @@ venuesRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) =>
       return;
     }
 
-    const { status, featured, owner_id, ...rest } = req.body;
+    const { status, featured, owner_id, property_code, ...rest } = req.body;
     const updates: Record<string, unknown> = { ...rest };
     if (req.user!.isAdmin) {
       if (status !== undefined) updates.status = status;

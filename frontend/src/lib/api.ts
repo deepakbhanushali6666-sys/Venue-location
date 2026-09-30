@@ -115,6 +115,17 @@ export const getAdminOverview = () =>
     audit: Record<string, unknown>[];
   }>("/admin/overview");
 export const getAuditLog = () => get<{ audit: Record<string, unknown>[] }>("/admin/audit-log");
+export type AdminProperty = {
+  id: string;
+  property_code: string;
+  name: string;
+  city: string;
+  state: string;
+  category: string;
+  suitable_for: string[] | null;
+  status: string;
+};
+export const getAdminProperties = () => get<{ properties: AdminProperty[] }>("/admin/properties");
 
 // Venue categories & subcategories (admin-managed)
 export type SubcategoryRecord = {

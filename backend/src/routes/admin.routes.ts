@@ -12,11 +12,11 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
     const [venues, leads, subscriptions, payments, audit] = await Promise.all([
       client
         .from("venues")
-        .select("id, name, city, category, status, featured, created_at")
+        .select("id, property_code, name, city, state, category, subcategory, suitable_for, booking_purposes, booking_restrictions, status, featured, created_at")
         .order("created_at", { ascending: false }),
       client
         .from("leads")
-        .select("id, lead_code, customer_name, mobile, email, purpose, budget, status, venue_name, venue_id, message, created_at")
+        .select("id, lead_code, property_code, customer_name, mobile, email, purpose, budget, status, venue_name, venue_id, message, created_at")
         .order("created_at", { ascending: false }),
       client.from("subscriptions").select("id, owner_id, status, expires_on, invoice_number"),
       client.from("payments").select("*").order("created_at", { ascending: false }),
@@ -36,6 +36,21 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
       payments: payments.data,
       audit: audit.data,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: property code directory.
+adminRouter.get("/properties", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const { data, error } = await req.client!
+      .from("venues")
+      .select("id, property_code, name, city, state, category, suitable_for, status")
+      .order("created_at")
+      .order("id");
+    if (error) throw error;
+    res.json({ properties: data });
   } catch (err) {
     next(err);
   }

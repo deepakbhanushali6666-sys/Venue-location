@@ -68,6 +68,13 @@ create table if not exists public.profiles (
 );
 alter table public.profiles enable row level security;
 
+-- Pads to at least three digits without truncating larger numbers.
+create or replace function public.format_code(prefix text, n bigint)
+returns text
+language sql
+immutable
+as $$ select prefix || lpad(n::text, greatest(3, length(n::text)), '0') $$;
+
 -- VENUES -----------------------------------------------------------------
 create table if not exists public.venues (
   id uuid primary key default gen_random_uuid(),
@@ -105,7 +112,7 @@ create sequence if not exists public.lead_code_seq start 1;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
-  lead_code text not null unique default ('OMS-' || lpad(nextval('public.lead_code_seq')::text, 3, '0')),
+  lead_code text not null unique default public.format_code('OMS-', nextval('public.lead_code_seq')),
   venue_id uuid references public.venues(id) on delete set null,
   venue_name text not null default '',
   customer_name text not null,
@@ -122,6 +129,68 @@ create table if not exists public.leads (
 );
 alter table public.leads enable row level security;
 create index if not exists idx_leads_venue on public.leads(venue_id);
+
+-- PROPERTY CODES -------------------------------------------------------
+create sequence if not exists public.property_code_seq start 1;
+alter table public.venues add column if not exists property_code text;
+alter table public.leads add column if not exists property_code text not null default '';
+
+do $$
+declare r record;
+begin
+  for r in select id from public.venues where property_code is null order by created_at, id loop
+    update public.venues
+    set property_code = public.format_code('VL-', nextval('public.property_code_seq'))
+    where id = r.id;
+  end loop;
+end;
+$$;
+
+alter table public.venues alter column property_code set not null;
+create unique index if not exists venues_property_code_key on public.venues(property_code);
+
+create or replace function public.set_venue_property_code()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.property_code := public.format_code('VL-', nextval('public.property_code_seq'));
+  else
+    new.property_code := old.property_code;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists venues_property_code on public.venues;
+create trigger venues_property_code
+before insert or update of property_code on public.venues
+for each row execute function public.set_venue_property_code();
+
+create or replace function public.set_lead_property_code()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.property_code := coalesce((select property_code from public.venues where id = new.venue_id), '');
+  return new;
+end;
+$$;
+
+drop trigger if exists leads_property_code on public.leads;
+create trigger leads_property_code
+before insert on public.leads
+for each row execute function public.set_lead_property_code();
+
+update public.leads l
+set property_code = v.property_code
+from public.venues v
+where v.id = l.venue_id and l.property_code = '';
 
 -- SUBSCRIPTIONS -------------------------------------------------------
 create table if not exists public.subscriptions (
@@ -854,6 +923,8 @@ revoke all on function public.log_venue_created() from public, anon, authenticat
 revoke all on function public.log_lead_created() from public, anon, authenticated;
 revoke all on function public.log_lead_status_change() from public, anon, authenticated;
 revoke all on function public.log_review_moderation() from public, anon, authenticated;
+revoke all on function public.set_venue_property_code() from public, anon, authenticated;
+revoke all on function public.set_lead_property_code() from public, anon, authenticated;
 
 revoke all on function public.has_role(uuid, public.app_role) from public, anon;
 grant execute on function public.has_role(uuid, public.app_role) to authenticated;
