@@ -961,8 +961,27 @@ function AdminPanel() {
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.property_code}</td>
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.name}</td>
                     <td className="wrap-break-word px-2 py-4 text-sm">{v.city}, {v.state}</td>
-                    <td className="wrap-break-word px-2 py-4 text-sm capitalize">
-                      {v.category}{v.subcategory ? ` / ${v.subcategory}` : ""}
+                    <td className="px-2 py-4 text-sm">
+                      <details>
+                        <summary className="cursor-pointer font-semibold text-navy">
+                          {v.category ? v.category : "No category"}
+                          {v.subcategory ? ` / ${v.subcategory}` : ""}
+                        </summary>
+                        <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          <li>
+                            <span className="font-medium text-foreground">Venue use:</span>{" "}
+                            {v.suitable_for?.length ? v.suitable_for.join(", ") : "Not set"}
+                          </li>
+                          <li>
+                            <span className="font-medium text-foreground">Category:</span>{" "}
+                            {v.category || "—"}
+                          </li>
+                          <li>
+                            <span className="font-medium text-foreground">Subcategory:</span>{" "}
+                            {v.subcategory || "None"}
+                          </li>
+                        </ul>
+                      </details>
                     </td>
                     <td className="px-2 py-4 text-xs">
                       {v.booking_purposes?.length ? (
