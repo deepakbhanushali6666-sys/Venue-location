@@ -31,6 +31,7 @@ const LEAD_STATUSES = ["New", "Contacted", "Negotiation", "Site Visit", "Booked"
 
 type VenueRow = {
   id: string;
+  property_code?: string;
   name: string;
   slug: string;
   category: string;
@@ -188,6 +189,47 @@ function OwnerDashboard() {
     }
   };
 
+  const requestVenueDeletion = (venue: VenueRow) => {
+    if (!window.confirm(`Send a deletion request for ${venue.name}?`)) return;
+
+    const ownerName = window.prompt("Owner name for this deletion request:", "")?.trim();
+    const mobile = window.prompt("Owner mobile number:", "")?.trim();
+
+    if (!ownerName || !mobile) {
+      toast.error("Owner name and mobile number are required for a deletion request.");
+      return;
+    }
+
+    const key = "venue-deletion-requests";
+    const requests = JSON.parse(localStorage.getItem(key) ?? "[]") as Array<{
+      id: string;
+      venueId: string;
+      property_code: string;
+      venueName: string;
+      ownerName: string;
+      mobile: string;
+      requestedAt: string;
+    }>;
+
+    const alreadyExists = requests.some((request) => request.venueId === venue.id);
+    if (alreadyExists) {
+      toast.info("A deletion request for this venue already exists.");
+      return;
+    }
+
+    const nextRequest = {
+      id: crypto.randomUUID(),
+      venueId: venue.id,
+      property_code: venue.property_code ?? "—",
+      venueName: venue.name,
+      ownerName,
+      mobile,
+      requestedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(key, JSON.stringify([nextRequest, ...requests]));
+    toast.success("Deletion request sent to admin.");
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -337,10 +379,16 @@ function OwnerDashboard() {
                       setShowForm(true);
                       window.scrollTo({ top: 300, behavior: "smooth" });
                     }}
-
                     className="text-sm font-bold text-gold"
                   >
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => requestVenueDeletion(v)}
+                    className="text-sm font-bold text-destructive"
+                  >
+                    Request Delete
                   </button>
                 </div>
               </div>

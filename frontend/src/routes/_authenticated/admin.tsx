@@ -138,6 +138,17 @@ function AdminPanel() {
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
   const [savingVenue, setSavingVenue] = useState<string | null>(null);
   const [deletingLead, setDeletingLead] = useState<string | null>(null);
+  const [deletionRequests, setDeletionRequests] = useState<
+    Array<{
+      id: string;
+      venueId: string;
+      property_code: string;
+      venueName: string;
+      ownerName: string;
+      mobile: string;
+      requestedAt: string;
+    }>
+  >([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -167,6 +178,17 @@ function AdminPanel() {
 
   useEffect(() => {
     if (!isAdmin) return;
+    const requests = JSON.parse(localStorage.getItem("venue-deletion-requests") ?? "[]") as Array<{
+      id: string;
+      venueId: string;
+      property_code: string;
+      venueName: string;
+      ownerName: string;
+      mobile: string;
+      requestedAt: string;
+    }>;
+    setDeletionRequests(requests);
+
     void loadAll();
     listCategories()
       .then(({ categories: rows }) => setCategories(rows))
@@ -403,6 +425,13 @@ function AdminPanel() {
     } finally {
       setDeletingLead(null);
     }
+  };
+
+  const clearDeletionRequest = (id: string) => {
+    const nextRequests = deletionRequests.filter((request) => request.id !== id);
+    setDeletionRequests(nextRequests);
+    localStorage.setItem("venue-deletion-requests", JSON.stringify(nextRequests));
+    toast.success("Deletion request cleared");
   };
 
   const stamp = new Date().toISOString().slice(0, 10);
@@ -1125,6 +1154,7 @@ function AdminPanel() {
 
         <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
           {([
+            ["admin-deletion-requests", "Deletion Requests"],
             ["admin-categories", "Categories"],
             ["admin-film-categories", "Film Categories"],
             ["admin-gallery", "Gallery"],
@@ -1142,6 +1172,52 @@ function AdminPanel() {
             </button>
           ))}
         </nav>
+
+        <section id="admin-deletion-requests" className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+          <h2 className="font-display text-xl font-extrabold text-navy">Deletion Requests</h2>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-200 text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="py-2">Code</th>
+                  <th>Venue</th>
+                  <th>Owner</th>
+                  <th>Mobile</th>
+                  <th>Requested</th>
+                  <th className="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deletionRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-muted-foreground">
+                      No deletion requests yet.
+                    </td>
+                  </tr>
+                ) : (
+                  deletionRequests.map((request) => (
+                    <tr key={request.id} className="border-t border-border">
+                      <td className="py-3 font-bold text-navy">{request.property_code}</td>
+                      <td>{request.venueName}</td>
+                      <td>{request.ownerName}</td>
+                      <td>{request.mobile}</td>
+                      <td>{new Date(request.requestedAt).toLocaleString("en-IN")}</td>
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => clearDeletionRequest(request.id)}
+                          className="rounded-md border border-border px-2 py-1 text-xs font-bold text-navy"
+                        >
+                          Clear
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <ReviewsPanel
           mode="admin"
