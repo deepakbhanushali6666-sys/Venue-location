@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
+import { deleteLead, getMySubscription, getProfile, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -189,16 +189,8 @@ function OwnerDashboard() {
     }
   };
 
-  const requestVenueDeletion = (venue: VenueRow) => {
+  const requestVenueDeletion = async (venue: VenueRow) => {
     if (!window.confirm(`Send a deletion request for ${venue.name}?`)) return;
-
-    const ownerName = window.prompt("Owner name for this deletion request:", "")?.trim();
-    const mobile = window.prompt("Owner mobile number:", "")?.trim();
-
-    if (!ownerName || !mobile) {
-      toast.error("Owner name and mobile number are required for a deletion request.");
-      return;
-    }
 
     const key = "venue-deletion-requests";
     const requests = JSON.parse(localStorage.getItem(key) ?? "[]") as Array<{
@@ -208,6 +200,7 @@ function OwnerDashboard() {
       venueName: string;
       ownerName: string;
       mobile: string;
+      email: string;
       requestedAt: string;
     }>;
 
@@ -217,13 +210,33 @@ function OwnerDashboard() {
       return;
     }
 
+    // Owner contact details come from the account used to list the venue.
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth.user;
+    const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+    let ownerName = (meta["full_name"] as string) ?? "";
+    let mobile = (meta["mobile"] as string) ?? "";
+    let email = user?.email ?? "";
+
+    if (user?.id) {
+      try {
+        const { profile } = await getProfile(user.id);
+        ownerName = (profile?.["full_name"] as string) || ownerName;
+        mobile = (profile?.["mobile"] as string) || mobile;
+        email = (profile?.["email"] as string) || email;
+      } catch {
+        // fall back to auth metadata
+      }
+    }
+
     const nextRequest = {
       id: crypto.randomUUID(),
       venueId: venue.id,
       property_code: venue.property_code ?? "—",
       venueName: venue.name,
-      ownerName,
-      mobile,
+      ownerName: ownerName || "—",
+      mobile: mobile || "—",
+      email: email || "—",
       requestedAt: new Date().toISOString(),
     };
 
@@ -385,7 +398,7 @@ function OwnerDashboard() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => requestVenueDeletion(v)}
+                    onClick={() => void requestVenueDeletion(v)}
                     className="text-sm font-bold text-destructive"
                   >
                     Request Delete

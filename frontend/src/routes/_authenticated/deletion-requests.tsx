@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteVenue } from "@/lib/api";
 import { useIsAdmin } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/deletion-requests")({
@@ -21,6 +23,7 @@ type DeletionRequestRow = {
   venueName: string;
   ownerName: string;
   mobile: string;
+  email: string;
   requestedAt: string;
 };
 
@@ -31,6 +34,7 @@ function DeletionRequestsPage() {
   const [checked, setChecked] = useState(false);
   const isAdmin = useIsAdmin(userId);
   const [requests, setRequests] = useState<DeletionRequestRow[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -50,6 +54,27 @@ function DeletionRequestsPage() {
     setRequests(nextRows);
     localStorage.setItem(KEY, JSON.stringify(nextRows));
     toast.success("Deletion request cleared");
+  };
+
+  const deleteRequestedVenue = async (request: DeletionRequestRow) => {
+    if (
+      !window.confirm(
+        `Delete ${request.venueName} permanently? This cannot be undone.`,
+      )
+    )
+      return;
+    setDeletingId(request.id);
+    try {
+      await deleteVenue(request.venueId);
+      const nextRows = requests.filter((row) => row.id !== request.id);
+      setRequests(nextRows);
+      localStorage.setItem(KEY, JSON.stringify(nextRows));
+      toast.success("Venue deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete venue");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (checked && !isAdmin) {
@@ -90,14 +115,15 @@ function DeletionRequestsPage() {
                   <th>Venue</th>
                   <th>Owner</th>
                   <th>Mobile</th>
+                  <th>Email</th>
                   <th>Requested</th>
-                  <th className="text-right">Action</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-muted-foreground">
+                    <td colSpan={7} className="py-4 text-muted-foreground">
                       No deletion requests yet.
                     </td>
                   </tr>
@@ -106,17 +132,30 @@ function DeletionRequestsPage() {
                     <tr key={request.id} className="border-t border-border">
                       <td className="py-3 font-bold text-navy">{request.property_code || "-"}</td>
                       <td>{request.venueName}</td>
-                      <td>{request.ownerName}</td>
-                      <td>{request.mobile}</td>
+                      <td>{request.ownerName || "-"}</td>
+                      <td>{request.mobile || "-"}</td>
+                      <td>{request.email || "-"}</td>
                       <td>{new Date(request.requestedAt).toLocaleString("en-IN")}</td>
                       <td className="text-right">
-                        <button
-                          type="button"
-                          onClick={() => clearRequest(request.id)}
-                          className="rounded-md border border-border px-2 py-1 text-xs font-bold text-navy"
-                        >
-                          Clear
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => clearRequest(request.id)}
+                            className="rounded-md border border-border px-2 py-1 text-xs font-bold text-navy"
+                          >
+                            Clear
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteRequestedVenue(request)}
+                            disabled={deletingId === request.id}
+                            title="Delete venue"
+                            aria-label={`Delete ${request.venueName}`}
+                            className="rounded-md border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
