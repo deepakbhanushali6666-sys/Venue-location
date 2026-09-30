@@ -34,6 +34,11 @@ To enable admin-only enquiry deletion on an existing database, run
 To restrict venue deletion to admins, also run
 [`supabase/admin_venue_delete.sql`](supabase/admin_venue_delete.sql).
 
+The one-time [`supabase/reset_lead_codes.sql`](supabase/reset_lead_codes.sql)
+deletes all current leads and lead audit history, then starts new lead IDs at
+`OMS-001`. New lead audit entries will use those new IDs. Back up the database
+before running it; previously issued IDs may still exist outside the app.
+
 ### 2. Backend
 
 ```sh

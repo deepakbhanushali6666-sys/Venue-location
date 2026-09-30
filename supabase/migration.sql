@@ -101,11 +101,11 @@ create index if not exists idx_venues_status on public.venues(status);
 create index if not exists idx_venues_owner on public.venues(owner_id);
 
 -- LEADS --------------------------------------------------------------
-create sequence if not exists public.lead_code_seq start 1001;
+create sequence if not exists public.lead_code_seq start 1;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
-  lead_code text not null unique default ('OMS-' || nextval('public.lead_code_seq')),
+  lead_code text not null unique default ('OMS-' || lpad(nextval('public.lead_code_seq')::text, 3, '0')),
   venue_id uuid references public.venues(id) on delete set null,
   venue_name text not null default '',
   customer_name text not null,
