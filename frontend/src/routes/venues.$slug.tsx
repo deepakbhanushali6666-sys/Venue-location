@@ -169,7 +169,7 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
               {venue.bookingPurposes && venue.bookingPurposes.length > 0 && (
                 <>
-                  <h2 className="section-title mt-8 text-base text-navy">What types of bookings do you accept?</h2>
+                  <h2 className="section-title mt-8 text-base text-navy">What types of bookings we accept</h2>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {venue.bookingPurposes.map((purpose) => (
                       <span key={purpose} className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy">
