@@ -220,6 +220,8 @@ export type Venue = {
   featured: boolean;
   suitableFor: string[];
   bookingPurposes?: string[];
+  bookingRestrictions?: string[];
+  propertyCode?: string;
   amenities: string[];
   description: string;
   images: string[];

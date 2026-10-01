@@ -17,6 +17,8 @@ export type VenueRow = {
   amenities: string[];
   suitable_for: string[];
     booking_purposes?: string[];
+  booking_restrictions?: string[] | null;
+  property_code?: string | null;
   photos: string[];
   video_url: string;
   map_query: string;
@@ -38,6 +40,8 @@ export function rowToVenue(row: VenueRow): Venue {
     featured: row.featured,
     suitableFor: row.suitable_for,
       ...(row.booking_purposes ? { bookingPurposes: row.booking_purposes } : {}),
+      ...(row.booking_restrictions?.length ? { bookingRestrictions: row.booking_restrictions } : {}),
+      ...(row.property_code ? { propertyCode: row.property_code } : {}),
     amenities: row.amenities,
     description: row.description,
     images: row.photos.length > 0 ? row.photos : [fallbackImage],
@@ -54,4 +58,4 @@ export function extractYouTubeId(url: string) {
 }
 
 export const VENUE_SELECT =
-  "id, slug, name, category, city, state, area, capacity, starting_price, parking, description, amenities, suitable_for, photos, video_url, map_query, featured";
+  "id, slug, name, category, city, state, area, capacity, starting_price, parking, description, amenities, suitable_for, booking_purposes, booking_restrictions, property_code, photos, video_url, map_query, featured";

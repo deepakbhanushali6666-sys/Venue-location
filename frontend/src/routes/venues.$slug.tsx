@@ -127,6 +127,11 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               <span className="rounded bg-gold px-2 py-1 text-[11px] font-bold uppercase text-gold-foreground">
                 {categoryBySlug(venue.category)?.name}
               </span>
+              {venue.propertyCode && (
+                <span className="ml-2 rounded bg-secondary px-2 py-1 text-[11px] font-bold uppercase text-navy">
+                  Property Code: {venue.propertyCode}
+                </span>
+              )}
               <h1 className="mt-3 font-display text-3xl font-extrabold text-navy">{venue.name}</h1>
               <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
@@ -161,6 +166,32 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
                   </span>
                 ))}
               </div>
+
+              {venue.bookingPurposes && venue.bookingPurposes.length > 0 && (
+                <>
+                  <h2 className="section-title mt-8 text-base text-navy">What types of bookings do you accept?</h2>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {venue.bookingPurposes.map((purpose) => (
+                      <span key={purpose} className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy">
+                        {purpose}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {venue.bookingRestrictions && venue.bookingRestrictions.length > 0 && (
+                <>
+                  <h2 className="section-title mt-8 text-base text-navy">Restrictions for booking</h2>
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {venue.bookingRestrictions.map((restriction) => (
+                      <li key={restriction} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="size-4 text-gold" /> {restriction}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
             <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
