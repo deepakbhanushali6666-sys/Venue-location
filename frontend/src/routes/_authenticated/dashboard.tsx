@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
+import { formatBudget } from "@/lib/utils";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { SubscriptionPanel } from "@/components/site/SubscriptionPanel";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
@@ -470,7 +471,7 @@ function OwnerDashboard() {
                     <td>{l.venue_name || "—"}</td>
                     <td>{l.purpose}</td>
                     <td>{l.event_date ?? "—"}</td>
-                    <td>{l.budget || "—"}</td>
+                    <td>{formatBudget(l.budget) || "—"}</td>
                     <td>
                       {isTeam && !isAdmin ? (
                         <span className="font-semibold text-navy">{l.status}</span>

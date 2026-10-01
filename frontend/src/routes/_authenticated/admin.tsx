@@ -19,6 +19,7 @@ import { cities, states } from "@/data/venues";
 import { listCategories, type CategoryRecord } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
+import { formatBudget } from "@/lib/utils";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
 import { CategoriesPanel } from "@/components/site/CategoriesPanel";
 import { GalleryPanel } from "@/components/site/GalleryPanel";
@@ -443,7 +444,7 @@ function AdminPanel() {
         l.mobile,
         l.venue_name,
         l.purpose,
-        l.budget,
+        formatBudget(l.budget),
         l.status,
       ]),
     );
@@ -1242,7 +1243,7 @@ function AdminPanel() {
                       {l.email ? `${l.email}\n` : ""}
                       {l.message || "—"}
                     </td>
-                    <td>{l.budget || "—"}</td>
+                    <td>{formatBudget(l.budget) || "—"}</td>
                     <td>{l.status}</td>
                     <td className="text-right">
                       <button

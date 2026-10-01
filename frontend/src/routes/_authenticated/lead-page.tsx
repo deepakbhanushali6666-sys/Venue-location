@@ -9,6 +9,7 @@ import {
   type PropertyDetail,
   type PropertyLead,
 } from "@/lib/api";
+import { formatBudget } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/lead-page")({
   head: () => ({
@@ -358,7 +359,7 @@ function LeadPage() {
                                   : "—"}
                               </td>
                               <td>{lead.guest_count ?? "—"}</td>
-                              <td>{lead.budget || "—"}</td>
+                              <td>{formatBudget(lead.budget) || "—"}</td>
                               <td className="max-w-70 whitespace-pre-line text-xs text-muted-foreground">
                                 {lead.message || "—"}
                               </td>
