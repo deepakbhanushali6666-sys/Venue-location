@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { withLeadContacts } from "../lib/leadContacts.js";
 import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
 
 export const adminRouter = Router();
@@ -16,7 +17,7 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
         .order("created_at", { ascending: false }),
       client
         .from("leads")
-        .select("id, lead_code, property_code, customer_name, mobile, email, purpose, budget, status, venue_name, venue_id, message, created_at")
+        .select("id, lead_code, property_code, customer_name, purpose, budget, status, venue_name, venue_id, message, created_at")
         .order("created_at", { ascending: false }),
       client.from("subscriptions").select("id, owner_id, status, expires_on, invoice_number"),
       client.from("payments").select("*").order("created_at", { ascending: false }),
@@ -31,7 +32,7 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
 
     res.json({
       venues: venues.data,
-      leads: leads.data,
+      leads: await withLeadContacts(client, leads.data),
       subscriptions: subscriptions.data,
       payments: payments.data,
       audit: audit.data,
@@ -84,7 +85,7 @@ adminRouter.get("/property-leads", requireAuth, requireAdmin, async (req: Authed
       req.client!
         .from("leads")
         .select(
-          "id, lead_code, property_code, venue_id, venue_name, customer_name, mobile, email, purpose, event_date, budget, guest_count, message, status, created_at",
+          "id, lead_code, property_code, venue_id, venue_name, customer_name, purpose, event_date, budget, guest_count, message, status, created_at",
         )
         .order("created_at", { ascending: false }),
     ]);
@@ -92,7 +93,10 @@ adminRouter.get("/property-leads", requireAuth, requireAdmin, async (req: Authed
     if (properties.error) throw properties.error;
     if (leads.error) throw leads.error;
 
-    res.json({ properties: properties.data, leads: leads.data });
+    res.json({
+      properties: properties.data,
+      leads: await withLeadContacts(req.client!, leads.data),
+    });
   } catch (err) {
     next(err);
   }
@@ -115,14 +119,14 @@ adminRouter.get("/team", requireAuth, requireAdmin, async (req: AuthedRequest, r
 
     const { data: profiles, error: profilesError } = await req.client!
       .from("profiles")
-      .select("id, full_name, email, mobile")
+      .select("id, full_name, email, mobile, auto_lead_contact")
       .in("id", ids);
     if (profilesError) throw profilesError;
 
     res.json({
       members: ids.map((id) => {
         const profile = (profiles ?? []).find((p) => (p as { id: string }).id === id);
-        return { id, full_name: "", email: "", mobile: "", ...(profile ?? {}) };
+        return { id, full_name: "", email: "", mobile: "", auto_lead_contact: false, ...(profile ?? {}) };
       }),
     });
   } catch (err) {
@@ -157,6 +161,23 @@ adminRouter.post("/team", requireAuth, requireAdmin, async (req: AuthedRequest, 
     if (error) throw error;
 
     res.status(201).json({ member: profile });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: toggle automatic lead-contact approval for one team member.
+adminRouter.patch("/team/:userId", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const autoLeadContact = Boolean(req.body?.auto_lead_contact);
+    const { data, error } = await req.client!
+      .from("profiles")
+      .update({ auto_lead_contact: autoLeadContact })
+      .eq("id", req.params.userId)
+      .select("id, full_name, email, mobile, auto_lead_contact")
+      .single();
+    if (error) throw error;
+    res.json({ member: data });
   } catch (err) {
     next(err);
   }

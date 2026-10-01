@@ -3,7 +3,18 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createDeletionRequest, deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
+import {
+  createDeletionRequest,
+  deleteLead,
+  getMySubscription,
+  listLeads,
+  listMyLeadContactRequests,
+  listMyVenues,
+  requestLeadContactAccess,
+  updateLeadStatus,
+  updateVenue,
+  type MyLeadContactRequest,
+} from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -55,11 +66,13 @@ type LeadRow = {
   customer_name: string;
   mobile: string;
   email: string;
+  contact_unlocked: boolean;
   purpose: string;
   event_date: string | null;
   budget: string;
   message: string;
   status: string;
+  venue_id: string | null;
   venue_name: string;
   created_at: string;
 };
@@ -87,6 +100,7 @@ function OwnerDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [deletingLead, setDeletingLead] = useState<string | null>(null);
+  const [contactRequests, setContactRequests] = useState<MyLeadContactRequest[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -96,14 +110,16 @@ function OwnerDashboard() {
     setUserId(uid);
     if (!uid) return;
 
-    const [{ venues: v }, { subscription: s }, { leads: l }] = await Promise.all([
+    const [{ venues: v }, { subscription: s }, { leads: l }, { requests: cr }] = await Promise.all([
       listMyVenues(),
       getMySubscription(),
       listLeads(),
+      listMyLeadContactRequests(),
     ]);
     setVenues(v as unknown as VenueRow[]);
     setSub(s as unknown as SubRow | null);
     setLeads(l as unknown as LeadRow[]);
+    setContactRequests(cr);
     setLoading(false);
   };
 
@@ -206,6 +222,25 @@ function OwnerDashboard() {
       toast.success("Deletion request sent to admin.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send deletion request");
+    }
+  };
+
+  const requestContactAccess = async (lead: LeadRow) => {
+    if (!lead.venue_id) {
+      toast.error("This enquiry is not linked to one of your properties.");
+      return;
+    }
+    const existing = contactRequests.find((r) => r.venue_id === lead.venue_id);
+    if (existing?.status === "pending") {
+      toast.info("Your request for this property is already waiting for admin approval.");
+      return;
+    }
+    try {
+      const { request } = await requestLeadContactAccess(lead.venue_id);
+      setContactRequests((rows) => [...rows.filter((r) => r.venue_id !== request.venue_id), request]);
+      toast.success("Contact access requested. The admin will review it.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not request contact access");
     }
   };
 
@@ -399,8 +434,8 @@ function OwnerDashboard() {
           <h2 className="font-display text-xl font-extrabold text-navy">Enquiries / Leads</h2>
           {!isAdmin && (
             <p className="mt-1 text-sm text-muted-foreground">
-              Use "Request Delete" to ask the admin to remove an enquiry, or email its Lead ID to{" "}
-              <a href={`mailto:${CONTACT.email}`} className="font-semibold text-navy underline hover:text-gold">the admin</a>.
+              Enquiry phone numbers and emails stay hidden until an admin approves your contact
+              request for that property. Use "Request Delete" to ask the admin to remove an enquiry.
             </p>
           )}
           <div className="mt-4 overflow-x-auto">
@@ -410,6 +445,7 @@ function OwnerDashboard() {
                   <th className="py-2">Lead ID</th>
                   <th>Name</th>
                   <th>Mobile</th>
+                  <th>Email</th>
                   <th>Venue</th>
                   <th>Purpose</th>
                   <th>Date</th>
@@ -419,11 +455,18 @@ function OwnerDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((l) => (
+                {leads.map((l) => {
+                  const contactRequest = contactRequests.find((r) => r.venue_id === l.venue_id);
+                  return (
                   <tr key={l.id} className="border-t border-border">
                     <td className="py-3 font-bold text-navy">{l.lead_code}</td>
                     <td>{l.customer_name}</td>
-                    <td>{l.mobile}</td>
+                    <td className={l.contact_unlocked ? "" : "text-muted-foreground"}>
+                      {l.mobile || "—"}
+                    </td>
+                    <td className={l.contact_unlocked ? "" : "text-muted-foreground"}>
+                      {l.email || "—"}
+                    </td>
                     <td>{l.venue_name || "—"}</td>
                     <td>{l.purpose}</td>
                     <td>{l.event_date ?? "—"}</td>
@@ -460,20 +503,39 @@ function OwnerDashboard() {
                       </td>
                     ) : (
                       <td className="text-right">
-                        <button
-                          type="button"
-                          onClick={() => void requestLeadDeletion(l)}
-                          className="text-xs font-bold text-destructive"
-                        >
-                          Request Delete
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                          {!l.contact_unlocked &&
+                            (contactRequest?.status === "pending" ? (
+                              <span className="text-xs font-bold text-muted-foreground">
+                                Contact request pending
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => void requestContactAccess(l)}
+                                className="text-xs font-bold text-gold"
+                              >
+                                {contactRequest?.status === "rejected"
+                                  ? "Request contact again"
+                                  : "Request contact details"}
+                              </button>
+                            ))}
+                          <button
+                            type="button"
+                            onClick={() => void requestLeadDeletion(l)}
+                            className="text-xs font-bold text-destructive"
+                          >
+                            Request Delete
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
-                ))}
+                  );
+                })}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-4 text-muted-foreground">
+                    <td colSpan={10} className="py-4 text-muted-foreground">
                       No enquiries yet.
                     </td>
                   </tr>

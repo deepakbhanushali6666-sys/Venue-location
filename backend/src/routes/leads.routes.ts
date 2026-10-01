@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabasePublic } from "../lib/supabasePublic.js";
+import { LEAD_COLUMNS, withLeadContacts } from "../lib/leadContacts.js";
 import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
 
 export const leadsRouter = Router();
@@ -47,7 +48,10 @@ leadsRouter.post("/", async (req, res, next) => {
 // Auth: venue owners see leads for their own venues, admins and team members see everything.
 leadsRouter.get("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
-    let query = req.client!.from("leads").select("*").order("created_at", { ascending: false });
+    let query = req.client!
+      .from("leads")
+      .select(LEAD_COLUMNS)
+      .order("created_at", { ascending: false });
 
     if (!req.user!.isStaff) {
       const { data: venues, error: venuesError } = await req.client!
@@ -66,7 +70,7 @@ leadsRouter.get("/", requireAuth, async (req: AuthedRequest, res, next) => {
 
     const { data, error } = await query;
     if (error) throw error;
-    res.json({ leads: data });
+    res.json({ leads: await withLeadContacts(req.client!, data) });
   } catch (err) {
     next(err);
   }
@@ -103,7 +107,7 @@ leadsRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) => 
       .from("leads")
       .update({ status })
       .eq("id", req.params.id)
-      .select()
+      .select(LEAD_COLUMNS)
       .single();
     if (error) throw error;
     res.json({ lead: data });

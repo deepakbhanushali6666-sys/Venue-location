@@ -190,17 +190,46 @@ export const createDeletionRequest = (target_type: "venue" | "lead", target_id: 
   post<{ request: DeletionRequest }>("/deletion-requests", { target_type, target_id });
 export const clearDeletionRequest = (id: string) => del<void>(`/deletion-requests/${id}`);
 
+// Lead contact access (owners/team members unlock enquiry phone + email per property)
+export type LeadContactRequestStatus = "pending" | "approved" | "rejected";
+export type MyLeadContactRequest = {
+  id: string;
+  venue_id: string;
+  status: LeadContactRequestStatus;
+  created_at: string;
+};
+export type LeadContactRequest = MyLeadContactRequest & {
+  requester_id: string;
+  property_code: string;
+  venue_name: string;
+  requester_name: string;
+  requester_email: string;
+  requester_mobile: string;
+  decided_at: string | null;
+};
+export const listLeadContactRequests = () =>
+  get<{ requests: LeadContactRequest[] }>("/lead-contact-requests");
+export const listMyLeadContactRequests = () =>
+  get<{ requests: MyLeadContactRequest[] }>("/lead-contact-requests/mine");
+export const requestLeadContactAccess = (venue_id: string) =>
+  post<{ request: MyLeadContactRequest }>("/lead-contact-requests", { venue_id });
+export const decideLeadContactRequest = (id: string, status: LeadContactRequestStatus) =>
+  patch<{ request: LeadContactRequest }>(`/lead-contact-requests/${id}`, { status });
+
 // Team members (read-only staff access, managed by admins)
 export type TeamMember = {
   id: string;
   full_name: string;
   email: string;
   mobile: string;
+  auto_lead_contact: boolean;
 };
 export const listTeamMembers = () => get<{ members: TeamMember[] }>("/admin/team");
 export const addTeamMember = (email: string) =>
   post<{ member: TeamMember }>("/admin/team", { email });
 export const removeTeamMember = (userId: string) => del<void>(`/admin/team/${userId}`);
+export const setTeamMemberAutoContact = (userId: string, auto_lead_contact: boolean) =>
+  patch<{ member: TeamMember }>(`/admin/team/${userId}`, { auto_lead_contact });
 
 // Venue categories & subcategories (admin-managed)
 export type SubcategoryRecord = {

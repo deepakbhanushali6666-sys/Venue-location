@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getPropertyLeads, type PropertyDetail, type PropertyLead } from "@/lib/api";
+import { toast } from "sonner";
+import {
+  decideLeadContactRequest,
+  getPropertyLeads,
+  listLeadContactRequests,
+  type LeadContactRequest,
+  type PropertyDetail,
+  type PropertyLead,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/_authenticated/lead-page")({
   head: () => ({
@@ -21,6 +29,8 @@ function LeadPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [contactRequests, setContactRequests] = useState<LeadContactRequest[]>([]);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
 
   useEffect(() => {
     getPropertyLeads()
@@ -34,6 +44,30 @@ function LeadPage() {
       )
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    listLeadContactRequests()
+      .then(({ requests }) => setContactRequests(requests))
+      .catch(() => undefined);
+  }, []);
+
+  const decideRequest = async (
+    request: LeadContactRequest,
+    status: "approved" | "rejected",
+  ) => {
+    setDecidingId(request.id);
+    try {
+      await decideLeadContactRequest(request.id, status);
+      setContactRequests((rows) =>
+        rows.map((row) => (row.id === request.id ? { ...row, status } : row)),
+      );
+      toast.success(status === "approved" ? "Contact access approved" : "Request rejected");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update request");
+    } finally {
+      setDecidingId(null);
+    }
+  };
 
   const leadsByProperty = useMemo(() => {
     const map = new Map<string, PropertyLead[]>();
@@ -79,6 +113,79 @@ function LeadPage() {
 
         {error && <p className="mt-6 text-sm text-destructive">{error}</p>}
         {loading && <p className="mt-6 text-sm text-muted-foreground">Loading properties...</p>}
+
+        <section className="mt-6 rounded-xl border border-border bg-card p-6 shadow-panel">
+          <h2 className="font-display text-xl font-extrabold text-navy">
+            Contact Access Requests (
+            {contactRequests.filter((r) => r.status === "pending").length} pending)
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Approve to let the owner see the phone number and email of every enquiry for that
+            property.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-215 text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="py-2">Code</th>
+                  <th>Property</th>
+                  <th>Requested by</th>
+                  <th>Mobile</th>
+                  <th>Email</th>
+                  <th>Requested</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contactRequests.map((request) => (
+                  <tr key={request.id} className="border-t border-border">
+                    <td className="py-3 font-bold text-navy">{request.property_code || "—"}</td>
+                    <td>{request.venue_name || "—"}</td>
+                    <td>{request.requester_name || "—"}</td>
+                    <td>{request.requester_mobile || "—"}</td>
+                    <td>{request.requester_email || "—"}</td>
+                    <td className="whitespace-nowrap">
+                      {new Date(request.created_at).toLocaleDateString("en-IN")}
+                    </td>
+                    <td className="font-semibold capitalize text-navy">{request.status}</td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {request.status !== "approved" && (
+                          <button
+                            type="button"
+                            onClick={() => void decideRequest(request, "approved")}
+                            disabled={decidingId === request.id}
+                            className="rounded-md bg-gold px-3 py-1 text-xs font-bold text-gold-foreground disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {request.status !== "rejected" && (
+                          <button
+                            type="button"
+                            onClick={() => void decideRequest(request, "rejected")}
+                            disabled={decidingId === request.id}
+                            className="rounded-md border border-border px-3 py-1 text-xs font-bold text-navy disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {contactRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-4 text-muted-foreground">
+                      No contact access requests yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {!loading && !error && (
           <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">

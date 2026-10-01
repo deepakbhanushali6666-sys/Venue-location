@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { addTeamMember, listTeamMembers, removeTeamMember, type TeamMember } from "@/lib/api";
+import { addTeamMember, listTeamMembers, removeTeamMember, setTeamMemberAutoContact, type TeamMember } from "@/lib/api";
 
 export function TeamMembersPanel() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -48,6 +48,21 @@ export function TeamMembersPanel() {
     }
   };
 
+  const toggleAutoContact = async (member: TeamMember, value: boolean) => {
+    setMembers((rows) =>
+      rows.map((row) => (row.id === member.id ? { ...row, auto_lead_contact: value } : row)),
+    );
+    try {
+      await setTeamMemberAutoContact(member.id, value);
+      toast.success(value ? "Auto approval turned on" : "Auto approval turned off");
+    } catch (err) {
+      setMembers((rows) =>
+        rows.map((row) => (row.id === member.id ? { ...row, auto_lead_contact: !value } : row)),
+      );
+      toast.error(err instanceof Error ? err.message : "Could not update auto approval");
+    }
+  };
+
   return (
     <section
       id="admin-team-members"
@@ -57,7 +72,8 @@ export function TeamMembersPanel() {
       <p className="mt-1 text-sm text-muted-foreground">
         Team members can add venue / film shooting location listings and view every enquiry from
         their dashboard. They cannot open the admin panel, and cannot edit or delete anything. The
-        person must sign up on the site first, then add their email here.
+        person must sign up on the site first, then add their email here. Turn on auto approval to
+        let a member see enquiry phone numbers and emails without asking each time.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -86,6 +102,7 @@ export function TeamMembersPanel() {
               <th className="py-2">Name</th>
               <th>Email</th>
               <th>Mobile</th>
+              <th>Lead contact auto approval</th>
               <th className="text-right">Actions</th>
             </tr>
           </thead>
@@ -95,6 +112,17 @@ export function TeamMembersPanel() {
                 <td className="py-3 font-bold text-navy">{member.full_name || "—"}</td>
                 <td>{member.email || "—"}</td>
                 <td>{member.mobile || "—"}</td>
+                <td>
+                  <label className="flex items-center gap-2 text-xs font-bold text-navy">
+                    <input
+                      type="checkbox"
+                      checked={member.auto_lead_contact}
+                      onChange={(e) => void toggleAutoContact(member, e.target.checked)}
+                      aria-label={`Auto approve lead contact details for ${member.email || member.id}`}
+                    />
+                    {member.auto_lead_contact ? "On" : "Off"}
+                  </label>
+                </td>
                 <td className="text-right">
                   <button
                     type="button"
@@ -110,7 +138,7 @@ export function TeamMembersPanel() {
             ))}
             {members.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-4 text-muted-foreground">
+                <td colSpan={5} className="py-4 text-muted-foreground">
                   No team members yet.
                 </td>
               </tr>

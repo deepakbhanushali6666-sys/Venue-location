@@ -60,7 +60,7 @@ deletionRequestsRouter.post("/", requireAuth, async (req: AuthedRequest, res, ne
     } else {
       const { data: lead, error } = await client
         .from("leads")
-        .select("lead_code, property_code, customer_name, mobile, venue_name")
+        .select("lead_code, property_code, customer_name, venue_name")
         .eq("id", targetId)
         .maybeSingle();
       if (error) throw error;
@@ -70,7 +70,7 @@ deletionRequestsRouter.post("/", requireAuth, async (req: AuthedRequest, res, ne
       }
       propertyCode = lead.property_code ?? "";
       label = lead.lead_code ?? "";
-      details = [lead.customer_name, lead.mobile, lead.venue_name].filter(Boolean).join(" · ");
+      details = [lead.customer_name, lead.venue_name].filter(Boolean).join(" · ");
     }
 
     const payload = {
