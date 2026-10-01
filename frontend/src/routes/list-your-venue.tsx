@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { BadgeCheck, IndianRupee, ImagePlus, LineChart } from "lucide-react";
+import { BadgeCheck, Eye, EyeOff, IndianRupee, ImagePlus, LineChart } from "lucide-react";
 import { cities, states } from "@/data/venues";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -130,6 +130,8 @@ function ListYourVenue() {
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [newAccountId, setNewAccountId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const ownerId = user?.id;
 
@@ -339,12 +341,44 @@ function ListYourVenue() {
             </div>
             {!ownerId && !authLoading && (
               <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <input name="password" type="password" autoComplete="new-password" placeholder="Create Password*" className={field} minLength={8} required />
+                <div className="relative">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Create Password*"
+                    className={`${field} pr-10`}
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-navy"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                   {err("password")}
                 </div>
-                <div>
-                  <input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm Password*" className={field} minLength={8} required />
+                <div className="relative">
+                  <input
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Confirm Password*"
+                    className={`${field} pr-10`}
+                    minLength={8}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-navy"
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                   {err("confirmPassword")}
                 </div>
               </div>
