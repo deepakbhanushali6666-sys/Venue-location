@@ -71,6 +71,33 @@ adminRouter.get("/audit-log", requireAuth, requireStaff, async (req: AuthedReque
   }
 });
 
+// Admin/team: every property with its full detail sheet plus the enquiries filed against it.
+adminRouter.get("/property-leads", requireAuth, requireStaff, async (req: AuthedRequest, res, next) => {
+  try {
+    const [properties, leads] = await Promise.all([
+      req.client!
+        .from("venues")
+        .select(
+          "id, property_code, name, category, subcategory, city, state, area, address, capacity, starting_price, parking, description, amenities, suitable_for, booking_purposes, booking_restrictions, photos, status, created_at",
+        )
+        .order("property_code"),
+      req.client!
+        .from("leads")
+        .select(
+          "id, lead_code, property_code, venue_id, venue_name, customer_name, mobile, email, purpose, event_date, budget, guest_count, message, status, created_at",
+        )
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (properties.error) throw properties.error;
+    if (leads.error) throw leads.error;
+
+    res.json({ properties: properties.data, leads: leads.data });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Admin: who currently holds the read-only "team" role.
 adminRouter.get("/team", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {

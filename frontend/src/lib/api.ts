@@ -127,6 +127,49 @@ export type AdminProperty = {
 };
 export const getAdminProperties = () => get<{ properties: AdminProperty[] }>("/admin/properties");
 
+// Property detail sheet + every enquiry filed against each property code
+export type PropertyDetail = {
+  id: string;
+  property_code: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  city: string;
+  state: string;
+  area: string;
+  address: string;
+  capacity: number;
+  starting_price: number;
+  parking: string;
+  description: string;
+  amenities: string[] | null;
+  suitable_for: string[] | null;
+  booking_purposes: string[] | null;
+  booking_restrictions: string[] | null;
+  photos: string[] | null;
+  status: string;
+  created_at: string;
+};
+export type PropertyLead = {
+  id: string;
+  lead_code: string;
+  property_code: string;
+  venue_id: string | null;
+  venue_name: string;
+  customer_name: string;
+  mobile: string;
+  email: string;
+  purpose: string;
+  event_date: string | null;
+  budget: string;
+  guest_count: number | null;
+  message: string;
+  status: string;
+  created_at: string;
+};
+export const getPropertyLeads = () =>
+  get<{ properties: PropertyDetail[]; leads: PropertyLead[] }>("/admin/property-leads");
+
 // Team members (read-only staff access, managed by admins)
 export type TeamMember = {
   id: string;

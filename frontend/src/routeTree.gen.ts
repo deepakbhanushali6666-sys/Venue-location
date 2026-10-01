@@ -27,6 +27,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDeletionRequestsRouteImport } from './routes/_authenticated/deletion-requests'
+import { Route as AuthenticatedLeadPageRouteImport } from './routes/_authenticated/lead-page'
 import { Route as AuthenticatedPropertyCodesRouteImport } from './routes/_authenticated/property-codes'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
@@ -122,6 +123,11 @@ const AuthenticatedDeletionRequestsRoute =
     path: '/deletion-requests',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLeadPageRoute = AuthenticatedLeadPageRouteImport.update({
+  id: '/lead-page',
+  path: '/lead-page',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPropertyCodesRoute =
   AuthenticatedPropertyCodesRouteImport.update({
     id: '/property-codes',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues': typeof VenuesIndexRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/_authenticated/lead-page': typeof AuthenticatedLeadPageRoute
   '/_authenticated/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/deletion-requests'
+    | '/lead-page'
     | '/property-codes'
     | '/venues/$slug'
     | '/venues/'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/deletion-requests'
+    | '/lead-page'
     | '/property-codes'
     | '/venues/$slug'
     | '/venues'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/deletion-requests'
+    | '/_authenticated/lead-page'
     | '/_authenticated/property-codes'
     | '/venues/$slug'
     | '/venues/'
@@ -437,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeletionRequestsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lead-page': {
+      id: '/_authenticated/lead-page'
+      path: '/lead-page'
+      fullPath: '/lead-page'
+      preLoaderRoute: typeof AuthenticatedLeadPageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/property-codes': {
       id: '/_authenticated/property-codes'
       path: '/property-codes'
@@ -472,6 +491,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeletionRequestsRoute: typeof AuthenticatedDeletionRequestsRoute
+  AuthenticatedLeadPageRoute: typeof AuthenticatedLeadPageRoute
   AuthenticatedPropertyCodesRoute: typeof AuthenticatedPropertyCodesRoute
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
 }
@@ -480,6 +500,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeletionRequestsRoute: AuthenticatedDeletionRequestsRoute,
+  AuthenticatedLeadPageRoute: AuthenticatedLeadPageRoute,
   AuthenticatedPropertyCodesRoute: AuthenticatedPropertyCodesRoute,
   AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
 }

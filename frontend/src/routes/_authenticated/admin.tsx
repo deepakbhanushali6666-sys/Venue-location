@@ -561,6 +561,12 @@ function AdminPanel() {
             >
               Property Codes
             </Link>
+            <Link
+              to="/lead-page"
+              className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
+            >
+              Lead Page
+            </Link>
             {isAdmin && (
               <Link
                 to="/deletion-requests"
