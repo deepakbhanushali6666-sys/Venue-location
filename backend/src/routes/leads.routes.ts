@@ -44,12 +44,12 @@ leadsRouter.post("/", async (req, res, next) => {
   }
 });
 
-// Auth: venue owners see leads for their own venues, admins see everything.
+// Auth: venue owners see leads for their own venues, admins and team members see everything.
 leadsRouter.get("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
     let query = req.client!.from("leads").select("*").order("created_at", { ascending: false });
 
-    if (!req.user!.isAdmin) {
+    if (!req.user!.isStaff) {
       const { data: venues, error: venuesError } = await req.client!
         .from("venues")
         .select("id")

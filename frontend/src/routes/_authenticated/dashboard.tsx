@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteLead, getMySubscription, getProfile, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
-import { useIsAdmin } from "@/hooks/useAuth";
+import { useRoles } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { SubscriptionPanel } from "@/components/site/SubscriptionPanel";
@@ -79,7 +79,7 @@ const input =
 function OwnerDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
-  const isAdmin = useIsAdmin(userId);
+  const { isAdmin, isStaff } = useRoles(userId);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [sub, setSub] = useState<SubRow | null>(null);
@@ -258,12 +258,12 @@ function OwnerDashboard() {
             <p className="text-sm text-muted-foreground">Manage listings, enquiries and your subscription.</p>
           </div>
           <div className="flex gap-2">
-            {isAdmin && (
+            {isStaff && (
               <Link
                 to="/admin"
                 className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy hover:bg-navy hover:text-navy-foreground"
               >
-                Admin Panel
+                {isAdmin ? "Admin Panel" : "Team Panel"}
               </Link>
             )}
             <button onClick={signOut} className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy">

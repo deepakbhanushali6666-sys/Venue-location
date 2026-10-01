@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseUserClient } from "../lib/supabaseUserClient.js";
 
 export interface AuthedRequest extends Request {
-  user?: { id: string; email: string | null; isAdmin: boolean };
+  // isStaff = admin or team member (team members get read-only admin access).
+  user?: { id: string; email: string | null; isAdmin: boolean; isTeam: boolean; isStaff: boolean };
   token?: string;
   // Client scoped to the caller's own JWT - Postgres RLS enforces authorization on every query.
   client?: SupabaseClient;
@@ -19,14 +20,25 @@ async function resolveUser(token: string) {
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) return null;
 
-  const { data: role } = await client
+  const { data: roles } = await client
     .from("user_roles")
     .select("role")
-    .eq("user_id", data.user.id)
-    .eq("role", "admin")
-    .maybeSingle();
+    .eq("user_id", data.user.id);
 
-  return { client, user: { id: data.user.id, email: data.user.email ?? null, isAdmin: Boolean(role) } };
+  const roleNames = (roles ?? []).map((row) => String((row as { role: string }).role));
+  const isAdmin = roleNames.includes("admin");
+  const isTeam = roleNames.includes("team");
+
+  return {
+    client,
+    user: {
+      id: data.user.id,
+      email: data.user.email ?? null,
+      isAdmin,
+      isTeam,
+      isStaff: isAdmin || isTeam,
+    },
+  };
 }
 
 export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
@@ -68,6 +80,15 @@ export async function optionalAuth(req: AuthedRequest, _res: Response, next: Nex
 export function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
   if (!req.user?.isAdmin) {
     res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  next();
+}
+
+// Read-only admin surface: admins and team members.
+export function requireStaff(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (!req.user?.isStaff) {
+    res.status(403).json({ error: "Admin or team access required" });
     return;
   }
   next();

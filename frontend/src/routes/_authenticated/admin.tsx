@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { cities, states } from "@/data/venues";
 import { listCategories, type CategoryRecord } from "@/lib/api";
-import { useIsAdmin } from "@/hooks/useAuth";
+import { useRoles } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
 import { CategoriesPanel } from "@/components/site/CategoriesPanel";
@@ -25,6 +25,7 @@ import { PeoplePanel } from "@/components/site/PeoplePanel";
 import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 import { LocationsPanel } from "@/components/site/LocationsPanel";
 import { PurposesPanel } from "@/components/site/PurposesPanel";
+import { TeamMembersPanel } from "@/components/site/TeamMembersPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -133,7 +134,7 @@ function getDeletionRequestCount() {
 
 function AdminPanel() {
   const [userId, setUserId] = useState<string>();
-  const isAdmin = useIsAdmin(userId);
+  const { isAdmin, isStaff } = useRoles(userId);
   const [checked, setChecked] = useState(false);
   const [deletionRequestCount, setDeletionRequestCount] = useState(0);
   const [venues, setVenues] = useState<VenueRow[]>([]);
@@ -176,7 +177,7 @@ function AdminPanel() {
   };
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isStaff) return;
     void loadAll();
     listCategories()
       .then(({ categories: rows }) => setCategories(rows))
@@ -184,7 +185,7 @@ function AdminPanel() {
     listCategories("film")
       .then(({ categories: rows }) => setFilmCategories(rows))
       .catch(() => toast.error("Could not load film location categories"));
-  }, [isAdmin]);
+  }, [isStaff]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -339,7 +340,7 @@ function AdminPanel() {
     }
   };
 
-  if (checked && !isAdmin) {
+  if (checked && !isStaff) {
     return (
       <div className="grid min-h-[70vh] place-items-center bg-sand px-4 text-center">
         <div>
@@ -519,8 +520,23 @@ function AdminPanel() {
     <div className="min-h-screen bg-sand px-4 py-10">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-3xl font-extrabold text-navy">Admin Panel</h1>
+          <div>
+            <h1 className="font-display text-3xl font-extrabold text-navy">
+              {isAdmin ? "Admin Panel" : "Team Panel"}
+            </h1>
+            {!isAdmin && (
+              <p className="text-sm text-muted-foreground">
+                View-only access. You can add new listings but cannot edit or delete records.
+              </p>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
+            <Link
+              to="/list-your-venue"
+              className="rounded-md bg-gold px-4 py-2 text-sm font-bold text-gold-foreground"
+            >
+              Add Venue / Film Location
+            </Link>
             <button
               onClick={exportVenues}
               className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
@@ -545,18 +561,20 @@ function AdminPanel() {
             >
               Property Codes
             </Link>
-            <Link
-              to="/deletion-requests"
-              className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
-              aria-label={`Deletion Requests${deletionRequestCount ? `, ${deletionRequestCount} pending` : ""}`}
-            >
-              Deletion Requests
-              {deletionRequestCount > 0 && (
-                <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-gold px-1.5 py-0.5 text-xs font-extrabold text-navy">
-                  {deletionRequestCount}
-                </span>
-              )}
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/deletion-requests"
+                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
+                aria-label={`Deletion Requests${deletionRequestCount ? `, ${deletionRequestCount} pending` : ""}`}
+              >
+                Deletion Requests
+                {deletionRequestCount > 0 && (
+                  <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-gold px-1.5 py-0.5 text-xs font-extrabold text-navy">
+                    {deletionRequestCount}
+                  </span>
+                )}
+              </Link>
+            )}
             <Link
               to="/dashboard"
               className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy"
@@ -869,7 +887,7 @@ function AdminPanel() {
                       )}
                     </td>
                     <td>
-                      {p.status === "pending" ? (
+                      {p.status === "pending" && isAdmin ? (
                         <div className="flex gap-2">
                           <button
                             onClick={() => verifyPayment(p.id)}
@@ -1064,46 +1082,51 @@ function AdminPanel() {
                       <input
                         type="checkbox"
                         checked={v.featured}
+                        disabled={!isAdmin}
                         aria-label={`Feature ${v.name}`}
                         onChange={(e) => toggleFeatured(v.id, e.target.checked)}
                       />
                     </td>
                     <td className="px-2 py-4">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                        <button
-                          onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
-                          className="font-bold text-navy"
-                        >
-                          Edit
-                        </button>
-
-                        {v.status !== "approved" && (
+                      {isAdmin ? (
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                           <button
-                            onClick={() => setStatus(v.id, "approved")}
-                            className="font-bold text-gold"
+                            onClick={() => setEditingVenue(editingVenue === v.id ? null : v.id)}
+                            className="font-bold text-navy"
                           >
-                            Approve
+                            Edit
                           </button>
-                        )}
 
-                        {v.status !== "rejected" && (
+                          {v.status !== "approved" && (
+                            <button
+                              onClick={() => setStatus(v.id, "approved")}
+                              className="font-bold text-gold"
+                            >
+                              Approve
+                            </button>
+                          )}
+
+                          {v.status !== "rejected" && (
+                            <button
+                              onClick={() => setStatus(v.id, "rejected")}
+                              className="font-bold text-destructive"
+                            >
+                              Reject
+                            </button>
+                          )}
+
                           <button
-                            onClick={() => setStatus(v.id, "rejected")}
-                            className="font-bold text-destructive"
+                            onClick={() => void removeVenue(v.id, v.name)}
+                            aria-label={`Delete ${v.name}`}
+                            title={`Delete ${v.name}`}
+                            className="inline-flex items-center text-destructive"
                           >
-                            Reject
+                            <Trash2 className="size-4" />
                           </button>
-                        )}
-
-                        <button
-                          onClick={() => void removeVenue(v.id, v.name)}
-                          aria-label={`Delete ${v.name}`}
-                          title={`Delete ${v.name}`}
-                          className="inline-flex items-center text-destructive"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">View only</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1157,43 +1180,50 @@ function AdminPanel() {
           </div>
         </section>
 
-        <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
-          {([
-            ["admin-categories", "Categories"],
-            ["admin-film-categories", "Film Categories"],
-            ["admin-gallery", "Gallery"],
-            ["admin-people", "Team & Advisors"],
-            ["admin-amenities", "Amenities"],
-            ["admin-locations", "Cities & States"],
-          ] as const).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="rounded-md border border-border px-3 py-2 text-xs font-bold text-navy transition-colors hover:border-gold hover:bg-secondary"
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+        {isAdmin && (
+          <>
+            <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">
+              {([
+                ["admin-categories", "Categories"],
+                ["admin-film-categories", "Film Categories"],
+                ["admin-gallery", "Gallery"],
+                ["admin-people", "Team & Advisors"],
+                ["admin-amenities", "Amenities"],
+                ["admin-locations", "Cities & States"],
+                ["admin-team-members", "Team Access"],
+              ] as const).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="rounded-md border border-border px-3 py-2 text-xs font-bold text-navy transition-colors hover:border-gold hover:bg-secondary"
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
 
-        <ReviewsPanel
-          mode="admin"
-          venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
-        />
+            <ReviewsPanel
+              mode="admin"
+              venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
+            />
 
-        <CategoriesPanel />
+            <CategoriesPanel />
 
-        <CategoriesPanel kind="film" />
+            <CategoriesPanel kind="film" />
 
-        <GalleryPanel />
+            <GalleryPanel />
 
-        <PeoplePanel />
+            <PeoplePanel />
 
-        <AmenitiesPanel />
+            <AmenitiesPanel />
 
-        <LocationsPanel />
-        <PurposesPanel />
+            <LocationsPanel />
+            <PurposesPanel />
+
+            <TeamMembersPanel />
+          </>
+        )}
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>
@@ -1232,16 +1262,18 @@ function AdminPanel() {
                     <td>{l.budget || "—"}</td>
                     <td>{l.status}</td>
                     <td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => void removeLead(l)}
-                        disabled={deletingLead === l.id}
-                        aria-label={`Delete enquiry ${l.lead_code}`}
-                        title={`Delete enquiry ${l.lead_code}`}
-                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => void removeLead(l)}
+                          disabled={deletingLead === l.id}
+                          aria-label={`Delete enquiry ${l.lead_code}`}
+                          title={`Delete enquiry ${l.lead_code}`}
+                          className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

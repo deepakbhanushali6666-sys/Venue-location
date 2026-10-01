@@ -127,6 +127,18 @@ export type AdminProperty = {
 };
 export const getAdminProperties = () => get<{ properties: AdminProperty[] }>("/admin/properties");
 
+// Team members (read-only staff access, managed by admins)
+export type TeamMember = {
+  id: string;
+  full_name: string;
+  email: string;
+  mobile: string;
+};
+export const listTeamMembers = () => get<{ members: TeamMember[] }>("/admin/team");
+export const addTeamMember = (email: string) =>
+  post<{ member: TeamMember }>("/admin/team", { email });
+export const removeTeamMember = (userId: string) => del<void>(`/admin/team/${userId}`);
+
 // Venue categories & subcategories (admin-managed)
 export type SubcategoryRecord = {
   id: string;
