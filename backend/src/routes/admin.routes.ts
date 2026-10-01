@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { requireAdmin, requireAuth, requireStaff, type AuthedRequest } from "../middleware/auth.js";
+import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
 
 export const adminRouter = Router();
 
 const AUDIT_COLUMNS = "id, action, entity_type, entity_id, entity_label, from_value, to_value, created_at, actor_id";
 
-// Admin/team: combined dashboard data (venues, leads, subscriptions, payments, audit log) in one call.
-adminRouter.get("/overview", requireAuth, requireStaff, async (req: AuthedRequest, res, next) => {
+// Admin: combined dashboard data (venues, leads, subscriptions, payments, audit log) in one call.
+adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
     const client = req.client!;
     const [venues, leads, subscriptions, payments, audit] = await Promise.all([
@@ -41,8 +41,8 @@ adminRouter.get("/overview", requireAuth, requireStaff, async (req: AuthedReques
   }
 });
 
-// Admin/team: property code directory.
-adminRouter.get("/properties", requireAuth, requireStaff, async (req: AuthedRequest, res, next) => {
+// Admin: property code directory.
+adminRouter.get("/properties", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
     const { data, error } = await req.client!
       .from("venues")
@@ -56,8 +56,8 @@ adminRouter.get("/properties", requireAuth, requireStaff, async (req: AuthedRequ
   }
 });
 
-// Admin/team: refresh just the audit log (used after a moderation action).
-adminRouter.get("/audit-log", requireAuth, requireStaff, async (req: AuthedRequest, res, next) => {
+// Admin: refresh just the audit log (used after a moderation action).
+adminRouter.get("/audit-log", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
     const { data, error } = await req.client!
       .from("audit_log")
@@ -71,8 +71,8 @@ adminRouter.get("/audit-log", requireAuth, requireStaff, async (req: AuthedReque
   }
 });
 
-// Admin/team: every property with its full detail sheet plus the enquiries filed against it.
-adminRouter.get("/property-leads", requireAuth, requireStaff, async (req: AuthedRequest, res, next) => {
+// Admin: every property with its full detail sheet plus the enquiries filed against it.
+adminRouter.get("/property-leads", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
     const [properties, leads] = await Promise.all([
       req.client!

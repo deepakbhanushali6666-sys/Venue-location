@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteLead, getMySubscription, getProfile, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
+import { createDeletionRequest, deleteLead, getMySubscription, listLeads, listMyVenues, updateLeadStatus, updateVenue } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
 import { categories, CONTACT } from "@/data/venues";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
@@ -79,7 +79,7 @@ const input =
 function OwnerDashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>();
-  const { isAdmin, isStaff } = useRoles(userId);
+  const { isAdmin, isTeam } = useRoles(userId);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [sub, setSub] = useState<SubRow | null>(null);
@@ -191,57 +191,22 @@ function OwnerDashboard() {
 
   const requestVenueDeletion = async (venue: VenueRow) => {
     if (!window.confirm(`Send a deletion request for ${venue.name}?`)) return;
-
-    const key = "venue-deletion-requests";
-    const requests = JSON.parse(localStorage.getItem(key) ?? "[]") as Array<{
-      id: string;
-      venueId: string;
-      property_code: string;
-      venueName: string;
-      ownerName: string;
-      mobile: string;
-      email: string;
-      requestedAt: string;
-    }>;
-
-    const alreadyExists = requests.some((request) => request.venueId === venue.id);
-    if (alreadyExists) {
-      toast.info("A deletion request for this venue already exists.");
-      return;
+    try {
+      await createDeletionRequest("venue", venue.id);
+      toast.success("Deletion request sent to admin.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send deletion request");
     }
+  };
 
-    // Owner contact details come from the account used to list the venue.
-    const { data: auth } = await supabase.auth.getUser();
-    const user = auth.user;
-    const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-    let ownerName = (meta["full_name"] as string) ?? "";
-    let mobile = (meta["mobile"] as string) ?? "";
-    let email = user?.email ?? "";
-
-    if (user?.id) {
-      try {
-        const { profile } = await getProfile(user.id);
-        ownerName = (profile?.["full_name"] as string) || ownerName;
-        mobile = (profile?.["mobile"] as string) || mobile;
-        email = (profile?.["email"] as string) || email;
-      } catch {
-        // fall back to auth metadata
-      }
+  const requestLeadDeletion = async (lead: LeadRow) => {
+    if (!window.confirm(`Send a deletion request for enquiry ${lead.lead_code}?`)) return;
+    try {
+      await createDeletionRequest("lead", lead.id);
+      toast.success("Deletion request sent to admin.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send deletion request");
     }
-
-    const nextRequest = {
-      id: crypto.randomUUID(),
-      venueId: venue.id,
-      property_code: venue.property_code ?? "—",
-      venueName: venue.name,
-      ownerName: ownerName || "—",
-      mobile: mobile || "—",
-      email: email || "—",
-      requestedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(key, JSON.stringify([nextRequest, ...requests]));
-    toast.success("Deletion request sent to admin.");
   };
 
   const signOut = async () => {
@@ -254,16 +219,30 @@ function OwnerDashboard() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl font-extrabold text-navy">Owner Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Manage listings, enquiries and your subscription.</p>
+            <h1 className="font-display text-3xl font-extrabold text-navy">
+              {isTeam && !isAdmin ? "Team Dashboard" : "Owner Dashboard"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isTeam && !isAdmin
+                ? "List new venues or film shooting locations and track every enquiry."
+                : "Manage listings, enquiries and your subscription."}
+            </p>
           </div>
-          <div className="flex gap-2">
-            {isStaff && (
+          <div className="flex flex-wrap gap-2">
+            {isTeam && !isAdmin && (
+              <Link
+                to="/list-your-venue"
+                className="rounded-md bg-gold px-4 py-2 text-sm font-bold text-gold-foreground"
+              >
+                Add Venue / Film Shooting Location
+              </Link>
+            )}
+            {isAdmin && (
               <Link
                 to="/admin"
                 className="rounded-md border border-navy px-4 py-2 text-sm font-bold text-navy hover:bg-navy hover:text-navy-foreground"
               >
-                {isAdmin ? "Admin Panel" : "Team Panel"}
+                Admin Panel
               </Link>
             )}
             <button onClick={signOut} className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy">
@@ -420,7 +399,8 @@ function OwnerDashboard() {
           <h2 className="font-display text-xl font-extrabold text-navy">Enquiries / Leads</h2>
           {!isAdmin && (
             <p className="mt-1 text-sm text-muted-foreground">
-              To remove an enquiry, email its Lead ID to <a href={`mailto:${CONTACT.email}`} className="font-semibold text-navy underline hover:text-gold">the admin</a>.
+              Use "Request Delete" to ask the admin to remove an enquiry, or email its Lead ID to{" "}
+              <a href={`mailto:${CONTACT.email}`} className="font-semibold text-navy underline hover:text-gold">the admin</a>.
             </p>
           )}
           <div className="mt-4 overflow-x-auto">
@@ -430,11 +410,12 @@ function OwnerDashboard() {
                   <th className="py-2">Lead ID</th>
                   <th>Name</th>
                   <th>Mobile</th>
+                  <th>Venue</th>
                   <th>Purpose</th>
                   <th>Date</th>
                   <th>Budget</th>
                   <th>Status</th>
-                  {isAdmin && <th className="text-right">Actions</th>}
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -443,23 +424,28 @@ function OwnerDashboard() {
                     <td className="py-3 font-bold text-navy">{l.lead_code}</td>
                     <td>{l.customer_name}</td>
                     <td>{l.mobile}</td>
+                    <td>{l.venue_name || "—"}</td>
                     <td>{l.purpose}</td>
                     <td>{l.event_date ?? "—"}</td>
                     <td>{l.budget || "—"}</td>
                     <td>
-                      <select
-                        value={l.status}
-                        onChange={(e) => updateLead(l.id, e.target.value as (typeof LEAD_STATUSES)[number])}
-                        className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-                      >
-                        {LEAD_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
+                      {isTeam && !isAdmin ? (
+                        <span className="font-semibold text-navy">{l.status}</span>
+                      ) : (
+                        <select
+                          value={l.status}
+                          onChange={(e) => updateLead(l.id, e.target.value as (typeof LEAD_STATUSES)[number])}
+                          className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                        >
+                          {LEAD_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
-                    {isAdmin && (
+                    {isAdmin ? (
                       <td className="text-right">
                         <button
                           type="button"
@@ -472,12 +458,22 @@ function OwnerDashboard() {
                           <Trash2 className="size-4" />
                         </button>
                       </td>
+                    ) : (
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => void requestLeadDeletion(l)}
+                          className="text-xs font-bold text-destructive"
+                        >
+                          Request Delete
+                        </button>
+                      </td>
                     )}
                   </tr>
                 ))}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={isAdmin ? 8 : 7} className="py-4 text-muted-foreground">
+                    <td colSpan={9} className="py-4 text-muted-foreground">
                       No enquiries yet.
                     </td>
                   </tr>

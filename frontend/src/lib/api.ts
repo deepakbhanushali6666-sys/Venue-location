@@ -170,6 +170,26 @@ export type PropertyLead = {
 export const getPropertyLeads = () =>
   get<{ properties: PropertyDetail[]; leads: PropertyLead[] }>("/admin/property-leads");
 
+// Deletion requests (raised by owners/team members, actioned by admins)
+export type DeletionRequest = {
+  id: string;
+  target_type: "venue" | "lead";
+  venue_id: string | null;
+  lead_id: string | null;
+  property_code: string;
+  target_label: string;
+  target_details: string;
+  requester_name: string;
+  requester_mobile: string;
+  requester_email: string;
+  created_at: string;
+};
+export const listDeletionRequests = () =>
+  get<{ requests: DeletionRequest[] }>("/deletion-requests");
+export const createDeletionRequest = (target_type: "venue" | "lead", target_id: string) =>
+  post<{ request: DeletionRequest }>("/deletion-requests", { target_type, target_id });
+export const clearDeletionRequest = (id: string) => del<void>(`/deletion-requests/${id}`);
+
 // Team members (read-only staff access, managed by admins)
 export type TeamMember = {
   id: string;

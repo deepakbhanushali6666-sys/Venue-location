@@ -55,9 +55,9 @@ export function TeamMembersPanel() {
     >
       <h2 className="font-display text-xl font-extrabold text-navy">Team Member Access</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Team members can view the admin panel and add venue / film shooting location listings, but
-        cannot approve, edit or delete anything. The person must sign up on the site first, then add
-        their email here.
+        Team members can add venue / film shooting location listings and view every enquiry from
+        their dashboard. They cannot open the admin panel, and cannot edit or delete anything. The
+        person must sign up on the site first, then add their email here.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
