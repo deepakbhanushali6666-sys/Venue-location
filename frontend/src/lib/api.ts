@@ -53,6 +53,8 @@ export const getVenueBySlug = (slug: string) =>
 export const listMyVenues = () => get<{ venues: Record<string, unknown>[] }>("/venues/mine");
 export const createVenue = (payload: Record<string, unknown>) =>
   post<{ venue: Record<string, unknown> }>("/venues", payload);
+export const createVenueDraft = (payload: Record<string, unknown>) =>
+  post<{ draft: { id: string } }>("/venue-drafts", { payload });
 export const updateVenue = (id: string, payload: Record<string, unknown>) =>
   patch<{ venue: Record<string, unknown> }>(`/venues/${id}`, payload);
 export const setVenueStatus = (id: string, status: "approved" | "rejected" | "pending") =>

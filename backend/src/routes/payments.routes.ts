@@ -6,20 +6,69 @@ export const paymentsRouter = Router();
 // Auth: owner submits a payment for their annual subscription.
 paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
-    const { amount, method, reference = "", payer_name = "", note = "" } = req.body;
+    const { amount, method, reference = "", payer_name = "", note = "", venue_draft_id } = req.body;
+    let paymentAmount = amount;
+    let paymentMethod = method;
+    let paymentNote = note;
+
+    if (venue_draft_id) {
+      if (!String(reference).trim()) {
+        res.status(400).json({ error: "Enter the UPI transaction reference" });
+        return;
+      }
+
+      const { data: draft, error: draftError } = await req.client!
+        .from("venue_listing_drafts")
+        .select("id, owner_id, submitted_venue_id, payload")
+        .eq("id", venue_draft_id)
+        .eq("owner_id", req.user!.id)
+        .maybeSingle();
+      if (draftError) throw draftError;
+      if (!draft) {
+        res.status(404).json({ error: "Venue listing draft not found" });
+        return;
+      }
+      if (draft.submitted_venue_id) {
+        res.status(409).json({ error: "This listing has already been submitted" });
+        return;
+      }
+
+      const { data: activePayment, error: paymentCheckError } = await req.client!
+        .from("payments")
+        .select("id")
+        .eq("venue_draft_id", venue_draft_id)
+        .in("status", ["pending", "verified"])
+        .maybeSingle();
+      if (paymentCheckError) throw paymentCheckError;
+      if (activePayment) {
+        res.status(409).json({ error: "A payment for this listing is already awaiting verification" });
+        return;
+      }
+
+      paymentAmount = 3650;
+      paymentMethod = "upi";
+      const listing = draft.payload as { name?: string; city?: string };
+      paymentNote = `Verified listing: ${listing.name ?? ""}, ${listing.city ?? ""}`;
+    }
+
     const { data, error } = await req.client!
       .from("payments")
       .insert({
         owner_id: req.user!.id,
-        amount,
-        method,
+        amount: venue_draft_id ? 3650 : paymentAmount,
+        method: venue_draft_id ? "upi" : paymentMethod,
         reference,
         payer_name,
-        note,
+        note: paymentNote,
+        ...(venue_draft_id ? { venue_draft_id } : {}),
         status: "pending",
       })
       .select()
       .single();
+    if (error?.code === "23505" && venue_draft_id) {
+      res.status(409).json({ error: "A payment for this listing is already awaiting verification" });
+      return;
+    }
     if (error) throw error;
     res.status(201).json({ payment: data });
   } catch (err) {

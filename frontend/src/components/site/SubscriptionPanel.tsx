@@ -161,6 +161,10 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
                 <dd className="font-bold text-navy">{PAYMENT_DETAILS.bankName}</dd>
               </div>
               <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Branch</dt>
+                <dd className="text-right font-bold text-navy">{PAYMENT_DETAILS.branch}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
                 <dt className="text-muted-foreground">Account no.</dt>
                 <dd className="font-bold text-navy">{PAYMENT_DETAILS.accountNumber}</dd>
               </div>

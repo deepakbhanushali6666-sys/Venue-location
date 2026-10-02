@@ -14,6 +14,7 @@ import { locationsRouter } from "./locations.routes.js";
 import { purposesRouter } from "./purposes.routes.js";
 import { deletionRequestsRouter } from "./deletion-requests.routes.js";
 import { leadContactRequestsRouter } from "./lead-contact-requests.routes.js";
+import { venueDraftsRouter } from "./venue-drafts.routes.js";
 
 export const apiRouter = Router();
 
@@ -32,3 +33,4 @@ apiRouter.use("/locations", locationsRouter);
 apiRouter.use("/purposes", purposesRouter);
 apiRouter.use("/deletion-requests", deletionRequestsRouter);
 apiRouter.use("/lead-contact-requests", leadContactRequestsRouter);
+apiRouter.use("/venue-drafts", venueDraftsRouter);

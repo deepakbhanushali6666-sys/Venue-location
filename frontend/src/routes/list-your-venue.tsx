@@ -1,11 +1,12 @@
-import { createVenue, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
+import { createPayment, createVenue, createVenueDraft, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Check, Eye, EyeOff, Info } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { cities, states } from "@/data/venues";
-import { BUSINESS } from "@/data/business";
+import { BUSINESS, PAYMENT_DETAILS, PLAN, upiLink } from "@/data/business";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,7 @@ const schema = z.object({
 const listingPlans = [
   {
     name: "Basic Listing",
+    id: "basic",
     price: "₹0",
     period: "",
     description: "Create your venue profile and start receiving enquiries.",
@@ -69,6 +71,7 @@ const listingPlans = [
   },
   {
     name: "Verified Listing",
+    id: "verified",
     price: "₹3,650",
     period: "/ year",
     description: "Build trust with a verified profile and enhanced presentation.",
@@ -80,7 +83,7 @@ const listingPlans = [
     button: "bg-blue-600 text-white hover:bg-blue-700",
     action: "GET VERIFIED",
     href: "#venue-registration",
-    note: "Create your listing first, then activate from your owner dashboard.",
+    note: "Pay by UPI. Your listing is submitted after payment verification.",
   },
   {
     name: "Premium",
@@ -174,6 +177,12 @@ function ListYourVenue() {
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [accountNotice, setAccountNotice] = useState<"created" | "confirmation" | "existing" | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<"basic" | "verified">("basic");
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [paymentReference, setPaymentReference] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, loading: authLoading } = useAuth();
@@ -208,9 +217,31 @@ function ListYourVenue() {
   const field =
     "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
 
+  const submitVerifiedPayment = async () => {
+    if (!draftId || !paymentReference.trim() || submittingPayment) return;
+    setSubmittingPayment(true);
+    try {
+      await createPayment({
+        amount: PLAN.amount,
+        method: "upi",
+        reference: paymentReference.trim(),
+        payer_name: payerName.trim(),
+        venue_draft_id: draftId,
+      });
+      setPaymentSubmitted(true);
+      toast.success("Payment reference submitted", {
+        description: "After verification, your listing will be submitted for admin approval.",
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit payment reference");
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (busy || authLoading || uploading) return;
+    if (busy || authLoading || uploading || draftId) return;
     const formEl = e.currentTarget;
     const data = Object.fromEntries(new FormData(formEl)) as Record<string, string>;
     if (data["acceptTerms"] !== "on") {
@@ -259,7 +290,7 @@ function ListYourVenue() {
           return;
         }
         setAccountNotice("created");
-        toast.success("Account created. Add your photos and submit your venue for approval.");
+        toast.success(selectedPlan === "verified" ? "Account created. Continue to payment." : "Account created. Add your photos and submit your venue for approval.");
       } catch (err) {
         if (err instanceof Error && /already registered|already exists/i.test(err.message)) {
           setAccountNotice("existing");
@@ -277,24 +308,33 @@ function ListYourVenue() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")}-${Math.random().toString(36).slice(2, 6)}`;
+    const listingPayload = {
+      name: d.venueName,
+      slug,
+      category: selectedCategoryRecord.slug,
+      subcategory: d.subcategory ?? "",
+      city: d.city,
+      state: d.state,
+      address: d.address,
+      description: d.notes ?? "",
+      gst_number: d.gst ?? "",
+      photos,
+      amenities: selectedAmenities,
+      suitable_for: selectedListingPurposes,
+      booking_purposes: selectedPurposes,
+      booking_restrictions: selectedRestrictions,
+      map_query: `${d.venueName}, ${d.city}`,
+    };
     try {
-      await createVenue({
-        name: d.venueName,
-        slug,
-        category: selectedCategoryRecord.slug,
-        subcategory: d.subcategory ?? "",
-        city: d.city,
-        state: d.state,
-        address: d.address,
-        description: d.notes ?? "",
-        gst_number: d.gst ?? "",
-        photos,
-        amenities: selectedAmenities,
-        suitable_for: selectedListingPurposes,
-        booking_purposes: selectedPurposes,
-        booking_restrictions: selectedRestrictions,
-        map_query: `${d.venueName}, ${d.city}`,
-      });
+      if (selectedPlan === "verified") {
+        const { draft } = await createVenueDraft(listingPayload);
+        setDraftId(draft.id);
+        setAccountNotice(null);
+        toast.success("Listing draft saved. Complete payment to submit it for approval.");
+        return;
+      }
+
+      await createVenue(listingPayload);
       toast.success("Venue submitted for approval", {
         description: "Track status and enquiries from your owner dashboard.",
       });
@@ -347,7 +387,7 @@ function ListYourVenue() {
         </div>
         <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {listingPlans.map((plan) => (
-            <article key={plan.name} className={`flex min-w-0 flex-col overflow-hidden rounded-lg border p-4 ${plan.theme}`}>
+            <article key={plan.name} className={`flex min-w-0 flex-col overflow-hidden rounded-lg border p-4 ${plan.theme} ${"id" in plan && selectedPlan === plan.id ? "ring-2 ring-navy ring-offset-2" : ""}`}>
               <div className="flex min-h-7 items-start justify-between gap-2">
                 <h3 className="font-display text-lg font-extrabold text-navy">{plan.name}</h3>
                 {"badge" in plan && plan.badge && (
@@ -367,14 +407,28 @@ function ListYourVenue() {
                 ))}
               </ul>
               <img src={plan.image} alt={plan.imageAlt} className="mt-4 aspect-video w-full rounded-md object-cover" />
-              <a
-                href={plan.href}
-                target={"external" in plan && plan.external ? "_blank" : undefined}
-                rel={"external" in plan && plan.external ? "noreferrer" : undefined}
-                className={`mt-3 flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-center text-xs font-extrabold transition-colors ${plan.button}`}
-              >
-                {plan.action}
-              </a>
+              {"id" in plan ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPlan(plan.id);
+                    document.getElementById("venue-registration")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  aria-pressed={selectedPlan === plan.id}
+                  className={`mt-3 flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-center text-xs font-extrabold transition-colors ${plan.button}`}
+                >
+                  {selectedPlan === plan.id ? "SELECTED" : plan.action}
+                </button>
+              ) : (
+                <a
+                  href={plan.href}
+                  target={"external" in plan && plan.external ? "_blank" : undefined}
+                  rel={"external" in plan && plan.external ? "noreferrer" : undefined}
+                  className={`mt-3 flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-center text-xs font-extrabold transition-colors ${plan.button}`}
+                >
+                  {plan.action}
+                </a>
+              )}
               {"note" in plan && plan.note && <p className="mt-2 text-center text-[11px] leading-snug text-muted-foreground">{plan.note}</p>}
             </article>
           ))}
@@ -388,7 +442,11 @@ function ListYourVenue() {
       <div id="venue-registration" className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-12">
         <div className="rounded-lg border border-border bg-card p-6 shadow-card">
           <h2 className="section-title text-lg text-navy">Venue Owner Registration</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Selected plan: <strong className="text-navy">{selectedPlan === "verified" ? `Verified Listing · ${PLAN.amount.toLocaleString("en-IN")}/year` : "Basic Listing · Free"}</strong>
+          </p>
           <form onSubmit={onSubmit} className="mt-5 space-y-3">
+            <fieldset disabled={Boolean(draftId)} className="space-y-3 disabled:opacity-75">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <input
@@ -677,17 +735,99 @@ function ListYourVenue() {
                 .
               </span>
             </label>
+            </fieldset>
             <button
               type="submit"
-              disabled={busy || authLoading || uploading}
+              disabled={busy || authLoading || uploading || Boolean(draftId) || (!ownerId && accountNotice !== null)}
               className="w-full rounded-md bg-gold px-6 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground hover:opacity-90 disabled:opacity-60"
             >
-              {uploading ? "Uploading photos…" : busy ? "Please wait…" : !ownerId ? "Create Account & Continue" : "Submit for Approval"}
+              {uploading ? "Uploading photos…" : busy ? "Please wait…" : draftId ? "Listing draft saved" : !ownerId && accountNotice === "created" ? "Signing you in…" : !ownerId ? "Create Account & Continue" : selectedPlan === "verified" ? "Save Draft & Continue to Payment" : "Submit for Approval"}
             </button>
+            {draftId && (
+              <section className="rounded-lg border border-blue-200 bg-blue-50 p-4" aria-labelledby="verified-payment-heading">
+                <h3 id="verified-payment-heading" className="font-display text-base font-extrabold text-navy">
+                  Pay {PLAN.amount.toLocaleString("en-IN")} to continue
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Scan the QR with your UPI app. After payment, enter the UTR/reference number. We’ll verify it before sending your listing for approval.
+                </p>
+                <div className="mt-4 grid gap-5 sm:grid-cols-[220px_1fr] sm:items-center">
+                  <div className="mx-auto rounded-md bg-white p-3">
+                    <QRCodeSVG
+                      value={upiLink(PLAN.amount, "VENUES LOCATION Verified Listing")}
+                      size={196}
+                      level="M"
+                      includeMargin
+                      aria-label="UPI payment QR code"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-navy">UPI ID: <strong>{PAYMENT_DETAILS.upiId}</strong></p>
+                    <dl className="grid gap-x-4 gap-y-2 rounded-md border border-blue-200 bg-white p-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Account name</dt>
+                        <dd className="font-bold text-navy">{PAYMENT_DETAILS.accountName}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Bank</dt>
+                        <dd className="font-bold text-navy">{PAYMENT_DETAILS.bankName}</dd>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs text-muted-foreground">Branch</dt>
+                        <dd className="font-bold text-navy">{PAYMENT_DETAILS.branch}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Account number</dt>
+                        <dd className="font-bold text-navy">{PAYMENT_DETAILS.accountNumber}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">IFSC</dt>
+                        <dd className="font-bold text-navy">{PAYMENT_DETAILS.ifsc}</dd>
+                      </div>
+                    </dl>
+                    <a
+                      href={upiLink(PLAN.amount, "VENUES LOCATION Verified Listing")}
+                      className="inline-flex rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-navy"
+                    >
+                      Open UPI app · ₹{PLAN.amount.toLocaleString("en-IN")}
+                    </a>
+                    {paymentSubmitted ? (
+                      <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+                        Payment reference received. Your listing will be submitted for admin approval after we verify the payment. You can track it from your dashboard.
+                      </p>
+                    ) : (
+                      <div className="grid gap-2">
+                        <input
+                          value={payerName}
+                          onChange={(event) => setPayerName(event.target.value)}
+                          placeholder="Name on payment (optional)"
+                          className={field}
+                        />
+                        <input
+                          value={paymentReference}
+                          onChange={(event) => setPaymentReference(event.target.value)}
+                          placeholder="UPI UTR / transaction reference*"
+                          className={field}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void submitVerifiedPayment()}
+                          disabled={submittingPayment || !paymentReference.trim()}
+                          className="rounded-md bg-navy px-4 py-2.5 text-sm font-bold text-navy-foreground disabled:opacity-50"
+                        >
+                          {submittingPayment ? "Submitting reference…" : "Submit Payment Reference"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
             {accountNotice && (
               <div role="status" aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-950">
                 {accountNotice === "created" && (
-                  <p><strong>Account created.</strong> Upload photos above, then click “Submit for Approval” below. Your listing has not been submitted yet.</p>
+                  <p><strong>Account created.</strong> Upload photos above, then click “{selectedPlan === "verified" ? "Save Draft & Continue to Payment" : "Submit for Approval"}”. Your listing has not been submitted yet.</p>
                 )}
                 {accountNotice === "confirmation" && (
                   <p><strong>Account created.</strong> Confirm your email, then <Link to="/auth" target="_blank" rel="noreferrer" className="font-bold underline">sign in in a new tab</Link> and return here to submit your listing. This form will stay open.</p>
@@ -698,7 +838,7 @@ function ListYourVenue() {
               </div>
             )}
             <p className="text-center text-xs text-muted-foreground">
-              Listings go live after admin verification. No payment is taken at this step.
+              {selectedPlan === "verified" ? "Payment is manually verified. Listings are then submitted for admin approval and do not go live until approved." : "Basic listings are free and go live after admin approval."}
             </p>
           </form>
         </div>

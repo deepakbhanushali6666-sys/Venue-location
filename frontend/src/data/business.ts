@@ -24,12 +24,13 @@ export const PLAN = {
 };
 
 export const PAYMENT_DETAILS = {
-  upiId: "omslocation@upi",
-  upiName: "VENUES LOCATION",
-  bankName: "—",
-  accountName: "VENUES LOCATION",
-  accountNumber: "—",
-  ifsc: "—",
+  upiId: "oncemore@axisbank",
+  upiName: "Once More Entertainment",
+  bankName: "AXIS BANK LTD",
+  branch: "Seven Bungalows, Andheri, Mumbai, Maharashtra 400053",
+  accountName: "Once More Entertainment",
+  accountNumber: "918020091713481",
+  ifsc: "UTIBOO01154",
 };
 
 export function upiLink(amount: number, note: string) {
