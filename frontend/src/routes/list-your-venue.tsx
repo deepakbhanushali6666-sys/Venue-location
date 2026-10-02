@@ -173,7 +173,7 @@ function ListYourVenue() {
   const [formStates, setFormStates] = useState<string[]>(states);
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [newAccountId, setNewAccountId] = useState<string | null>(null);
+  const [accountNotice, setAccountNotice] = useState<"created" | "confirmation" | "existing" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, loading: authLoading } = useAuth();
@@ -255,16 +255,14 @@ function ListYourVenue() {
         });
         if (error) throw error;
         if (!signup.session) {
-          toast.success("Account created. Check your email to confirm it.", {
-            description: "Your venue has not been submitted yet. After confirmation, sign in and submit this form.",
-          });
+          setAccountNotice("confirmation");
           return;
         }
-        setNewAccountId(signup.session.user.id);
+        setAccountNotice("created");
         toast.success("Account created. Add your photos and submit your venue for approval.");
       } catch (err) {
         if (err instanceof Error && /already registered|already exists/i.test(err.message)) {
-          toast.error("This email already has an account. Sign in below, then return here to submit your listing.");
+          setAccountNotice("existing");
         } else {
           toast.error(err instanceof Error ? err.message : "Could not create account");
         }
@@ -307,6 +305,7 @@ function ListYourVenue() {
       setSelectedListingPurposes([]);
       setSelectedRestrictions([]);
       setSelectedCategory("");
+      setAccountNotice(null);
       void navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit venue");
@@ -568,11 +567,6 @@ function ListYourVenue() {
             />
             {ownerId ? (
               <div className="grid">
-                {newAccountId === ownerId && (
-                  <p role="status" className="mb-3 text-sm text-navy">
-                    Account created. Add photos, then submit your listing for admin approval.
-                  </p>
-                )}
                 <PhotoUploader userId={ownerId} value={photos} onChange={setPhotos} onBusyChange={setUploading} />
               </div>
             ) : (
@@ -690,6 +684,19 @@ function ListYourVenue() {
             >
               {uploading ? "Uploading photos…" : busy ? "Please wait…" : !ownerId ? "Create Account & Continue" : "Submit for Approval"}
             </button>
+            {accountNotice && (
+              <div role="status" aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-950">
+                {accountNotice === "created" && (
+                  <p><strong>Account created.</strong> Upload photos above, then click “Submit for Approval” below. Your listing has not been submitted yet.</p>
+                )}
+                {accountNotice === "confirmation" && (
+                  <p><strong>Account created.</strong> Confirm your email, then <Link to="/auth" target="_blank" rel="noreferrer" className="font-bold underline">sign in in a new tab</Link> and return here to submit your listing. This form will stay open.</p>
+                )}
+                {accountNotice === "existing" && (
+                  <p><strong>This email already has an account.</strong> <Link to="/auth" target="_blank" rel="noreferrer" className="font-bold underline">Sign in in a new tab</Link>, then return here to submit your listing. This form will stay open.</p>
+                )}
+              </div>
+            )}
             <p className="text-center text-xs text-muted-foreground">
               Listings go live after admin verification. No payment is taken at this step.
             </p>
