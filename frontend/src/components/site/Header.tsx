@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { CONTACT } from "@/data/venues";
@@ -19,15 +19,16 @@ const aboutLinks = [
 ] as const;
 
 export function Header() {
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3">
         <Link to="/" onClick={() => setOpen(false)}>
-          <Logo />
+          <Logo compact />
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
@@ -94,11 +95,29 @@ export function Header() {
           </a>
         </nav>
 
+        {pathname === "/list-your-venue" && (
+          <div className="ml-auto flex shrink-0 items-center gap-1 lg:hidden">
+            <Link
+              to="/auth"
+              className="flex min-h-8 items-center justify-center rounded-md border border-navy px-2 text-xs font-bold text-navy"
+            >
+              Login
+            </Link>
+            <Link
+              to="/auth"
+              search={{ mode: "signup" }}
+              className="flex min-h-8 items-center justify-center rounded-md bg-gold px-2 text-xs font-extrabold text-gold-foreground"
+            >
+              Register
+            </Link>
+          </div>
+        )}
+
         <button
           type="button"
           aria-label="Toggle menu"
           onClick={() => setOpen((v) => !v)}
-          className="grid size-10 place-items-center rounded-md border border-border lg:hidden"
+          className="grid size-9 shrink-0 place-items-center rounded-md border border-border sm:size-10 lg:hidden"
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>

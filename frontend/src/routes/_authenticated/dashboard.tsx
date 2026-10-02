@@ -441,20 +441,20 @@ function OwnerDashboard() {
             </p>
           )}
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-205 text-left text-sm">
+            <table className="w-full min-w-375 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2">Lead ID</th>
-                  <th>Property Code</th>
-                  <th>Name</th>
-                  <th>Mobile</th>
-                  <th>Email</th>
-                  <th>Venue</th>
-                  <th>Purpose</th>
-                  <th>Date</th>
-                  <th>Budget</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
+                  <th className="whitespace-nowrap px-3 py-3">Lead ID</th>
+                  <th className="whitespace-nowrap px-3 py-3">Property Code</th>
+                  <th className="whitespace-nowrap px-3 py-3">Name</th>
+                  <th className="whitespace-nowrap px-3 py-3">Mobile</th>
+                  <th className="whitespace-nowrap px-3 py-3">Email</th>
+                  <th className="whitespace-nowrap px-3 py-3">Venue</th>
+                  <th className="whitespace-nowrap px-3 py-3">Purpose</th>
+                  <th className="whitespace-nowrap px-3 py-3">Date</th>
+                  <th className="whitespace-nowrap px-3 py-3">Budget</th>
+                  <th className="whitespace-nowrap px-3 py-3">Status</th>
+                  <th className="whitespace-nowrap px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -462,20 +462,20 @@ function OwnerDashboard() {
                   const contactRequest = contactRequests.find((r) => r.venue_id === l.venue_id);
                   return (
                   <tr key={l.id} className="border-t border-border">
-                    <td className="py-3 font-bold text-navy">{l.lead_code}</td>
-                    <td className="font-semibold text-navy">{l.property_code || "—"}</td>
-                    <td>{l.customer_name}</td>
-                    <td className={l.contact_unlocked ? "" : "text-muted-foreground"}>
+                    <td className="whitespace-nowrap px-3 py-3 font-bold text-navy">{l.lead_code}</td>
+                    <td className="whitespace-nowrap px-3 py-3 font-semibold text-navy">{l.property_code || "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-3">{l.customer_name}</td>
+                    <td className={`whitespace-nowrap px-3 py-3 ${l.contact_unlocked ? "" : "text-muted-foreground"}`}>
                       {l.mobile || "—"}
                     </td>
-                    <td className={l.contact_unlocked ? "" : "text-muted-foreground"}>
+                    <td className={`whitespace-nowrap px-3 py-3 ${l.contact_unlocked ? "" : "text-muted-foreground"}`}>
                       {l.email || "—"}
                     </td>
-                    <td>{l.venue_name || "—"}</td>
-                    <td>{l.purpose}</td>
-                    <td>{l.event_date ?? "—"}</td>
-                    <td>{formatBudget(l.budget) || "—"}</td>
-                    <td>
+                    <td className="whitespace-nowrap px-3 py-3">{l.venue_name || "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-3">{l.purpose}</td>
+                    <td className="whitespace-nowrap px-3 py-3">{l.event_date ?? "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-3">{formatBudget(l.budget) || "—"}</td>
+                    <td className="px-3 py-3">
                       {isTeam && !isAdmin ? (
                         <span className="font-semibold text-navy">{l.status}</span>
                       ) : (
@@ -493,7 +493,7 @@ function OwnerDashboard() {
                       )}
                     </td>
                     {isAdmin ? (
-                      <td className="text-right">
+                      <td className="px-3 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => void removeLead(l)}
@@ -506,7 +506,7 @@ function OwnerDashboard() {
                         </button>
                       </td>
                     ) : (
-                      <td className="text-right">
+                      <td className="px-3 py-3 text-right">
                         <div className="flex flex-col items-end gap-1">
                           {!l.contact_unlocked &&
                             (contactRequest?.status === "pending" ? (

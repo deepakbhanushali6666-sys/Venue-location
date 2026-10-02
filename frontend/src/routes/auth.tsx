@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/site/Logo";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
+    search["mode"] === "signup" ? { mode: "signup" } : {},
   head: () => ({
     meta: [
       { title: "Owner Sign In | VENUES LOCATION" },
@@ -25,10 +27,15 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const { mode: requestedMode } = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(requestedMode ?? "signin");
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    setMode(requestedMode ?? "signin");
+  }, [requestedMode]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

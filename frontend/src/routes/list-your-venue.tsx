@@ -3,11 +3,16 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
-import { BadgeCheck, Eye, EyeOff, IndianRupee, ImagePlus, LineChart } from "lucide-react";
+import { Check, Eye, EyeOff, Info } from "lucide-react";
 import { cities, states } from "@/data/venues";
+import { BUSINESS } from "@/data/business";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
+import basicPlanImage from "@/assets/cat-film.jpg";
+import verifiedPlanImage from "@/assets/cat-resort.jpg";
+import premiumPlanImage from "@/assets/cat-hotel.jpg";
+import proPlanImage from "@/assets/cat-studio.jpg";
 
 export const Route = createFileRoute("/list-your-venue")({
   head: () => ({
@@ -16,13 +21,12 @@ export const Route = createFileRoute("/list-your-venue")({
       {
         name: "description",
         content:
-          "Register your hotel, resort, farmhouse, lawn or studio on VENUES LOCATION. One plan at ₹3,650 per year, verified listing and genuine enquiries from real clients.",
+          "List your venue or film location on VENUES LOCATION for free, or choose optional annual plans for verified listings and marketing.",
       },
       { property: "og:title", content: "List Your Venue | VENUES LOCATION" },
       {
         property: "og:description",
-        content:
-          "Get genuine enquiries from weddings, corporates and production houses. ₹3,650 per year.",
+        content: "Start with a free basic listing or choose optional plans for more visibility and promotion.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -48,28 +52,68 @@ const schema = z.object({
   notes: z.string().trim().max(600).optional(),
 });
 
-const benefits = [
+const listingPlans = [
   {
-    icon: BadgeCheck,
-    title: "Verified listing",
-    text: "Your venue is reviewed and approved by our team before going live.",
+    name: "Basic Listing",
+    price: "₹0",
+    period: "",
+    description: "Create your venue profile and start receiving enquiries.",
+    features: ["Add property details", "Upload selected photos", "Choose accepted booking types", "Appear in relevant searches", "Receive customer enquiries"],
+    image: basicPlanImage,
+    imageAlt: "Heritage courtyard available as a film location",
+    theme: "border-emerald-200 bg-emerald-50/80",
+    check: "text-emerald-600",
+    button: "bg-emerald-600 text-white hover:bg-emerald-700",
+    action: "LIST YOUR VENUE",
+    href: "#venue-registration",
   },
   {
-    icon: LineChart,
-    title: "Genuine leads",
-    text: "Every enquiry reaches you with a Lead ID, contact details and event brief.",
+    name: "Verified Listing",
+    price: "₹3,650",
+    period: "/ year",
+    description: "Build trust with a verified profile and enhanced presentation.",
+    features: ["Everything in Basic", "Verified profile badge", "Enhanced photo gallery", "Add video or reel", "Priority in search results", "Contact and enquiry tools"],
+    image: verifiedPlanImage,
+    imageAlt: "Resort pool and waterfront venue",
+    theme: "border-blue-200 bg-blue-50/80",
+    check: "text-blue-600",
+    button: "bg-blue-600 text-white hover:bg-blue-700",
+    action: "GET VERIFIED",
+    href: "#venue-registration",
+    note: "Create your listing first, then activate from your owner dashboard.",
   },
   {
-    icon: ImagePlus,
-    title: "Full control",
-    text: "Update photos, pricing and details anytime from your owner dashboard.",
+    name: "Premium",
+    price: "Contact Us",
+    period: "",
+    description: "Get more visibility and attract more bookings.",
+    features: ["Everything in Verified", "Featured placement", "Priority visibility", "Social media promotion opportunities", "The Location Magazine features"],
+    image: premiumPlanImage,
+    imageAlt: "Modern high-rise venue location",
+    theme: "border-amber-200 bg-amber-50/80",
+    check: "text-amber-600",
+    button: "bg-amber-500 text-navy hover:bg-amber-400",
+    action: "ENQUIRE FOR PREMIUM",
+    href: `https://wa.me/91${BUSINESS.phone}?text=${encodeURIComponent("Hi, I would like to know more about the Premium venue listing plan.")}`,
+    external: true,
+    badge: "POPULAR",
   },
   {
-    icon: IndianRupee,
-    title: "One simple plan",
-    text: "₹3,650 per year. No commission on bookings, invoice provided.",
+    name: "Pro Marketing",
+    price: "₹36,500",
+    period: "/ year",
+    description: "Complete marketing support for maximum exposure.",
+    features: ["Everything in Premium", "Dedicated promotional support", "Social media promotion", "Reels and video promotion", "The Location Magazine promotion", "Content and campaign support"],
+    image: proPlanImage,
+    imageAlt: "Film production studio with lighting equipment",
+    theme: "border-rose-200 bg-rose-50/80",
+    check: "text-rose-600",
+    button: "bg-rose-600 text-white hover:bg-rose-700",
+    action: "ENQUIRE FOR PRO",
+    href: `https://wa.me/91${BUSINESS.phone}?text=${encodeURIComponent("Hi, I would like to know more about the Pro Marketing plan.")}`,
+    external: true,
   },
-];
+] as const;
 
 const bookingPurposes = [
   ["🎬", "Film / Movie Shoot"],
@@ -286,33 +330,58 @@ function ListYourVenue() {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-[1fr_1.2fr]">
-        <div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {benefits.map((b) => (
-              <div key={b.title} className="rounded-xl border border-border bg-card p-5">
-                <b.icon className="size-7 text-gold" />
-                <h2 className="mt-2 font-display text-base font-bold text-navy">{b.title}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{b.text}</p>
-              </div>
-            ))}
+      <section className="mx-auto max-w-7xl px-4 py-8" aria-labelledby="plans-heading">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 id="plans-heading" className="font-display text-2xl font-extrabold text-navy">Choose Your Plan</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Start with a Basic Listing at ₹0. Upgrade anytime for more visibility and promotion.</p>
           </div>
-
-          <div className="mt-6 rounded-xl bg-navy p-7 text-navy-foreground">
-            <h2 className="section-title text-base text-gold">Subscription</h2>
-            <p className="mt-3 font-display text-4xl font-extrabold">
-              ₹3,650 <span className="text-base font-semibold text-navy-foreground/70">/ year</span>
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-navy-foreground/85">
-              <li>• One plan, all features included</li>
-              <li>• Online payment with GST invoice</li>
-              <li>• Automatic renewal reminders</li>
-              <li>• Unlimited enquiries and photo updates</li>
-            </ul>
-          </div>
+          <p className="rounded-md bg-gold px-4 py-2 text-center font-display text-sm font-extrabold uppercase text-gold-foreground">
+            Free to List<br />Pay to Grow
+          </p>
         </div>
+        <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {listingPlans.map((plan) => (
+            <article key={plan.name} className={`flex min-w-0 flex-col overflow-hidden rounded-lg border p-4 ${plan.theme}`}>
+              <div className="flex min-h-7 items-start justify-between gap-2">
+                <h3 className="font-display text-lg font-extrabold text-navy">{plan.name}</h3>
+                {"badge" in plan && plan.badge && (
+                  <span className="rounded bg-amber-400 px-2 py-1 text-[10px] font-extrabold text-navy">{plan.badge}</span>
+                )}
+              </div>
+              <p className="mt-1 font-display text-3xl font-extrabold leading-tight text-navy">
+                {plan.price}<span className="text-sm font-semibold text-muted-foreground">{plan.period}</span>
+              </p>
+              <p className="mt-2 min-h-10 text-sm text-foreground/80">{plan.description}</p>
+              <ul className="mt-4 flex-1 space-y-2 text-xs leading-snug text-foreground/85">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2">
+                    <Check className={`mt-0.5 size-4 shrink-0 ${plan.check}`} />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <img src={plan.image} alt={plan.imageAlt} className="mt-4 aspect-video w-full rounded-md object-cover" />
+              <a
+                href={plan.href}
+                target={"external" in plan && plan.external ? "_blank" : undefined}
+                rel={"external" in plan && plan.external ? "noreferrer" : undefined}
+                className={`mt-3 flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-center text-xs font-extrabold transition-colors ${plan.button}`}
+              >
+                {plan.action}
+              </a>
+              {"note" in plan && plan.note && <p className="mt-2 text-center text-[11px] leading-snug text-muted-foreground">{plan.note}</p>}
+            </article>
+          ))}
+        </div>
+        <p className="mt-4 flex items-start gap-2 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-xs text-navy">
+          <Info className="mt-0.5 size-4 shrink-0 text-sky-700" />
+          <span><strong>Basic Listing is free.</strong> Paid plans add visibility and promotional services. Enquiries and bookings depend on customer demand, property suitability and availability.</span>
+        </p>
+      </section>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+      <div id="venue-registration" className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-12">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-card">
           <h2 className="section-title text-lg text-navy">Venue Owner Registration</h2>
           <form onSubmit={onSubmit} className="mt-5 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -502,7 +571,7 @@ function ListYourVenue() {
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">
-                Already have an account? <Link to="/auth" className="font-bold text-gold">Sign in</Link> before listing your venue.
+                Create a new account with the password above, or <Link to="/auth" className="font-bold text-gold">sign in</Link> if you already have one.
               </p>
             )}
             {amenities.length > 0 && (
