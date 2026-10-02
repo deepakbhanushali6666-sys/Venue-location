@@ -915,56 +915,59 @@ function AdminPanel() {
         </section>
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-xl font-extrabold text-navy">Audit Log</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={auditFilter}
-                onChange={(e) => setAuditFilter(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="all">All activity</option>
-                {Object.entries(ACTION_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={exportAudit}
-                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-sand"
-              >
-                Export audit CSV
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 max-h-120 overflow-auto">
+          <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>
+          <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-190 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2">When</th>
-                  <th>Action</th>
-                  <th>Record</th>
-                  <th>From</th>
-                  <th>To</th>
+                  <th className="py-2">Lead ID</th>
+                  <th>Property Code</th>
+                  <th>Name</th>
+                  <th>Mobile</th>
+                  <th>Venue</th>
+                  <th>Purpose</th>
+                  <th>Details</th>
+                  <th>Budget</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAudit.map((a) => (
-                  <tr key={a.id} className="border-t border-border">
-                    <td className="py-3 whitespace-nowrap">
-                      {new Date(a.created_at).toLocaleString("en-IN")}
+                {leads.map((l) => (
+                  <tr key={l.id} className="border-t border-border">
+                    <td className="py-3 font-bold text-navy">{l.lead_code}</td>
+                    <td className="font-semibold text-navy">{l.property_code || "—"}</td>
+                    <td>{l.customer_name}</td>
+                    <td>{l.mobile}</td>
+                    <td>{l.venue_name || "—"}</td>
+                    <td>{l.purpose}</td>
+                    <td
+                      className="max-w-70 whitespace-pre-line text-xs text-muted-foreground"
+                      title={l.message || undefined}
+                    >
+                      {l.email ? `${l.email}\n` : ""}
+                      {l.message || "—"}
                     </td>
-                    <td className="font-bold text-navy">{ACTION_LABELS[a.action] ?? a.action}</td>
-                    <td>{a.entity_label || "—"}</td>
-                    <td>{a.from_value || "—"}</td>
-                    <td>{a.to_value || "—"}</td>
+                    <td>{formatBudget(l.budget) || "—"}</td>
+                    <td>{l.status}</td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => void removeLead(l)}
+                        disabled={deletingLead === l.id}
+                        aria-label={`Delete enquiry ${l.lead_code}`}
+                        title={`Delete enquiry ${l.lead_code}`}
+                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
-                {filteredAudit.length === 0 && (
+                {leads.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-4 text-muted-foreground">
-                      No activity recorded yet.
+                    <td colSpan={10} className="py-4 text-muted-foreground">
+                      No leads yet.
                     </td>
                   </tr>
                 )}
@@ -1210,59 +1213,56 @@ function AdminPanel() {
         <TeamMembersPanel />
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
-          <h2 className="font-display text-xl font-extrabold text-navy">All Leads</h2>
-          <div className="mt-4 overflow-x-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-extrabold text-navy">Audit Log</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={auditFilter}
+                onChange={(e) => setAuditFilter(e.target.value)}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="all">All activity</option>
+                {Object.entries(ACTION_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={exportAudit}
+                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-sand"
+              >
+                Export audit CSV
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 max-h-120 overflow-auto">
             <table className="w-full min-w-190 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2">Lead ID</th>
-                  <th>Property Code</th>
-                  <th>Name</th>
-                  <th>Mobile</th>
-                  <th>Venue</th>
-                  <th>Purpose</th>
-                  <th>Details</th>
-                  <th>Budget</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
+                  <th className="py-2">When</th>
+                  <th>Action</th>
+                  <th>Record</th>
+                  <th>From</th>
+                  <th>To</th>
                 </tr>
               </thead>
               <tbody>
-                {leads.map((l) => (
-                  <tr key={l.id} className="border-t border-border">
-                    <td className="py-3 font-bold text-navy">{l.lead_code}</td>
-                    <td className="font-semibold text-navy">{l.property_code || "—"}</td>
-                    <td>{l.customer_name}</td>
-                    <td>{l.mobile}</td>
-                    <td>{l.venue_name || "—"}</td>
-                    <td>{l.purpose}</td>
-                    <td
-                      className="max-w-70 whitespace-pre-line text-xs text-muted-foreground"
-                      title={l.message || undefined}
-                    >
-                      {l.email ? `${l.email}\n` : ""}
-                      {l.message || "—"}
+                {filteredAudit.map((a) => (
+                  <tr key={a.id} className="border-t border-border">
+                    <td className="py-3 whitespace-nowrap">
+                      {new Date(a.created_at).toLocaleString("en-IN")}
                     </td>
-                    <td>{formatBudget(l.budget) || "—"}</td>
-                    <td>{l.status}</td>
-                    <td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => void removeLead(l)}
-                        disabled={deletingLead === l.id}
-                        aria-label={`Delete enquiry ${l.lead_code}`}
-                        title={`Delete enquiry ${l.lead_code}`}
-                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </td>
+                    <td className="font-bold text-navy">{ACTION_LABELS[a.action] ?? a.action}</td>
+                    <td>{a.entity_label || "—"}</td>
+                    <td>{a.from_value || "—"}</td>
+                    <td>{a.to_value || "—"}</td>
                   </tr>
                 ))}
-                {leads.length === 0 && (
+                {filteredAudit.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-4 text-muted-foreground">
-                      No leads yet.
+                    <td colSpan={5} className="py-4 text-muted-foreground">
+                      No activity recorded yet.
                     </td>
                   </tr>
                 )}

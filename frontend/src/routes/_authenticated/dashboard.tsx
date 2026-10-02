@@ -64,6 +64,7 @@ type VenueRow = {
 type LeadRow = {
   id: string;
   lead_code: string;
+  property_code?: string;
   customer_name: string;
   mobile: string;
   email: string;
@@ -444,6 +445,7 @@ function OwnerDashboard() {
               <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-2">Lead ID</th>
+                  <th>Property Code</th>
                   <th>Name</th>
                   <th>Mobile</th>
                   <th>Email</th>
@@ -461,6 +463,7 @@ function OwnerDashboard() {
                   return (
                   <tr key={l.id} className="border-t border-border">
                     <td className="py-3 font-bold text-navy">{l.lead_code}</td>
+                    <td className="font-semibold text-navy">{l.property_code || "—"}</td>
                     <td>{l.customer_name}</td>
                     <td className={l.contact_unlocked ? "" : "text-muted-foreground"}>
                       {l.mobile || "—"}
@@ -536,7 +539,7 @@ function OwnerDashboard() {
                 })}
                 {leads.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-4 text-muted-foreground">
+                    <td colSpan={11} className="py-4 text-muted-foreground">
                       No enquiries yet.
                     </td>
                   </tr>
