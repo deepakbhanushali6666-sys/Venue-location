@@ -128,3 +128,23 @@ leadContactRequestsRouter.patch("/:id", requireAuth, requireAdmin, async (req: A
     next(err);
   }
 });
+
+// Admin: clear a request; removing an approved row also revokes contact access.
+leadContactRequestsRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const { data, error } = await req.client!
+      .from("lead_contact_requests")
+      .delete()
+      .eq("id", req.params.id)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      res.status(404).json({ error: "Contact access request not found" });
+      return;
+    }
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});

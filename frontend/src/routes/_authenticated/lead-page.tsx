@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   clearDeletionRequest,
+  clearLeadContactRequest,
   decideLeadContactRequest,
   getPropertyLeads,
   listDeletionRequests,
@@ -80,6 +81,26 @@ function LeadPage() {
       toast.error(err instanceof Error ? err.message : "Could not update request");
     } finally {
       setDecidingId(null);
+    }
+  };
+
+  const clearContactRequest = async (request: LeadContactRequest) => {
+    if (
+      request.status === "approved" &&
+      !window.confirm("Clear this approved request? The owner will lose access to enquiry contact details for this property.")
+    ) {
+      return;
+    }
+
+    setClearingRequestId(request.id);
+    try {
+      await clearLeadContactRequest(request.id);
+      setContactRequests((rows) => rows.filter((row) => row.id !== request.id));
+      toast.success("Contact access request cleared");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not clear contact access request");
+    } finally {
+      setClearingRequestId(null);
     }
   };
 
@@ -198,6 +219,15 @@ function LeadPage() {
                             Reject
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => void clearContactRequest(request)}
+                          disabled={decidingId === request.id || clearingRequestId === request.id}
+                          title={request.status === "approved" ? "Clear request and revoke contact access" : "Clear this request"}
+                          className="rounded-md border border-border px-3 py-1 text-xs font-bold text-navy disabled:opacity-50"
+                        >
+                          Clear
+                        </button>
                       </div>
                     </td>
                   </tr>

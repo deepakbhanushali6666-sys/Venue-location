@@ -215,6 +215,7 @@ export const requestLeadContactAccess = (venue_id: string) =>
   post<{ request: MyLeadContactRequest }>("/lead-contact-requests", { venue_id });
 export const decideLeadContactRequest = (id: string, status: LeadContactRequestStatus) =>
   patch<{ request: LeadContactRequest }>(`/lead-contact-requests/${id}`, { status });
+export const clearLeadContactRequest = (id: string) => del<void>(`/lead-contact-requests/${id}`);
 
 // Team members (read-only staff access, managed by admins)
 export type TeamMember = {

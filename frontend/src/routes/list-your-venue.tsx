@@ -255,13 +255,19 @@ function ListYourVenue() {
         });
         if (error) throw error;
         if (!signup.session) {
-          toast.error("Could not sign in automatically. Check your email or sign in with your existing account.");
+          toast.success("Account created. Check your email to confirm it.", {
+            description: "Your venue has not been submitted yet. After confirmation, sign in and submit this form.",
+          });
           return;
         }
         setNewAccountId(signup.session.user.id);
         toast.success("Account created. Add your photos and submit your venue for approval.");
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Could not create account");
+        if (err instanceof Error && /already registered|already exists/i.test(err.message)) {
+          toast.error("This email already has an account. Sign in below, then return here to submit your listing.");
+        } else {
+          toast.error(err instanceof Error ? err.message : "Could not create account");
+        }
       } finally {
         setBusy(false);
       }
@@ -571,7 +577,7 @@ function ListYourVenue() {
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">
-                Create a new account with the password above, or <Link to="/auth" className="font-bold text-gold">sign in</Link> if you already have one.
+                Create a new account with the password above, or <Link to="/auth" target="_blank" rel="noreferrer" className="font-bold text-gold">sign in</Link> if you already have one.
               </p>
             )}
             {amenities.length > 0 && (
