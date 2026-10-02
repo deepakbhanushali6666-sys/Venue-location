@@ -135,9 +135,11 @@ function DeletionRequestsPage() {
                     type="button"
                     onClick={() => void clearRequest(request)}
                     disabled={busyId === request.id}
+                    title="Dismiss the request without deleting the record"
+                    aria-label={`Clear deletion request for ${request.target_label}`}
                     className="rounded-md border border-border px-2 py-1 text-xs font-bold text-navy disabled:opacity-50"
                   >
-                    Clear
+                    Clear Request
                   </button>
                   <button
                     type="button"

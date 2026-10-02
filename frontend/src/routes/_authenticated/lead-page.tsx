@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
+  clearDeletionRequest,
   decideLeadContactRequest,
   getPropertyLeads,
+  listDeletionRequests,
   listLeadContactRequests,
+  type DeletionRequest,
   type LeadContactRequest,
   type PropertyDetail,
   type PropertyLead,
@@ -32,6 +35,8 @@ function LeadPage() {
   const [error, setError] = useState("");
   const [contactRequests, setContactRequests] = useState<LeadContactRequest[]>([]);
   const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
+  const [clearingRequestId, setClearingRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     getPropertyLeads()
@@ -52,6 +57,14 @@ function LeadPage() {
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    listDeletionRequests()
+      .then(({ requests }) => setDeletionRequests(requests.filter((request) => request.target_type === "lead")))
+      .catch((err: unknown) =>
+        toast.error(err instanceof Error ? err.message : "Could not load deletion requests"),
+      );
+  }, []);
+
   const decideRequest = async (
     request: LeadContactRequest,
     status: "approved" | "rejected",
@@ -67,6 +80,19 @@ function LeadPage() {
       toast.error(err instanceof Error ? err.message : "Could not update request");
     } finally {
       setDecidingId(null);
+    }
+  };
+
+  const clearLeadDeletionRequest = async (request: DeletionRequest) => {
+    setClearingRequestId(request.id);
+    try {
+      await clearDeletionRequest(request.id);
+      setDeletionRequests((rows) => rows.filter((row) => row.id !== request.id));
+      toast.success("Deletion request cleared");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not clear request");
+    } finally {
+      setClearingRequestId(null);
     }
   };
 
@@ -328,10 +354,13 @@ function LeadPage() {
                             <th>Budget</th>
                             <th>Message</th>
                             <th>Status</th>
+                            <th className="text-right">Deletion request</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {propertyLeads.map((lead) => (
+                          {propertyLeads.map((lead) => {
+                            const deletionRequest = deletionRequests.find((request) => request.lead_id === lead.id);
+                            return (
                             <tr key={lead.id} className="border-t border-border align-top">
                               <td className="py-3 font-bold text-navy">{lead.lead_code}</td>
                               <td className="whitespace-nowrap">
@@ -364,11 +393,27 @@ function LeadPage() {
                                 {lead.message || "—"}
                               </td>
                               <td className="font-semibold text-navy">{lead.status}</td>
+                              <td className="text-right">
+                                {deletionRequest ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => void clearLeadDeletionRequest(deletionRequest)}
+                                    disabled={clearingRequestId === deletionRequest.id}
+                                    title="Dismiss the request without deleting the enquiry"
+                                    className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-bold text-navy disabled:opacity-50"
+                                  >
+                                    Clear Request
+                                  </button>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
                             </tr>
-                          ))}
+                          );
+                          })}
                           {propertyLeads.length === 0 && (
                             <tr>
-                              <td colSpan={11} className="py-4 text-muted-foreground">
+                              <td colSpan={12} className="py-4 text-muted-foreground">
                                 No enquiries for this property yet.
                               </td>
                             </tr>
