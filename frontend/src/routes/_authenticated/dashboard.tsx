@@ -391,7 +391,7 @@ function OwnerDashboard() {
             </form>
           )}
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 max-h-[34rem] space-y-3 overflow-y-auto overscroll-contain pr-1">
             {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
             {!loading && venues.length === 0 && (
               <p className="text-sm text-muted-foreground">No venues yet. Add your first listing above.</p>
@@ -402,7 +402,10 @@ function OwnerDashboard() {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4"
               >
                 <div>
-                  <div className="font-bold text-navy">{v.name}</div>
+                  <div className="font-bold text-navy">
+                    {v.property_code && <span className="mr-2 font-mono text-gold">{v.property_code}</span>}
+                    {v.name}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {[v.area, v.city, v.pincode ? `PIN ${v.pincode}` : ""].filter(Boolean).join(", ")} · {v.capacity} guests · ₹{v.starting_price.toLocaleString("en-IN")}
                   </div>
@@ -450,9 +453,9 @@ function OwnerDashboard() {
               request for that property. Use "Request Delete" to ask the admin to remove an enquiry.
             </p>
           )}
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 max-h-[34rem] overflow-auto overscroll-contain">
             <table className="w-full min-w-375 text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="whitespace-nowrap px-3 py-3">Lead ID</th>
                   <th className="whitespace-nowrap px-3 py-3">Property Code</th>
