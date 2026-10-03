@@ -50,6 +50,7 @@ type VenueRow = {
   city: string;
   state: string;
   area: string;
+  pincode: string;
   capacity: number;
   starting_price: number;
   parking: string;
@@ -156,6 +157,7 @@ function OwnerDashboard() {
       city: String(f.get("city") ?? "").trim(),
       state: String(f.get("state") ?? "").trim(),
       area: String(f.get("area") ?? "").trim(),
+      pincode: String(f.get("pincode") ?? "").trim(),
       capacity: Number(f.get("capacity") ?? 0) || 0,
       starting_price: Number(f.get("starting_price") ?? 0) || 0,
       parking: String(f.get("parking") ?? "").trim(),
@@ -345,6 +347,7 @@ function OwnerDashboard() {
               <input name="city" placeholder="City" defaultValue={editing?.city} className={input} />
               <input name="state" placeholder="State" defaultValue={editing?.state} className={input} />
               <input name="area" placeholder="Area / Locality" defaultValue={editing?.area} className={input} />
+              <input name="pincode" placeholder="PIN Code (optional)" defaultValue={editing?.pincode} inputMode="numeric" maxLength={6} pattern="[1-9][0-9]{5}" className={input} />
               <input name="parking" placeholder="Parking (e.g. 120 cars)" defaultValue={editing?.parking} className={input} />
               <input name="capacity" type="number" placeholder="Guest capacity" defaultValue={editing?.capacity} className={input} />
               <input
@@ -393,8 +396,7 @@ function OwnerDashboard() {
                 <div>
                   <div className="font-bold text-navy">{v.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {v.area ? `${v.area}, ` : ""}
-                    {v.city} · {v.capacity} guests · ₹{v.starting_price.toLocaleString("en-IN")}
+                    {[v.area, v.city, v.pincode ? `PIN ${v.pincode}` : ""].filter(Boolean).join(", ")} · {v.capacity} guests · ₹{v.starting_price.toLocaleString("en-IN")}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

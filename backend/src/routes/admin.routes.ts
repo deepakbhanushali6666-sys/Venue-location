@@ -13,7 +13,7 @@ adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedReques
     const [venues, leads, subscriptions, payments, audit] = await Promise.all([
       client
         .from("venues")
-        .select("id, property_code, name, city, state, category, subcategory, suitable_for, booking_purposes, booking_restrictions, status, featured, featured_order, created_at")
+        .select("id, property_code, name, city, state, area, pincode, category, subcategory, suitable_for, booking_purposes, booking_restrictions, status, featured, featured_order, created_at")
         .order("created_at", { ascending: false }),
       client
         .from("leads")

@@ -135,7 +135,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               <h1 className="mt-3 font-display text-3xl font-extrabold text-navy">{venue.name}</h1>
               <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="size-4 text-gold" /> {venue.area}, {venue.city}, {venue.state}
+                  <MapPin className="size-4 text-gold" />
+                  {[venue.area, venue.city, venue.state].filter(Boolean).join(", ")}
+                  {venue.pincode && <span> · PIN {venue.pincode}</span>}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Users className="size-4 text-gold" /> Up to {venue.capacity} guests

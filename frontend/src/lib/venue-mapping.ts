@@ -10,6 +10,7 @@ export type VenueRow = {
   city: string;
   state: string;
   area: string;
+  pincode?: string;
   capacity: number;
   starting_price: number;
   parking: string;
@@ -34,6 +35,7 @@ export function rowToVenue(row: VenueRow): Venue {
     city: row.city,
     state: row.state,
     area: row.area,
+    ...(row.pincode ? { pincode: row.pincode } : {}),
     capacity: row.capacity,
     startingPrice: row.starting_price,
     parking: row.parking || "On request",
@@ -60,4 +62,4 @@ export function extractYouTubeId(url: string) {
 }
 
 export const VENUE_SELECT =
-  "id, slug, name, category, city, state, area, capacity, starting_price, parking, description, amenities, suitable_for, booking_purposes, booking_restrictions, property_code, photos, video_url, map_query, featured";
+  "id, slug, name, category, city, state, area, pincode, capacity, starting_price, parking, description, amenities, suitable_for, booking_purposes, booking_restrictions, property_code, photos, video_url, map_query, featured";

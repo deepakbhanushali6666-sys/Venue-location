@@ -213,6 +213,7 @@ export type Venue = {
   city: string;
   state: string;
   area: string;
+  pincode?: string;
   capacity: number;
   startingPrice: number;
   parking: string;

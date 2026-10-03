@@ -71,7 +71,7 @@ begin
     end if;
 
     insert into public.venues (
-      owner_id, name, slug, category, subcategory, city, state, area, address,
+      owner_id, name, slug, category, subcategory, city, state, area, pincode, address,
       capacity, starting_price, parking, description, amenities, suitable_for,
       booking_purposes, booking_restrictions, photos, video_url, map_query,
       gst_number, status
@@ -84,6 +84,7 @@ begin
       v_payload->>'city',
       coalesce(v_payload->>'state', ''),
       coalesce(v_payload->>'area', ''),
+      coalesce(v_payload->>'pincode', ''),
       coalesce(v_payload->>'address', ''),
       coalesce(nullif(v_payload->>'capacity', '')::integer, 0),
       coalesce(nullif(v_payload->>'starting_price', '')::integer, 0),

@@ -65,6 +65,8 @@ type VenueRow = {
   name: string;
   city: string;
   state: string;
+  area: string;
+  pincode: string;
   category: string;
   subcategory: string;
   suitable_for: string[];
@@ -402,11 +404,17 @@ function AdminPanel() {
     const updates = {
       city: data["city"]?.trim() ?? "",
       state: data["state"]?.trim() ?? "",
+      area: data["area"]?.trim() ?? "",
+      pincode: data["pincode"]?.trim() ?? "",
       category: data["category"]?.trim() ?? "",
       subcategory: data["subcategory"]?.trim() ?? "",
     };
     if (!updates.city || !updates.state || !updates.category) {
       toast.error("City, state and category are required");
+      return;
+    }
+    if (updates.pincode && !/^[1-9][0-9]{5}$/.test(updates.pincode)) {
+      toast.error("Enter a valid 6-digit PIN Code");
       return;
     }
     setSavingVenue(venue.id);
@@ -1043,7 +1051,10 @@ function AdminPanel() {
                   <tr key={v.id} className="border-t border-border align-top hover:bg-secondary/30">
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.property_code}</td>
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.name}</td>
-                    <td className="wrap-break-word px-2 py-4 text-sm">{v.city}, {v.state}</td>
+                    <td className="wrap-break-word px-2 py-4 text-sm">
+                      {[v.area, v.city, v.state].filter(Boolean).join(", ")}
+                      {v.pincode && <div className="text-xs text-muted-foreground">PIN {v.pincode}</div>}
+                    </td>
                     <td className="px-2 py-4 text-sm">
                       <details>
                         <summary className="cursor-pointer font-semibold text-navy">
@@ -1178,7 +1189,7 @@ function AdminPanel() {
                 ))}
                 {venues.map((v) => editingVenue === v.id && (
                   <tr key={`${v.id}-editor`} className="border-t border-border bg-secondary/40">
-                    <td colSpan={9} className="py-3">
+                    <td colSpan={10} className="py-3">
                       <form
                         className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
                         onSubmit={(event) => {
@@ -1192,6 +1203,8 @@ function AdminPanel() {
                         <select name="city" defaultValue={v.city} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
                           {cities.map((city) => <option key={city}>{city}</option>)}
                         </select>
+                        <input name="area" defaultValue={v.area} placeholder="Area / Locality" className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
+                        <input name="pincode" defaultValue={v.pincode} placeholder="PIN Code (optional)" inputMode="numeric" maxLength={6} pattern="[1-9][0-9]{5}" className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
                         <select name="category" defaultValue={v.category} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
                           {(v.suitable_for?.includes("Film Shooting Locations") && !v.suitable_for?.includes("Venue Bookings") ? filmCategories : categories).map((category) => (
                             <option key={category.id} value={category.slug}>{category.name}</option>

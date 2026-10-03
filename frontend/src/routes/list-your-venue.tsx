@@ -46,6 +46,8 @@ const schema = z.object({
   venueName: z.string().trim().min(2, "Enter the venue name").max(120),
   city: z.string().min(1, "Select a city"),
   state: z.string().min(1, "Select a state"),
+  area: z.string().trim().max(120).optional(),
+  pincode: z.string().trim().refine((value) => !value || /^[1-9][0-9]{5}$/.test(value), "Enter a valid 6-digit PIN Code").optional(),
   category: z.string().optional(),
   subcategory: z.string().trim().max(80).optional(),
   address: z.string().trim().min(5, "Enter the venue location").max(240),
@@ -315,6 +317,8 @@ function ListYourVenue() {
       subcategory: d.subcategory ?? "",
       city: d.city,
       state: d.state,
+      area: d.area ?? "",
+      pincode: d.pincode ?? "",
       address: d.address,
       description: d.notes ?? "",
       gst_number: d.gst ?? "",
@@ -537,6 +541,27 @@ function ListYourVenue() {
                   ))}
                 </select>
                 {err("state")}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                name="area"
+                placeholder="Area / Locality (optional)"
+                className={field}
+                maxLength={120}
+              />
+              <div>
+                <input
+                  name="pincode"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  placeholder="PIN Code (optional)"
+                  className={field}
+                  maxLength={6}
+                  pattern="[1-9][0-9]{5}"
+                  title="Enter a valid 6-digit Indian PIN Code"
+                />
+                {err("pincode")}
               </div>
             </div>
             <fieldset className="rounded-md border border-border bg-background p-4">
