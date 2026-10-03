@@ -82,6 +82,7 @@ type LeadRow = {
 
 type SubRow = {
   id: string;
+  plan_name: string;
   status: string;
   amount: number;
   started_on: string | null;

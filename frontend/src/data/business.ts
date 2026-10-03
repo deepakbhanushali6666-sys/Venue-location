@@ -10,7 +10,8 @@ export const BUSINESS = {
 };
 
 export const PLAN = {
-  name: "VENUES LOCATION Annual Listing Plan",
+  code: "verified_listing",
+  name: "VENUES LOCATION Verified Listing",
   amount: 3650,
   currency: "INR",
   period: "12 months",
@@ -20,6 +21,22 @@ export const PLAN = {
     "Owner dashboard with lead status tracking",
     "Featured placement eligibility",
     "GST invoice for every payment",
+  ],
+};
+
+export const PRO_MARKETING_PLAN = {
+  code: "pro_marketing",
+  name: "VENUES LOCATION Pro Marketing",
+  amount: 36500,
+  currency: "INR",
+  period: "12 months",
+  features: [
+    "Everything in Premium",
+    "Dedicated promotional support",
+    "Social media promotion",
+    "Reels and video promotion",
+    "The Location Magazine promotion",
+    "Content and campaign support",
   ],
 };
 

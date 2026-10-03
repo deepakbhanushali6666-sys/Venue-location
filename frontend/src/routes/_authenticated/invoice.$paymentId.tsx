@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getPayment, getProfile } from "@/lib/api";
-import { BUSINESS, PLAN, formatINR } from "@/data/business";
+import { BUSINESS, PLAN, PRO_MARKETING_PLAN, formatINR } from "@/data/business";
 
 export const Route = createFileRoute("/_authenticated/invoice/$paymentId")({
   head: () => ({
@@ -22,6 +22,7 @@ type Payment = {
   id: string;
   owner_id: string;
   amount: number;
+  plan_code?: string;
   method: string;
   reference: string;
   payer_name: string;
@@ -69,6 +70,9 @@ function InvoicePage() {
     );
 
   const verified = payment.status === "verified";
+  const invoicePlan = payment.plan_code === PRO_MARKETING_PLAN.code || payment.amount === PRO_MARKETING_PLAN.amount
+    ? PRO_MARKETING_PLAN
+    : PLAN;
   const taxable = Math.round((payment.amount / 1.18) * 100) / 100;
   const gst = Math.round((payment.amount - taxable) * 100) / 100;
   const date = payment.verified_at ?? payment.created_at;
@@ -135,8 +139,8 @@ function InvoicePage() {
             <tbody>
               <tr className="border-t border-border">
                 <td className="py-3">
-                  <div className="font-bold text-navy">{PLAN.name}</div>
-                  <div className="text-muted-foreground">Annual venue listing subscription ({PLAN.period})</div>
+                  <div className="font-bold text-navy">{invoicePlan.name}</div>
+                  <div className="text-muted-foreground">Annual venue listing subscription ({invoicePlan.period})</div>
                 </td>
                 <td className="text-right">{formatINR(taxable)}</td>
               </tr>

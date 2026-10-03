@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { createPayment, listMyPayments } from "@/lib/api";
-import { BUSINESS, PAYMENT_DETAILS, PLAN, formatINR, upiLink } from "@/data/business";
+import { BUSINESS, PAYMENT_DETAILS, PLAN, PRO_MARKETING_PLAN, formatINR, upiLink } from "@/data/business";
 
 type PaymentRow = {
   id: string;
   amount: number;
+  plan_code?: string;
   method: string;
   reference: string;
   status: string;
@@ -18,6 +19,7 @@ type PaymentRow = {
 type SubRow = {
   status: string;
   amount: number;
+  plan_name?: string;
   started_on: string | null;
   expires_on: string | null;
   invoice_number: string;
@@ -47,6 +49,10 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
   }, [userId]);
 
   const pending = payments.find((p) => p.status === "pending");
+  const currentPlan =
+    sub?.plan_name === PRO_MARKETING_PLAN.name || sub?.amount === PRO_MARKETING_PLAN.amount || pending?.plan_code === PRO_MARKETING_PLAN.code
+      ? PRO_MARKETING_PLAN
+      : PLAN;
   const left = daysLeft(sub?.expires_on ?? null);
   const isActive = sub?.status === "active" && (left === null || left > 0);
 
@@ -61,7 +67,8 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
     setSaving(true);
     try {
       await createPayment({
-        amount: PLAN.amount,
+        amount: currentPlan.amount,
+        plan_code: currentPlan.code,
         method: String(f.get("method") ?? "upi"),
         reference,
         payer_name: String(f.get("payer_name") ?? "").trim(),
@@ -84,7 +91,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
         <div>
           <h2 className="font-display text-xl font-extrabold text-navy">Subscription</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {PLAN.name} — {formatINR(PLAN.amount)} for {PLAN.period}.
+            {currentPlan.name} — {formatINR(currentPlan.amount)} for {currentPlan.period}.
           </p>
         </div>
         <span
@@ -112,7 +119,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
       </div>
 
       <ul className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-        {PLAN.features.map((f) => (
+        {currentPlan.features.map((f) => (
           <li key={f}>• {f}</li>
         ))}
       </ul>
@@ -128,7 +135,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
           onClick={() => setOpen((o) => !o)}
           className="rounded-md bg-gold px-5 py-2 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground"
         >
-          {open ? "Close" : isActive ? `Renew ${formatINR(PLAN.amount)}` : `Pay ${formatINR(PLAN.amount)} / year`}
+          {open ? "Close" : isActive ? `Renew ${formatINR(currentPlan.amount)}` : `Pay ${formatINR(currentPlan.amount)} / year`}
         </button>
         <a
           href={`https://wa.me/91${BUSINESS.phone}?text=${encodeURIComponent("Hi, I need help with my VENUES LOCATION subscription payment.")}`}
@@ -143,7 +150,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
       {open && (
         <div className="mt-5 grid gap-5 rounded-lg border border-border p-4 lg:grid-cols-2">
           <div>
-            <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(PLAN.amount)}</h3>
+            <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(currentPlan.amount)}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Pay by UPI or bank transfer, then submit the reference number for verification.
             </p>
@@ -174,7 +181,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
               </div>
             </dl>
             <a
-              href={upiLink(PLAN.amount, "VENUES LOCATION annual listing")}
+              href={upiLink(currentPlan.amount, currentPlan.name)}
               className="mt-3 inline-block rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy"
             >
               Open UPI app

@@ -3,20 +3,34 @@ import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/aut
 
 export const paymentsRouter = Router();
 
+const PAID_LISTING_PLANS = {
+  verified_listing: { amount: 3650, name: "VENUES LOCATION Verified Listing" },
+  pro_marketing: { amount: 36500, name: "VENUES LOCATION Pro Marketing" },
+} as const;
+
 // Auth: owner submits a payment for their annual subscription.
 paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
-    const { amount, method, reference = "", payer_name = "", note = "", venue_draft_id } = req.body;
-    let paymentAmount = amount;
-    let paymentMethod = method;
-    let paymentNote = note;
+    const {
+      plan_code = "verified_listing",
+      method = "upi",
+      reference = "",
+      payer_name = "",
+      note = "",
+      venue_draft_id,
+    } = req.body;
+    const plan = PAID_LISTING_PLANS[plan_code as keyof typeof PAID_LISTING_PLANS];
+    if (!plan) {
+      res.status(400).json({ error: "Select a valid subscription plan" });
+      return;
+    }
+    if (!String(reference).trim()) {
+      res.status(400).json({ error: "Enter the UPI transaction reference" });
+      return;
+    }
+    let paymentNote = String(note).trim();
 
     if (venue_draft_id) {
-      if (!String(reference).trim()) {
-        res.status(400).json({ error: "Enter the UPI transaction reference" });
-        return;
-      }
-
       const { data: draft, error: draftError } = await req.client!
         .from("venue_listing_drafts")
         .select("id, owner_id, submitted_venue_id, payload")
@@ -45,18 +59,17 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
         return;
       }
 
-      paymentAmount = 3650;
-      paymentMethod = "upi";
       const listing = draft.payload as { name?: string; city?: string };
-      paymentNote = `Verified listing: ${listing.name ?? ""}, ${listing.city ?? ""}`;
+      paymentNote = `${plan.name}: ${listing.name ?? ""}, ${listing.city ?? ""}`;
     }
 
     const { data, error } = await req.client!
       .from("payments")
       .insert({
         owner_id: req.user!.id,
-        amount: venue_draft_id ? 3650 : paymentAmount,
-        method: venue_draft_id ? "upi" : paymentMethod,
+        amount: plan.amount,
+        method: venue_draft_id ? "upi" : method,
+        plan_code,
         reference,
         payer_name,
         note: paymentNote,

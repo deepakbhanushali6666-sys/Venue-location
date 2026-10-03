@@ -24,6 +24,23 @@ alter table public.payments
   add column if not exists venue_draft_id uuid
   references public.venue_listing_drafts(id) on delete set null;
 
+alter table public.payments
+  add column if not exists plan_code text not null default 'verified_listing';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'payments_plan_code_allowed'
+      and conrelid = 'public.payments'::regclass
+  ) then
+    alter table public.payments
+      add constraint payments_plan_code_allowed
+      check (plan_code in ('verified_listing', 'pro_marketing'));
+  end if;
+end;
+$$;
+
 create unique index if not exists payments_one_active_listing_payment_idx
   on public.payments(venue_draft_id)
   where venue_draft_id is not null and status in ('pending', 'verified');
@@ -40,6 +57,7 @@ declare
   v_payload jsonb;
   v_venue_id uuid;
   v_invoice text;
+  v_plan_name text;
   v_start date;
   v_expiry date;
   v_current date;
@@ -52,6 +70,21 @@ begin
   if not found then raise exception 'Payment not found'; end if;
   if v_pay.status = 'verified' then return v_pay.invoice_number; end if;
   if v_pay.status <> 'pending' then raise exception 'Only pending payments can be verified'; end if;
+  if v_pay.plan_code not in ('verified_listing', 'pro_marketing') then
+    raise exception 'Unsupported subscription plan';
+  end if;
+
+  if v_pay.plan_code = 'pro_marketing' then
+    v_plan_name := 'VENUES LOCATION Pro Marketing';
+  else
+    v_plan_name := 'VENUES LOCATION Verified Listing';
+  end if;
+  if v_pay.venue_draft_id is not null and (
+    (v_pay.plan_code = 'verified_listing' and v_pay.amount <> 3650)
+    or (v_pay.plan_code = 'pro_marketing' and v_pay.amount <> 36500)
+  ) then
+    raise exception 'Payment amount does not match the selected plan';
+  end if;
 
   if v_pay.venue_draft_id is not null then
     select * into v_draft
@@ -121,10 +154,10 @@ begin
     v_expiry := current_date + interval '1 year';
   end if;
 
-  insert into public.subscriptions (owner_id, status, amount, started_on, expires_on, invoice_number)
-  values (v_pay.owner_id, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
+  insert into public.subscriptions (owner_id, plan_name, status, amount, started_on, expires_on, invoice_number)
+  values (v_pay.owner_id, v_plan_name, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
   on conflict (owner_id) do update
-    set status = 'active', amount = excluded.amount,
+    set plan_name = excluded.plan_name, status = 'active', amount = excluded.amount,
         started_on = coalesce(public.subscriptions.started_on, excluded.started_on),
         expires_on = excluded.expires_on, invoice_number = excluded.invoice_number;
 
