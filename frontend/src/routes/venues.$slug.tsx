@@ -133,20 +133,26 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
                 </span>
               )}
               <h1 className="mt-3 font-display text-3xl font-extrabold text-navy">{venue.name}</h1>
-              <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="size-4 text-gold" />
-                  {[venue.area, venue.city, venue.state].filter(Boolean).join(", ")}
-                  {venue.pincode && <span> · PIN {venue.pincode}</span>}
+              <div className="mt-3 grid gap-x-5 gap-y-3 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-5">
+                <span className="flex min-w-0 items-start gap-1.5 sm:col-span-2 xl:col-span-2">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-gold" />
+                  <span className="min-w-0 wrap-break-word">
+                    <span className="block">{[venue.area, venue.city, venue.state].filter(Boolean).join(", ")}</span>
+                    {venue.pincode && (
+                      <span className="mt-1 inline-flex rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-navy">
+                        PIN {venue.pincode}
+                      </span>
+                    )}
+                  </span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Users className="size-4 text-gold" /> Up to {venue.capacity} guests
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Users className="size-4 shrink-0 text-gold" /> <span>Up to {venue.capacity} guests</span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Car className="size-4 text-gold" /> {venue.parking}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Car className="size-4 shrink-0 text-gold" /> <span>{venue.parking}</span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Star className="size-4 fill-gold text-gold" /> {venue.rating}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Star className="size-4 shrink-0 fill-gold text-gold" /> <span>{venue.rating}</span>
                 </span>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-foreground/85">{venue.description}</p>
