@@ -61,6 +61,8 @@ export const setVenueStatus = (id: string, status: "approved" | "rejected" | "pe
   patch<{ venue: Record<string, unknown> }>(`/venues/${id}/status`, { status });
 export const setVenueFeatured = (id: string, featured: boolean) =>
   patch<{ venue: Record<string, unknown> }>(`/venues/${id}/featured`, { featured });
+export const setVenueFeaturedOrder = (id: string, featured_order: number) =>
+  patch<{ venue: Record<string, unknown> }>(`/venues/${id}/featured-order`, { featured_order });
 export const deleteVenue = (id: string) => del<void>(`/venues/${id}`);
 
 // Leads

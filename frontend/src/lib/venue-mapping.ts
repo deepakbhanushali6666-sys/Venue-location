@@ -23,6 +23,7 @@ export type VenueRow = {
   video_url: string;
   map_query: string;
   featured: boolean;
+  featured_order?: number;
 };
 
 export function rowToVenue(row: VenueRow): Venue {
@@ -38,6 +39,7 @@ export function rowToVenue(row: VenueRow): Venue {
     parking: row.parking || "On request",
     rating: 4.5,
     featured: row.featured,
+    featuredOrder: row.featured_order ?? 0,
     suitableFor: row.suitable_for,
       ...(row.booking_purposes ? { bookingPurposes: row.booking_purposes } : {}),
       ...(row.booking_restrictions?.length ? { bookingRestrictions: row.booking_restrictions } : {}),

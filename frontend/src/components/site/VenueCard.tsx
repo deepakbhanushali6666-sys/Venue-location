@@ -26,6 +26,11 @@ export function VenueCard({ venue }: { venue: Venue }) {
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded bg-navy/90 px-2 py-1 text-[11px] font-bold text-navy-foreground">
           <Star className="size-3 fill-gold text-gold" /> {venue.rating}
         </span>
+        {venue.featured && (
+          <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded bg-gold px-2 py-1 text-[11px] font-extrabold uppercase text-gold-foreground">
+            <Star className="size-3 fill-current" /> Featured
+          </span>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-display text-lg font-bold text-navy">{venue.name}</h3>

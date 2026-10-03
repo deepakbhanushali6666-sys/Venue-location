@@ -162,6 +162,28 @@ venuesRouter.patch("/:id/featured", requireAuth, requireAdmin, async (req: Authe
   }
 });
 
+// Admin: set the featured display position; zero keeps the default newest-first order.
+venuesRouter.patch("/:id/featured-order", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const featuredOrder = Number(req.body?.featured_order);
+    if (!Number.isInteger(featuredOrder) || featuredOrder < 0) {
+      res.status(400).json({ error: "featured_order must be a non-negative integer" });
+      return;
+    }
+
+    const { data, error } = await req.client!
+      .from("venues")
+      .update({ featured_order: featuredOrder })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ venue: data });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Admin: permanently delete a venue.
 venuesRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {

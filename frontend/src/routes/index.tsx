@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Building2,
@@ -19,7 +20,9 @@ import { FounderPortrait } from "@/components/site/FounderPortrait";
 import { SearchPanel } from "@/components/site/SearchPanel";
 import { VenueCard } from "@/components/site/VenueCard";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
-import { CONTACT, categories, testimonials, venues } from "@/data/venues";
+import { CONTACT, categories, testimonials, venues, type Venue } from "@/data/venues";
+import { listVenues } from "@/lib/api";
+import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -68,7 +71,27 @@ const why = [
 ];
 
 function Home() {
-  const featured = venues.filter((v) => v.featured);
+  const [liveVenues, setLiveVenues] = useState<Venue[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listVenues()
+      .then(({ venues: rows }) => {
+        if (!cancelled) setLiveVenues((rows as unknown as VenueRow[]).map(rowToVenue));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const featured = (liveVenues ?? venues)
+    .filter((venue) => venue.featured)
+    .sort((a, b) => {
+      const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
+      const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
 
   return (
     <div className="bg-background">
@@ -251,11 +274,15 @@ function Home() {
       {/* Featured venues */}
       <section className="mx-auto max-w-7xl px-4 pb-16">
         <SectionHeading title="Featured Venues" />
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((v) => (
-            <VenueCard key={v.slug} venue={v} />
-          ))}
-        </div>
+        {featured.length > 0 ? (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.map((v) => (
+              <VenueCard key={v.slug} venue={v} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 text-sm text-muted-foreground">No featured venues are available right now.</p>
+        )}
         <div className="mt-8 text-center">
           <Link
             to="/venues"

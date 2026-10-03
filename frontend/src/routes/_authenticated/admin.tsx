@@ -11,6 +11,7 @@ import {
   listDeletionRequests,
   rejectPayment as apiRejectPayment,
   setVenueFeatured,
+  setVenueFeaturedOrder,
   setVenueStatus,
   updateVenue,
   verifyPayment as apiVerifyPayment,
@@ -60,6 +61,7 @@ type VenueRow = {
   booking_restrictions: string[];
   status: string;
   featured: boolean;
+  featured_order: number;
   created_at: string;
 };
 
@@ -362,6 +364,23 @@ function AdminPanel() {
       void refreshAudit();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update featured status");
+    }
+  };
+
+  const setFeaturedOrder = async (id: string, featured_order: number) => {
+    if (!Number.isInteger(featured_order) || featured_order < 0) {
+      toast.error("Featured order must be zero or a positive whole number");
+      return;
+    }
+    const currentVenue = venues.find((venue) => venue.id === id);
+    if (!currentVenue || currentVenue.featured_order === featured_order) return;
+    try {
+      await setVenueFeaturedOrder(id, featured_order);
+      setVenues((prev) => prev.map((venue) => venue.id === id ? { ...venue, featured_order } : venue));
+      toast.success(featured_order === 0 ? "Featured order reset to newest first" : `Featured position set to ${featured_order}`);
+      void refreshAudit();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update featured order");
     }
   };
 
@@ -981,14 +1000,15 @@ function AdminPanel() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-260 table-fixed text-left text-sm">
               <colgroup>
-                <col className="w-[8%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[13%]" />
-                <col className="w-[16%]" />
-                <col className="w-[14%]" />
-                <col className="w-[8%]" />
                 <col className="w-[7%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+                <col className="w-[12%]" />
+                <col className="w-[15%]" />
+                <col className="w-[13%]" />
+                <col className="w-[7%]" />
+                <col className="w-[6%]" />
+                <col className="w-[8%]" />
                 <col className="w-[10%]" />
               </colgroup>
               <thead className="bg-secondary/60 text-xs uppercase tracking-wide text-muted-foreground">
@@ -1001,6 +1021,7 @@ function AdminPanel() {
                   <th className="px-2 py-3">Restrictions</th>
                   <th className="px-2 py-3">Status</th>
                   <th className="px-2 py-3 text-center">Featured</th>
+                  <th className="px-2 py-3 text-center" title="Lower numbers appear first; zero uses newest-first order">Featured order</th>
                   <th className="px-2 py-3">Actions</th>
                 </tr>
               </thead>
@@ -1081,6 +1102,19 @@ function AdminPanel() {
                         checked={v.featured}
                         aria-label={`Feature ${v.name}`}
                         onChange={(e) => toggleFeatured(v.id, e.target.checked)}
+                      />
+                    </td>
+                    <td className="px-2 py-4">
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        defaultValue={v.featured_order ?? 0}
+                        disabled={!v.featured}
+                        aria-label={`Featured order for ${v.name}`}
+                        title="Lower numbers appear first; zero uses newest-first order"
+                        onBlur={(event) => void setFeaturedOrder(v.id, Number(event.currentTarget.value))}
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-sm disabled:opacity-50"
                       />
                     </td>
                     <td className="px-2 py-4">

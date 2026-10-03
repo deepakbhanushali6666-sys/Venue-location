@@ -218,6 +218,7 @@ export type Venue = {
   parking: string;
   rating: number;
   featured: boolean;
+  featuredOrder?: number;
   suitableFor: string[];
   bookingPurposes?: string[];
   bookingRestrictions?: string[];

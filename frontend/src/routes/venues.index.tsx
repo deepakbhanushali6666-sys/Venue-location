@@ -112,6 +112,12 @@ function VenuesPage() {
       if (band && (v.capacity < band.min || v.capacity > band.max)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    if (a.featured !== b.featured) return Number(b.featured) - Number(a.featured);
+    if (!a.featured) return 0;
+    const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
+    const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
+    return aOrder - bOrder;
   });
 
   const select = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
