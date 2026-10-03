@@ -2,6 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteLead,
@@ -10,9 +18,12 @@ import {
   getAuditLog,
   listDeletionRequests,
   rejectPayment as apiRejectPayment,
+  previewVenueTransfer,
   setVenueFeatured,
   setVenueFeaturedOrder,
   setVenueStatus,
+  transferVenueOwner,
+  type VenueTransferPreview,
   updateVenue,
   verifyPayment as apiVerifyPayment,
 } from "@/lib/api";
@@ -120,6 +131,7 @@ const ACTION_LABELS: Record<string, string> = {
   venue_created: "Venue submitted",
   venue_status_changed: "Venue approval changed",
   venue_featured_changed: "Venue featured changed",
+  venue_owner_transferred: "Venue owner transferred",
   lead_created: "Enquiry received",
   lead_status_changed: "Lead status changed",
   payment_verified: "Payment verified",
@@ -144,6 +156,7 @@ function AdminPanel() {
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
   const [savingVenue, setSavingVenue] = useState<string | null>(null);
   const [deletingLead, setDeletingLead] = useState<string | null>(null);
+  const [transferVenue, setTransferVenue] = useState<VenueRow | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -1125,6 +1138,13 @@ function AdminPanel() {
                         >
                           Edit
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setTransferVenue(v)}
+                          className="font-bold text-blue-700"
+                        >
+                          Transfer
+                        </button>
 
                         {v.status !== "approved" && (
                           <button
@@ -1246,6 +1266,17 @@ function AdminPanel() {
 
         <TeamMembersPanel />
 
+        {transferVenue && (
+          <VenueTransferDialog
+            venue={transferVenue}
+            onClose={() => setTransferVenue(null)}
+            onTransferred={() => {
+              setTransferVenue(null);
+              void loadAll();
+            }}
+          />
+        )}
+
         <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-xl font-extrabold text-navy">Audit Log</h2>
@@ -1306,5 +1337,140 @@ function AdminPanel() {
         </section>
       </div>
     </div>
+  );
+}
+
+function VenueTransferDialog({
+  venue,
+  onClose,
+  onTransferred,
+}: {
+  venue: VenueRow;
+  onClose: () => void;
+  onTransferred: () => void;
+}) {
+  const [accountIdentifier, setAccountIdentifier] = useState("");
+  const [preview, setPreview] = useState<VenueTransferPreview | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const loadPreview = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true);
+    setPreview(null);
+    try {
+      const result = await previewVenueTransfer(venue.id, venue.property_code, accountIdentifier.trim());
+      setPreview(result.preview);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not preview venue transfer");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmTransfer = async () => {
+    if (!preview || busy) return;
+    setBusy(true);
+    try {
+      await transferVenueOwner(venue.id, venue.property_code, preview.new_owner.id);
+      toast.success(`${venue.property_code} transferred to ${preview.new_owner.full_name || preview.new_owner.email}`);
+      onTransferred();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not transfer venue");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Transfer venue ownership</DialogTitle>
+          <DialogDescription>
+            The recipient must already have an owner account. Transferring removes this venue from the current owner’s dashboard and revokes their contact access.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={(event) => void loadPreview(event)} className="grid gap-3">
+          <div>
+            <label htmlFor="transfer-property-code" className="text-xs font-bold text-navy">Property code</label>
+            <input
+              id="transfer-property-code"
+              value={venue.property_code}
+              readOnly
+              className="mt-1 w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-navy"
+            />
+          </div>
+          <div>
+            <label htmlFor="transfer-owner-identifier" className="text-xs font-bold text-navy">New owner’s registered email or mobile</label>
+            <input
+              id="transfer-owner-identifier"
+              value={accountIdentifier}
+              onChange={(event) => {
+                setAccountIdentifier(event.target.value);
+                setPreview(null);
+              }}
+              autoComplete="off"
+              required
+              placeholder="Email address or mobile number"
+              className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={busy || !accountIdentifier.trim()}
+            className="w-fit rounded-md border border-border px-4 py-2 text-sm font-bold text-navy disabled:opacity-50"
+          >
+            {busy && !preview ? "Checking account…" : "Preview transfer"}
+          </button>
+        </form>
+
+        {preview && (
+          <div className="space-y-4 rounded-md border border-border bg-secondary/40 p-4 text-sm">
+            <div>
+              <h3 className="font-bold text-navy">Venue</h3>
+              <p>{preview.venue.property_code} · {preview.venue.name}</p>
+              <p className="text-muted-foreground">{[preview.venue.city, preview.venue.state].filter(Boolean).join(", ")} · {preview.venue.status}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <h3 className="font-bold text-navy">Current owner</h3>
+                <p>{preview.current_owner?.full_name || "Unknown"}</p>
+                <p className="break-all text-muted-foreground">{preview.current_owner?.email || "—"}</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-navy">New owner</h3>
+                <p>{preview.new_owner.full_name || "Owner"}</p>
+                <p className="break-all text-muted-foreground">{preview.new_owner.email}</p>
+                <p className="text-muted-foreground">{preview.new_owner.mobile || "—"}</p>
+              </div>
+            </div>
+            <p><strong>{preview.lead_count}</strong> enquiries will remain attached to this venue and appear in the new owner’s dashboard.</p>
+            <p className="text-xs text-muted-foreground">The venue stays in the admin panel. The previous owner loses venue and lead dashboard access; their approved contact requests are revoked.</p>
+          </div>
+        )}
+
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="rounded-md border border-border px-4 py-2 text-sm font-bold text-navy disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          {preview && (
+            <button
+              type="button"
+              onClick={() => void confirmTransfer()}
+              disabled={busy}
+              className="rounded-md bg-gold px-4 py-2 text-sm font-extrabold text-gold-foreground disabled:opacity-50"
+            >
+              {busy ? "Transferring…" : "Confirm transfer"}
+            </button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

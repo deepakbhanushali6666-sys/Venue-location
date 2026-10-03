@@ -63,6 +63,33 @@ export const setVenueFeatured = (id: string, featured: boolean) =>
   patch<{ venue: Record<string, unknown> }>(`/venues/${id}/featured`, { featured });
 export const setVenueFeaturedOrder = (id: string, featured_order: number) =>
   patch<{ venue: Record<string, unknown> }>(`/venues/${id}/featured-order`, { featured_order });
+export type VenueTransferOwner = {
+  id: string;
+  full_name: string;
+  email: string;
+  mobile: string;
+};
+export type VenueTransferPreview = {
+  venue: {
+    id: string;
+    property_code: string;
+    name: string;
+    city: string;
+    state: string;
+    status: string;
+    owner_id: string;
+  };
+  current_owner: VenueTransferOwner | null;
+  new_owner: VenueTransferOwner;
+  lead_count: number;
+};
+export const previewVenueTransfer = (id: string, property_code: string, account_identifier: string) =>
+  post<{ preview: VenueTransferPreview }>(`/venues/${id}/transfer-preview`, { property_code, account_identifier });
+export const transferVenueOwner = (id: string, property_code: string, new_owner_id: string) =>
+  post<{ transfer: { venue_id: string; previous_owner_id: string; new_owner_id: string } }>(
+    `/venues/${id}/transfer-owner`,
+    { property_code, new_owner_id },
+  );
 export const deleteVenue = (id: string) => del<void>(`/venues/${id}`);
 
 // Leads

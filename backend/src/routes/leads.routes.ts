@@ -45,7 +45,7 @@ leadsRouter.post("/", async (req, res, next) => {
   }
 });
 
-// Auth: venue owners see leads for their own venues, admins and team members see everything.
+// Owner dashboards show leads only for venues currently owned by the signed-in account.
 leadsRouter.get("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
     let query = req.client!
@@ -53,20 +53,18 @@ leadsRouter.get("/", requireAuth, async (req: AuthedRequest, res, next) => {
       .select(LEAD_COLUMNS)
       .order("created_at", { ascending: false });
 
-    if (!req.user!.isStaff) {
-      const { data: venues, error: venuesError } = await req.client!
-        .from("venues")
-        .select("id")
-        .eq("owner_id", req.user!.id);
-      if (venuesError) throw venuesError;
+    const { data: venues, error: venuesError } = await req.client!
+      .from("venues")
+      .select("id")
+      .eq("owner_id", req.user!.id);
+    if (venuesError) throw venuesError;
 
-      const venueIds = (venues ?? []).map((v) => v.id);
-      if (venueIds.length === 0) {
-        res.json({ leads: [] });
-        return;
-      }
-      query = query.in("venue_id", venueIds);
+    const venueIds = (venues ?? []).map((v) => v.id);
+    if (venueIds.length === 0) {
+      res.json({ leads: [] });
+      return;
     }
+    query = query.in("venue_id", venueIds);
 
     const { data, error } = await query;
     if (error) throw error;
