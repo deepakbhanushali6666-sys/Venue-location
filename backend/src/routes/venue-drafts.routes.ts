@@ -14,6 +14,14 @@ venueDraftsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) =
       res.status(400).json({ error: "Venue name, category and city are required" });
       return;
     }
+    if (payload.plan_code !== "verified_listing" && payload.plan_code !== "pro_marketing") {
+      res.status(400).json({ error: "Choose a supported paid listing plan" });
+      return;
+    }
+    if (Array.isArray(payload.photos) && payload.photos.length > 20) {
+      res.status(400).json({ error: "Paid listings allow up to 20 photos" });
+      return;
+    }
 
     const { data, error } = await req.client!
       .from("venue_listing_drafts")

@@ -96,6 +96,13 @@ begin
     if v_draft.submitted_venue_id is not null then raise exception 'Listing draft was already submitted'; end if;
 
     v_payload := v_draft.payload;
+    if v_payload->>'plan_code' is distinct from v_pay.plan_code then
+      raise exception 'Payment plan does not match the saved listing draft';
+    end if;
+    if jsonb_typeof(v_payload->'photos') = 'array'
+      and jsonb_array_length(v_payload->'photos') > 20 then
+      raise exception 'Paid listings allow up to 20 photos';
+    end if;
     if coalesce(trim(v_payload->>'name'), '') = ''
       or coalesce(trim(v_payload->>'slug'), '') = ''
       or coalesce(trim(v_payload->>'category'), '') = ''

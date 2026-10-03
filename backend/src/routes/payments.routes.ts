@@ -59,7 +59,11 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
         return;
       }
 
-      const listing = draft.payload as { name?: string; city?: string };
+      const listing = draft.payload as { name?: string; city?: string; plan_code?: string };
+      if (listing.plan_code !== plan_code) {
+        res.status(409).json({ error: "Payment plan does not match the saved listing draft" });
+        return;
+      }
       paymentNote = `${plan.name}: ${listing.name ?? ""}, ${listing.city ?? ""}`;
     }
 

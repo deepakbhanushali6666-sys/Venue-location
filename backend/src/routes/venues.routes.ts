@@ -4,6 +4,20 @@ import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/aut
 
 export const venuesRouter = Router();
 
+async function maxVenuePhotosForOwner(req: AuthedRequest, ownerId: string) {
+  if (req.user!.isAdmin) return 20;
+  const { data: subscription, error } = await req.client!
+    .from("subscriptions")
+    .select("status, expires_on")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (error) throw error;
+  const expiresAt = subscription?.expires_on
+    ? new Date(`${subscription.expires_on}T23:59:59.999`).getTime()
+    : null;
+  return subscription?.status === "active" && (expiresAt === null || expiresAt >= Date.now()) ? 20 : 10;
+}
+
 // Public: approved venues only, with optional filters.
 venuesRouter.get("/", async (req, res, next) => {
   try {
@@ -65,13 +79,19 @@ venuesRouter.get("/:slug", async (req, res, next) => {
 venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
     const { ownerName, mobile, email, venueName, gst, notes, property_code, ...rest } = req.body ?? {};
+    const photos = Array.isArray(rest.photos) ? rest.photos : [];
+    const maxPhotos = await maxVenuePhotosForOwner(req, req.user!.id);
+    if (photos.length > maxPhotos) {
+      res.status(400).json({ error: `This listing allows up to ${maxPhotos} photos` });
+      return;
+    }
     const payload = {
       ...rest,
       owner_id: req.user!.id,
       status: "pending",
       description: typeof rest.description === "string" ? rest.description : typeof notes === "string" ? notes : "",
       gst_number: typeof rest.gst_number === "string" ? rest.gst_number : typeof gst === "string" ? gst : "",
-      photos: Array.isArray(rest.photos) ? rest.photos : [],
+      photos,
       amenities: Array.isArray(rest.amenities) ? rest.amenities : [],
       suitable_for: Array.isArray(rest.suitable_for) ? rest.suitable_for : [],
       booking_purposes: Array.isArray(rest.booking_purposes) ? rest.booking_purposes : [],
@@ -110,6 +130,17 @@ venuesRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) =>
 
     const { status, featured, owner_id, property_code, ...rest } = req.body;
     const updates: Record<string, unknown> = { ...rest };
+    if (rest.photos !== undefined) {
+      if (!Array.isArray(rest.photos)) {
+        res.status(400).json({ error: "photos must be an array" });
+        return;
+      }
+      const maxPhotos = await maxVenuePhotosForOwner(req, existing.owner_id);
+      if (rest.photos.length > maxPhotos) {
+        res.status(400).json({ error: `This listing allows up to ${maxPhotos} photos` });
+        return;
+      }
+    }
     if (req.user!.isAdmin) {
       if (status !== undefined) updates.status = status;
       if (featured !== undefined) updates.featured = featured;

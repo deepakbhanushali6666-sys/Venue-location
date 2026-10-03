@@ -366,7 +366,14 @@ function OwnerDashboard() {
                 defaultValue={editing?.amenities?.join(", ")}
                 className={`${input} sm:col-span-2`}
               />
-              {userId && <PhotoUploader userId={userId} value={photos} onChange={setPhotos} />}
+              {userId && (
+                <PhotoUploader
+                  userId={userId}
+                  value={photos}
+                  onChange={setPhotos}
+                  maxPhotos={sub?.status === "active" && (!sub.expires_on || new Date(sub.expires_on).getTime() > Date.now()) ? 20 : 10}
+                />
+              )}
 
               <textarea
                 name="description"

@@ -62,7 +62,7 @@ const listingPlans = [
     price: "₹0",
     period: "",
     description: "Create your venue profile and start receiving enquiries.",
-    features: ["Add property details", "Upload selected photos", "Choose accepted booking types", "Appear in relevant searches", "Receive customer enquiries"],
+    features: ["Add property details", "Up to 10 venue photos", "Choose accepted booking types", "Appear in relevant searches", "Receive customer enquiries"],
     image: basicPlanImage,
     imageAlt: "Heritage courtyard available as a film location",
     theme: "border-emerald-200 bg-emerald-50/80",
@@ -77,7 +77,7 @@ const listingPlans = [
     price: "₹3,650",
     period: "/ year",
     description: "Build trust with a verified profile and enhanced presentation.",
-    features: ["Everything in Basic", "Verified profile badge", "Enhanced photo gallery", "Add video or reel", "Priority in search results", "Contact and enquiry tools"],
+    features: ["Everything in Basic", "Up to 20 venue photos", "Verified profile badge", "Add video or reel", "Priority in search results", "Contact and enquiry tools"],
     image: verifiedPlanImage,
     imageAlt: "Resort pool and waterfront venue",
     theme: "border-blue-200 bg-blue-50/80",
@@ -109,7 +109,7 @@ const listingPlans = [
     price: "₹36,500",
     period: "/ year",
     description: "Complete marketing support for maximum exposure.",
-    features: ["Everything in Premium", "Dedicated promotional support", "Social media promotion", "Reels and video promotion", "The Location Magazine promotion", "Content and campaign support"],
+    features: ["Everything in Premium", "Up to 20 venue photos", "Dedicated promotional support", "Social media promotion", "Reels and video promotion", "The Location Magazine promotion", "Content and campaign support"],
     image: proPlanImage,
     imageAlt: "Film production studio with lighting equipment",
     theme: "border-rose-200 bg-rose-50/80",
@@ -271,6 +271,11 @@ function ListYourVenue() {
       return;
     }
     const d = parsed.data;
+    const photoLimit = selectedPlan === "basic" ? 10 : 20;
+    if (photos.length > photoLimit) {
+      toast.error(`${selectedPlan === "basic" ? "Basic" : "Paid"} listings allow up to ${photoLimit} photos. Remove ${photos.length - photoLimit} photo${photos.length - photoLimit === 1 ? "" : "s"} to continue.`);
+      return;
+    }
 
     if (!ownerId) {
       const password = data["password"] ?? "";
@@ -334,7 +339,7 @@ function ListYourVenue() {
     };
     try {
       if (selectedPlan !== "basic") {
-        const { draft } = await createVenueDraft(listingPayload);
+        const { draft } = await createVenueDraft({ ...listingPayload, plan_code: selectedPaymentPlan.code });
         setDraftId(draft.id);
         setAccountNotice(null);
         toast.success("Listing draft saved. Complete payment to submit it for approval.");
@@ -653,7 +658,13 @@ function ListYourVenue() {
             />
             {ownerId ? (
               <div className="grid">
-                <PhotoUploader userId={ownerId} value={photos} onChange={setPhotos} onBusyChange={setUploading} />
+                <PhotoUploader
+                  userId={ownerId}
+                  value={photos}
+                  onChange={setPhotos}
+                  onBusyChange={setUploading}
+                  maxPhotos={selectedPlan === "basic" ? 10 : 20}
+                />
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground">

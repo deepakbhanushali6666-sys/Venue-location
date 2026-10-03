@@ -5,7 +5,7 @@ import { VenuePhotoWatermark } from "@/components/site/VenuePhotoWatermark";
 
 const TEN_YEARS = 60 * 60 * 24 * 3650;
 const MAX_BYTES = 8 * 1024 * 1024;
-const MAX_PHOTOS = 10;
+const DEFAULT_MAX_PHOTOS = 10;
 const MAX_IMAGE_DIMENSION = 2400;
 
 async function watermarkPhoto(file: File): Promise<Blob> {
@@ -45,20 +45,22 @@ export function PhotoUploader({
   value,
   onChange,
   onBusyChange,
+  maxPhotos = DEFAULT_MAX_PHOTOS,
 }: {
   userId: string;
   value: string[];
   onChange: (next: string[]) => void;
   onBusyChange?: (busy: boolean) => void;
+  maxPhotos?: number;
 }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const remaining = MAX_PHOTOS - value.length;
+    const remaining = maxPhotos - value.length;
     if (remaining <= 0) {
-      toast.error(`You can upload up to ${MAX_PHOTOS} photos`);
+      toast.error(`You can upload up to ${maxPhotos} photos`);
       return;
     }
     setBusy(true);
@@ -66,7 +68,7 @@ export function PhotoUploader({
     const uploaded: string[] = [];
     const selected = Array.from(files);
     if (selected.length > remaining) {
-      toast.error(`Only ${remaining} more photo${remaining > 1 ? "s" : ""} allowed (max ${MAX_PHOTOS})`);
+      toast.error(`Only ${remaining} more photo${remaining > 1 ? "s" : ""} allowed (max ${maxPhotos})`);
     }
     for (const file of selected.slice(0, remaining)) {
       if (!file.type.startsWith("image/")) {
@@ -141,14 +143,14 @@ export function PhotoUploader({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled={busy || value.length >= MAX_PHOTOS}
+          disabled={busy || value.length >= maxPhotos}
           onClick={() => inputRef.current?.click()}
           className="rounded-md border border-navy px-4 py-2 font-display text-xs font-extrabold uppercase tracking-wide text-navy disabled:opacity-60"
         >
           {busy ? "Uploading…" : "Upload photos"}
         </button>
         <span className="text-xs text-muted-foreground">
-          JPG or PNG, up to 8 MB each. First photo is the cover. {value.length}/{MAX_PHOTOS} photos.
+          JPG or PNG, up to 8 MB each. First photo is the cover. {value.length}/{maxPhotos} photos.
         </span>
       </div>
 
