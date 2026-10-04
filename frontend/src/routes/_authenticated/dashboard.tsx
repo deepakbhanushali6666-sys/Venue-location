@@ -109,22 +109,29 @@ function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth.user?.id;
-    setUserId(uid);
-    if (!uid) return;
+    setLoading(true);
+    try {
+      const { data: auth, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      const uid = auth.user?.id;
+      setUserId(uid);
+      if (!uid) return;
 
-    const [{ venues: v }, { subscription: s }, { leads: l }, { requests: cr }] = await Promise.all([
-      listMyVenues(),
-      getMySubscription(),
-      listLeads(),
-      listMyLeadContactRequests(),
-    ]);
-    setVenues(v as unknown as VenueRow[]);
-    setSub(s as unknown as SubRow | null);
-    setLeads(l as unknown as LeadRow[]);
-    setContactRequests(cr);
-    setLoading(false);
+      const [{ venues: v }, { subscription: s }, { leads: l }, { requests: cr }] = await Promise.all([
+        listMyVenues(),
+        getMySubscription(),
+        listLeads(),
+        listMyLeadContactRequests(),
+      ]);
+      setVenues(v as unknown as VenueRow[]);
+      setSub(s as unknown as SubRow | null);
+      setLeads(l as unknown as LeadRow[]);
+      setContactRequests(cr);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load dashboard");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

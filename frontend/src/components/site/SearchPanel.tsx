@@ -109,7 +109,11 @@ export function SearchPanel() {
           <button
             key={t.id}
             type="button"
+            aria-label={t.label}
+            aria-pressed={tab === t.id}
+            title={t.label}
             onClick={() => {
+              if (tab === t.id) return;
               setTab(t.id);
               set("category", "");
               setOpenPicker(null);
