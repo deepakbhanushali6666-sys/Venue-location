@@ -50,6 +50,8 @@ const schema = z.object({
   pincode: z.string().trim().refine((value) => !value || /^[1-9][0-9]{5}$/.test(value), "Enter a valid 6-digit PIN Code").optional(),
   category: z.string().optional(),
   subcategory: z.string().trim().max(80).optional(),
+  filmCategory: z.string().optional(),
+  filmSubcategory: z.string().trim().max(80).optional(),
   address: z.string().trim().min(5, "Enter the venue location").max(240),
   gst: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(600).optional(),
@@ -179,6 +181,7 @@ function ListYourVenue() {
   const [formStates, setFormStates] = useState<string[]>(states);
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedFilmCategory, setSelectedFilmCategory] = useState("");
   const [accountNotice, setAccountNotice] = useState<"created" | "confirmation" | "existing" | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "verified" | "pro">("basic");
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -213,9 +216,12 @@ function ListYourVenue() {
   }, []);
 
   const filmOnly = selectedListingPurposes.includes("Film Shooting Locations") && !selectedListingPurposes.includes("Venue Bookings");
+  const venueAndFilm = selectedListingPurposes.includes("Film Shooting Locations") && selectedListingPurposes.includes("Venue Bookings");
   const categoryOptions = filmOnly ? filmCategories : categories;
   const subcategoryOptions =
     categoryOptions.find((c) => c.name === selectedCategory)?.subcategories ?? [];
+  const filmSubcategoryOptions =
+    filmCategories.find((category) => category.name === selectedFilmCategory)?.subcategories ?? [];
   const navigate = useNavigate();
   const field =
     "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
@@ -265,12 +271,23 @@ function ListYourVenue() {
       toast.error("Select at least one listing purpose");
       return;
     }
+    const includesVenueBookings = selectedListingPurposes.includes("Venue Bookings");
+    const includesFilmLocations = selectedListingPurposes.includes("Film Shooting Locations");
     const selectedCategoryRecord = categoryOptions.find((category) => category.name === parsed.data.category);
     if (!selectedCategoryRecord) {
-      setErrors({ category: "Select a category" });
+      setErrors({ category: includesVenueBookings ? "Select a venue category" : "Select a film location category" });
       return;
     }
     const d = parsed.data;
+    const selectedFilmCategoryRecord = includesFilmLocations
+      ? venueAndFilm
+        ? filmCategories.find((category) => category.name === d.filmCategory)
+        : selectedCategoryRecord
+      : undefined;
+    if (venueAndFilm && !selectedFilmCategoryRecord) {
+      toast.error("Select a film location category");
+      return;
+    }
     const photoLimit = selectedPlan === "basic" ? 10 : 20;
     if (photos.length > photoLimit) {
       toast.error(`${selectedPlan === "basic" ? "Basic" : "Paid"} listings allow up to ${photoLimit} photos. Remove ${photos.length - photoLimit} photo${photos.length - photoLimit === 1 ? "" : "s"} to continue.`);
@@ -323,6 +340,10 @@ function ListYourVenue() {
       slug,
       category: selectedCategoryRecord.slug,
       subcategory: d.subcategory ?? "",
+      film_category: selectedFilmCategoryRecord?.slug ?? "",
+      film_subcategory: includesFilmLocations
+        ? venueAndFilm ? d.filmSubcategory ?? "" : d.subcategory ?? ""
+        : "",
       city: d.city,
       state: d.state,
       area: d.area ?? "",
@@ -581,6 +602,7 @@ function ListYourVenue() {
                   type="button"
                   onClick={() => {
                     setSelectedCategory("");
+                    setSelectedFilmCategory("");
                     setSelectedListingPurposes((current) =>
                       current.length === listingPurposeOptions.length ? [] : [...listingPurposeOptions],
                     );
@@ -601,6 +623,7 @@ function ListYourVenue() {
                       checked={selectedListingPurposes.includes(option)}
                       onChange={(event) => {
                         setSelectedCategory("");
+                        setSelectedFilmCategory("");
                         setSelectedListingPurposes((current) =>
                           event.target.checked ? [...current, option] : current.filter((item) => item !== option),
                         );
@@ -639,6 +662,34 @@ function ListYourVenue() {
                   ))}
                 </select>
                 {err("subcategory")}
+              </div>
+            )}
+            {venueAndFilm && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  name="filmCategory"
+                  value={selectedFilmCategory}
+                  onChange={(event) => setSelectedFilmCategory(event.target.value)}
+                  className={field}
+                  required
+                >
+                  <option value="">Film Location Category*</option>
+                  {filmCategories.map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
+                </select>
+                <select
+                  key={selectedFilmCategory}
+                  name="filmSubcategory"
+                  defaultValue=""
+                  className={field}
+                  disabled={!selectedFilmCategory || filmSubcategoryOptions.length === 0}
+                >
+                  <option value="">Film Location Subcategory (optional)</option>
+                  {filmSubcategoryOptions.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
+                  ))}
+                </select>
               </div>
             )}
             <div>

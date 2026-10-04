@@ -69,6 +69,8 @@ type VenueRow = {
   pincode: string;
   category: string;
   subcategory: string;
+  film_category: string;
+  film_subcategory: string;
   suitable_for: string[];
   booking_purposes: string[];
   booking_restrictions: string[];
@@ -1074,6 +1076,12 @@ function AdminPanel() {
                             <span className="font-medium text-foreground">Subcategory:</span>{" "}
                             {v.subcategory || "None"}
                           </li>
+                          {(v.film_category || v.film_subcategory) && (
+                            <li>
+                              <span className="font-medium text-foreground">Film location:</span>{" "}
+                              {[v.film_category, v.film_subcategory].filter(Boolean).join(" / ")}
+                            </li>
+                          )}
                         </ul>
                       </details>
                     </td>

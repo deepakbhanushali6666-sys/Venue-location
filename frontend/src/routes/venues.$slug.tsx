@@ -127,6 +127,12 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               <span className="rounded bg-gold px-2 py-1 text-[11px] font-bold uppercase text-gold-foreground">
                 {categoryBySlug(venue.category)?.name}
               </span>
+              {venue.filmCategory && venue.filmCategory !== venue.category && (
+                <span className="ml-2 rounded bg-secondary px-2 py-1 text-[11px] font-bold uppercase text-navy">
+                  Film: {venue.filmCategory.replaceAll("-", " ")}
+                  {venue.filmSubcategory ? ` / ${venue.filmSubcategory}` : ""}
+                </span>
+              )}
               {venue.propertyCode && (
                 <span className="ml-2 rounded bg-secondary px-2 py-1 text-[11px] font-bold uppercase text-navy">
                   Property Code: {venue.propertyCode}

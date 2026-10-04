@@ -210,6 +210,8 @@ export type Venue = {
   name: string;
   category: CategorySlug;
   subcategory?: string;
+  filmCategory?: string;
+  filmSubcategory?: string;
   city: string;
   state: string;
   area: string;

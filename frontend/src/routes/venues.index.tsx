@@ -17,6 +17,8 @@ import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 type VenueSearch = {
   category?: string;
   subcategory?: string;
+  filmType?: string;
+  filmSubcategory?: string;
   city?: string;
   state?: string;
   event?: string;
@@ -27,7 +29,7 @@ type VenueSearch = {
 export const Route = createFileRoute("/venues/")({
   validateSearch: (search: Record<string, unknown>): VenueSearch => {
     const out: VenueSearch = {};
-    const keys = ["category", "subcategory", "city", "state", "event", "budget", "capacity"] as const;
+    const keys = ["category", "subcategory", "filmType", "filmSubcategory", "city", "state", "event", "budget", "capacity"] as const;
     for (const key of keys) {
       const value = search[key];
       if (typeof value === "string" && value) out[key] = value;
@@ -59,6 +61,7 @@ function VenuesPage() {
   const navigate = useNavigate();
   const [liveVenues, setLiveVenues] = useState<Venue[]>([]);
   const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(defaultCategories.map((category, sort_order) => ({ ...category, id: category.slug, sort_order, subcategories: [] })));
+  const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [locationCities, setLocationCities] = useState(cities);
   const [locationStates, setLocationStates] = useState(states);
   const [purposes, setPurposes] = useState(eventTypes);
@@ -75,6 +78,7 @@ function VenuesPage() {
 
   useEffect(() => {
     listCategories().then(({ categories: rows }) => setVenueCategories(rows)).catch(() => undefined);
+    listCategories("film").then(({ categories: rows }) => setFilmCategories(rows)).catch(() => undefined);
     listLocations().then(({ locations }) => {
       setLocationCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
       setLocationStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
@@ -85,18 +89,30 @@ function VenuesPage() {
   const update = (key: keyof VenueSearch, value: string) => {
     const next: VenueSearch = { ...search };
     if (key === "category") delete next.subcategory;
+    if (key === "filmType") delete next.filmSubcategory;
     if (value) next[key] = value;
     else delete next[key];
     navigate({ to: "/venues", search: next });
   };
 
+  const browsingFilmLocations = search.category === "film-shooting-locations";
+  const venueCategorySlugs = new Set(venueCategories.map((category) => category.slug));
+  const filmOnlyCategories = filmCategories.filter((category) => !venueCategorySlugs.has(category.slug));
+  const activeCategoryOptions = browsingFilmLocations ? filmOnlyCategories : venueCategories;
+  const selectedCategory = browsingFilmLocations
+    ? filmOnlyCategories.find((category) => category.slug === search.filmType)
+    : venueCategories.find((category) => category.slug === search.category);
+  const selectedSubcategory = browsingFilmLocations ? search.filmSubcategory : search.subcategory;
+
   const hasCategoryVenues = !search.category || liveVenues.some((venue) => venue.category === search.category);
 
   const results = liveVenues.filter((v) => {
     const listingVisibility = v.suitableFor ?? [];
-    const browsingFilmLocations = search["category"] === "film-shooting-locations";
     if (browsingFilmLocations) {
       if (!listingVisibility.includes("Film Shooting Locations") && !listingVisibility.includes("Film Shoot") && !(listingVisibility.length === 0 && v.category === "film-shooting-locations")) return false;
+      if (search["filmType"] && (v.filmCategory || v.category) !== search["filmType"]) return false;
+      if (search["filmSubcategory"] && (v.filmSubcategory || v.subcategory) !== search["filmSubcategory"]) return false;
+      if (search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
     } else if (listingVisibility.length > 0 && !listingVisibility.includes("Venue Bookings")) return false;
     if (!browsingFilmLocations && hasCategoryVenues && search["category"] && v.category !== search["category"]) return false;
     if (!browsingFilmLocations && hasCategoryVenues && search["subcategory"] && v.subcategory !== search["subcategory"]) return false;
@@ -140,25 +156,29 @@ function VenuesPage() {
             <SlidersHorizontal className="size-4 text-gold" /> Filters
           </h2>
           <div className="mt-4 space-y-4">
-            <Filter label="Venue Type">
-              <select className={select} value={search["category"] ?? ""} onChange={(e) => update("category", e.target.value)}>
-                <option value="">All categories</option>
-                {venueCategories.map((c) => (
+            <Filter label={browsingFilmLocations ? "Film Location Type" : "Venue Type"}>
+              <select
+                className={select}
+                value={browsingFilmLocations ? search.filmType ?? "" : search.category === "film-shooting-locations" ? "" : search.category ?? ""}
+                onChange={(event) => update(browsingFilmLocations ? "filmType" : "category", event.target.value)}
+              >
+                <option value="">{browsingFilmLocations ? "All film location types" : "All categories"}</option>
+                {activeCategoryOptions.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.name}
                   </option>
                 ))}
               </select>
             </Filter>
-            <Filter label="Subcategory">
+            <Filter label={browsingFilmLocations ? "Film Subcategory" : "Subcategory"}>
               <select
                 className={select}
-                value={search["subcategory"] ?? ""}
-                onChange={(e) => update("subcategory", e.target.value)}
-                disabled={!search["category"]}
+                value={selectedSubcategory ?? ""}
+                onChange={(event) => update(browsingFilmLocations ? "filmSubcategory" : "subcategory", event.target.value)}
+                disabled={browsingFilmLocations ? !search.filmType : !search.category || search.category === "film-shooting-locations"}
               >
                 <option value="">All subcategories</option>
-                {venueCategories.find((category) => category.slug === search["category"])?.subcategories.map((subcategory) => (
+                {selectedCategory?.subcategories.map((subcategory) => (
                   <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
                 ))}
               </select>

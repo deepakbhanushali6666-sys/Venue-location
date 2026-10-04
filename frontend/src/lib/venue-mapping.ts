@@ -7,6 +7,8 @@ export type VenueRow = {
   name: string;
   category: string;
   subcategory?: string;
+  film_category?: string | null;
+  film_subcategory?: string | null;
   city: string;
   state: string;
   area: string;
@@ -36,6 +38,8 @@ export function rowToVenue(row: VenueRow): Venue {
     state: row.state,
     area: row.area,
     ...(row.pincode ? { pincode: row.pincode } : {}),
+    ...(row.film_category ? { filmCategory: row.film_category } : {}),
+    ...(row.film_subcategory ? { filmSubcategory: row.film_subcategory } : {}),
     capacity: row.capacity,
     startingPrice: row.starting_price,
     parking: row.parking || "On request",
