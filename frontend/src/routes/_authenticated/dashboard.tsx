@@ -398,7 +398,7 @@ function OwnerDashboard() {
             </form>
           )}
 
-          <div className="mt-5 max-h-[34rem] space-y-3 overflow-y-auto overscroll-contain pr-1">
+          <div className="mt-5 max-h-136 space-y-3 overflow-y-auto overscroll-contain pr-1">
             {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
             {!loading && venues.length === 0 && (
               <p className="text-sm text-muted-foreground">No venues yet. Add your first listing above.</p>
@@ -460,7 +460,7 @@ function OwnerDashboard() {
               request for that property. Use "Request Delete" to ask the admin to remove an enquiry.
             </p>
           )}
-          <div className="mt-4 max-h-[34rem] overflow-auto overscroll-contain">
+          <div className="mt-4 max-h-136 overflow-auto overscroll-contain">
             <table className="w-full min-w-375 text-left text-sm">
               <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>

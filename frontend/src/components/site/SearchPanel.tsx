@@ -165,7 +165,7 @@ export function SearchPanel() {
                 </PopoverTrigger>
                 <PopoverContent
                   align="start"
-                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  className="w-(--radix-popover-trigger-width) p-0"
                   onOpenAutoFocus={(event) => event.preventDefault()}
                 >
                   <Command
@@ -201,7 +201,7 @@ export function SearchPanel() {
                             }}
                           >
                             <Check className={`size-4 ${pickerValue === option.value ? "opacity-100" : "opacity-0"}`} />
-                            <span className="min-w-0 break-words">{option.name}</span>
+                            <span className="min-w-0 wrap-break-word">{option.name}</span>
                           </CommandItem>
                       ))}
                       </CommandGroup>
