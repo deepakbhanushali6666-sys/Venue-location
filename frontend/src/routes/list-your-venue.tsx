@@ -49,9 +49,7 @@ const schema = z.object({
   area: z.string().trim().max(120).optional(),
   pincode: z.string().trim().refine((value) => !value || /^[1-9][0-9]{5}$/.test(value), "Enter a valid 6-digit PIN Code").optional(),
   category: z.string().optional(),
-  subcategory: z.string().trim().max(80).optional(),
   filmCategory: z.string().optional(),
-  filmSubcategory: z.string().trim().max(80).optional(),
   address: z.string().trim().min(5, "Enter the venue location").max(240),
   gst: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(600).optional(),
@@ -182,6 +180,8 @@ function ListYourVenue() {
   const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedFilmCategory, setSelectedFilmCategory] = useState("");
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
+  const [selectedFilmSubcategories, setSelectedFilmSubcategories] = useState<string[]>([]);
   const [accountNotice, setAccountNotice] = useState<"created" | "confirmation" | "existing" | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "verified" | "pro">("basic");
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -214,6 +214,15 @@ function ListYourVenue() {
       .then(({ purposes: rows }) => setBookingOptions(rows.map((purpose) => purpose.name)))
       .catch(() => undefined);
   }, []);
+
+  // Reset the chosen subcategories whenever the owning category changes so
+  // stale selections from a previous category can't be submitted.
+  useEffect(() => {
+    setSelectedSubcategories([]);
+  }, [selectedCategory]);
+  useEffect(() => {
+    setSelectedFilmSubcategories([]);
+  }, [selectedFilmCategory]);
 
   const filmOnly = selectedListingPurposes.includes("Film Shooting Locations") && !selectedListingPurposes.includes("Venue Bookings");
   const venueAndFilm = selectedListingPurposes.includes("Film Shooting Locations") && selectedListingPurposes.includes("Venue Bookings");
@@ -339,11 +348,11 @@ function ListYourVenue() {
       name: d.venueName,
       slug,
       category: selectedCategoryRecord.slug,
-      subcategory: d.subcategory ?? "",
+      subcategory: selectedSubcategories,
       film_category: selectedFilmCategoryRecord?.slug ?? "",
       film_subcategory: includesFilmLocations
-        ? venueAndFilm ? d.filmSubcategory ?? "" : d.subcategory ?? ""
-        : "",
+        ? venueAndFilm ? selectedFilmSubcategories : selectedSubcategories
+        : [],
       city: d.city,
       state: d.state,
       area: d.area ?? "",
@@ -378,6 +387,9 @@ function ListYourVenue() {
       setSelectedListingPurposes([]);
       setSelectedRestrictions([]);
       setSelectedCategory("");
+      setSelectedFilmCategory("");
+      setSelectedSubcategories([]);
+      setSelectedFilmSubcategories([]);
       setAccountNotice(null);
       void navigate({ to: "/dashboard" });
     } catch (err) {
@@ -652,20 +664,31 @@ function ListYourVenue() {
               {err("category")}
             </div>}
             {selectedListingPurposes.length > 0 && subcategoryOptions.length > 0 && (
-              <div>
-                <select key={selectedCategory} name="subcategory" defaultValue="" className={field}>
-                  <option value="">{filmOnly ? "Film Location Subcategory (optional)" : "Venue Subcategory (optional)"}</option>
+              <fieldset className="rounded-md border border-border bg-background p-4">
+                <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
+                  {filmOnly ? "Film Location Subcategories (optional)" : "Venue Subcategories (optional)"}
+                </legend>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {subcategoryOptions.map((s) => (
-                    <option key={s.id} value={s.name}>
+                    <label key={s.id} className="flex items-center gap-2 text-sm text-foreground/85">
+                      <input
+                        type="checkbox"
+                        checked={selectedSubcategories.includes(s.name)}
+                        onChange={(event) =>
+                          setSelectedSubcategories((current) =>
+                            event.target.checked ? [...current, s.name] : current.filter((item) => item !== s.name),
+                          )
+                        }
+                        className="size-4 accent-gold"
+                      />
                       {s.name}
-                    </option>
+                    </label>
                   ))}
-                </select>
-                {err("subcategory")}
-              </div>
+                </div>
+              </fieldset>
             )}
             {venueAndFilm && (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <>
                 <select
                   name="filmCategory"
                   value={selectedFilmCategory}
@@ -678,19 +701,33 @@ function ListYourVenue() {
                     <option key={category.id} value={category.name}>{category.name}</option>
                   ))}
                 </select>
-                <select
-                  key={selectedFilmCategory}
-                  name="filmSubcategory"
-                  defaultValue=""
-                  className={field}
-                  disabled={!selectedFilmCategory || filmSubcategoryOptions.length === 0}
-                >
-                  <option value="">Film Location Subcategory (optional)</option>
-                  {filmSubcategoryOptions.map((subcategory) => (
-                    <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
-                  ))}
-                </select>
-              </div>
+                {selectedFilmCategory && filmSubcategoryOptions.length > 0 && (
+                  <fieldset className="rounded-md border border-border bg-background p-4">
+                    <legend className="px-1 font-display text-xs font-extrabold uppercase tracking-wide text-navy">
+                      Film Location Subcategories (optional)
+                    </legend>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {filmSubcategoryOptions.map((subcategory) => (
+                        <label key={subcategory.id} className="flex items-center gap-2 text-sm text-foreground/85">
+                          <input
+                            type="checkbox"
+                            checked={selectedFilmSubcategories.includes(subcategory.name)}
+                            onChange={(event) =>
+                              setSelectedFilmSubcategories((current) =>
+                                event.target.checked
+                                  ? [...current, subcategory.name]
+                                  : current.filter((item) => item !== subcategory.name),
+                              )
+                            }
+                            className="size-4 accent-gold"
+                          />
+                          {subcategory.name}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+              </>
             )}
             <div>
               <input

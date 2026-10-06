@@ -6,9 +6,9 @@ export type VenueRow = {
   slug: string;
   name: string;
   category: string;
-  subcategory?: string;
+  subcategory?: string[];
   film_category?: string | null;
-  film_subcategory?: string | null;
+  film_subcategory?: string[] | null;
   city: string;
   state: string;
   area: string;
@@ -39,7 +39,7 @@ export function rowToVenue(row: VenueRow): Venue {
     area: row.area,
     ...(row.pincode ? { pincode: row.pincode } : {}),
     ...(row.film_category ? { filmCategory: row.film_category } : {}),
-    ...(row.film_subcategory ? { filmSubcategory: row.film_subcategory } : {}),
+    ...(row.film_subcategory?.length ? { filmSubcategory: row.film_subcategory } : {}),
     capacity: row.capacity,
     startingPrice: row.starting_price,
     parking: row.parking || "On request",
@@ -55,7 +55,7 @@ export function rowToVenue(row: VenueRow): Venue {
     images: row.photos.length > 0 ? row.photos : [fallbackImage],
     videoId: extractYouTubeId(row.video_url),
     mapQuery: row.map_query || `${row.area} ${row.city}`,
-    ...(row.subcategory ? { subcategory: row.subcategory } : {}),
+    ...(row.subcategory?.length ? { subcategory: row.subcategory } : {}),
   };
 }
 

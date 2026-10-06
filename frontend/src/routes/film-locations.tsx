@@ -115,7 +115,10 @@ function FilmLocations() {
   };
   const visibleVenues = shootVenues.filter((venue) => {
     if (search.category && (venue.filmCategory || venue.category) !== search.category) return false;
-    if (search.subcategory && (venue.filmSubcategory || venue.subcategory) !== search.subcategory) return false;
+    if (search.subcategory) {
+      const effectiveSubcategories = venue.filmSubcategory?.length ? venue.filmSubcategory : (venue.subcategory ?? []);
+      if (!effectiveSubcategories.includes(search.subcategory)) return false;
+    }
     if (search.city && venue.city !== search.city) return false;
     if (search.state && venue.state !== search.state) return false;
     if (search.event && !(venue.bookingPurposes ?? venue.suitableFor).includes(search.event)) return false;

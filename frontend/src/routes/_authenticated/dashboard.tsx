@@ -7,12 +7,14 @@ import {
   createDeletionRequest,
   deleteLead,
   getMySubscription,
+  listCategories,
   listLeads,
   listMyLeadContactRequests,
   listMyVenues,
   requestLeadContactAccess,
   updateLeadStatus,
   updateVenue,
+  type CategoryRecord,
   type MyLeadContactRequest,
 } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
@@ -47,6 +49,7 @@ type VenueRow = {
   name: string;
   slug: string;
   category: string;
+  subcategory?: string[];
   city: string;
   state: string;
   area: string;
@@ -103,6 +106,9 @@ function OwnerDashboard() {
   const [editing, setEditing] = useState<VenueRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [categoryRecords, setCategoryRecords] = useState<CategoryRecord[]>([]);
+  const [editingCategorySlug, setEditingCategorySlug] = useState("resorts");
+  const [editingSubcategories, setEditingSubcategories] = useState<string[]>([]);
   const [deletingLead, setDeletingLead] = useState<string | null>(null);
   const [contactRequests, setContactRequests] = useState<MyLeadContactRequest[]>([]);
 
@@ -136,6 +142,9 @@ function OwnerDashboard() {
 
   useEffect(() => {
     void load();
+    listCategories()
+      .then(({ categories: rows }) => setCategoryRecords(rows))
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -161,7 +170,8 @@ function OwnerDashboard() {
     const payload = {
       owner_id: userId,
       name,
-      category: String(f.get("category") ?? "resorts"),
+      category: editingCategorySlug,
+      subcategory: editingSubcategories,
       city: String(f.get("city") ?? "").trim(),
       state: String(f.get("state") ?? "").trim(),
       area: String(f.get("area") ?? "").trim(),
@@ -345,13 +355,48 @@ function OwnerDashboard() {
           {showForm && editing && (
             <form key={editing.id} onSubmit={saveVenue} className="mt-5 grid gap-3 sm:grid-cols-2">
               <input name="name" placeholder="Venue name" defaultValue={editing?.name} className={input} />
-              <select name="category" defaultValue={editing?.category ?? "resorts"} className={input}>
+              <select
+                name="category"
+                value={editingCategorySlug}
+                onChange={(e) => {
+                  setEditingCategorySlug(e.target.value);
+                  setEditingSubcategories([]);
+                }}
+                className={input}
+              >
                 {categories.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.name}
                   </option>
                 ))}
               </select>
+              {(() => {
+                const subcategoryOptions =
+                  categoryRecords.find((c) => c.slug === editingCategorySlug)?.subcategories ?? [];
+                if (subcategoryOptions.length === 0) return null;
+                return (
+                  <fieldset className={`${input} sm:col-span-2 h-auto border-border`}>
+                    <legend className="px-1 text-xs font-bold uppercase tracking-wide text-navy">Subcategories</legend>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {subcategoryOptions.map((s) => (
+                        <label key={s.id} className="flex items-center gap-2 text-sm text-foreground/85">
+                          <input
+                            type="checkbox"
+                            checked={editingSubcategories.includes(s.name)}
+                            onChange={(event) =>
+                              setEditingSubcategories((current) =>
+                                event.target.checked ? [...current, s.name] : current.filter((item) => item !== s.name),
+                              )
+                            }
+                            className="size-4 accent-gold"
+                          />
+                          {s.name}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                );
+              })()}
               <input name="city" placeholder="City" defaultValue={editing?.city} className={input} />
               <input name="state" placeholder="State" defaultValue={editing?.state} className={input} />
               <input name="area" placeholder="Area / Locality" defaultValue={editing?.area} className={input} />
@@ -425,6 +470,8 @@ function OwnerDashboard() {
                     onClick={() => {
                       setEditing(v);
                       setPhotos(v.photos ?? []);
+                      setEditingCategorySlug(v.category);
+                      setEditingSubcategories(v.subcategory ?? []);
                       setShowForm(true);
                       window.scrollTo({ top: 300, behavior: "smooth" });
                     }}

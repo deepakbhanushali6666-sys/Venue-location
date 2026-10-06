@@ -315,8 +315,21 @@ create table if not exists public.venue_subcategories (
 alter table public.venue_subcategories enable row level security;
 create index if not exists idx_venue_subcategories_category on public.venue_subcategories(category_id);
 
--- venues.subcategory holds the chosen subcategory name for a listing.
-alter table public.venues add column if not exists subcategory text not null default '';
+-- venues.subcategory holds the chosen subcategory names for a listing (multi-select).
+alter table public.venues add column if not exists subcategory text[] not null default '{}'::text[];
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'venues' and column_name = 'subcategory' and data_type = 'text'
+  ) then
+    alter table public.venues
+      alter column subcategory drop default,
+      alter column subcategory type text[] using case when subcategory = '' then '{}'::text[] else array[subcategory] end,
+      alter column subcategory set default '{}'::text[];
+  end if;
+end $$;
 
 -- =====================================================================
 -- FUNCTIONS

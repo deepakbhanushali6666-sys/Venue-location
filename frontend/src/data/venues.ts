@@ -209,9 +209,9 @@ export type Venue = {
   slug: string;
   name: string;
   category: CategorySlug;
-  subcategory?: string;
+  subcategory?: string[];
   filmCategory?: string;
-  filmSubcategory?: string;
+  filmSubcategory?: string[];
   city: string;
   state: string;
   area: string;

@@ -121,13 +121,15 @@ begin
       v_payload->>'name',
       v_payload->>'slug',
       v_payload->>'category',
-      coalesce(v_payload->>'subcategory', ''),
+      case when jsonb_typeof(v_payload->'subcategory') = 'array'
+        then array(select jsonb_array_elements_text(v_payload->'subcategory')) else '{}'::text[] end,
       v_payload->>'city',
       coalesce(v_payload->>'state', ''),
       coalesce(v_payload->>'area', ''),
       coalesce(v_payload->>'pincode', ''),
       coalesce(v_payload->>'film_category', ''),
-      coalesce(v_payload->>'film_subcategory', ''),
+      case when jsonb_typeof(v_payload->'film_subcategory') = 'array'
+        then array(select jsonb_array_elements_text(v_payload->'film_subcategory')) else '{}'::text[] end,
       coalesce(v_payload->>'address', ''),
       coalesce(nullif(v_payload->>'capacity', '')::integer, 0),
       coalesce(nullif(v_payload->>'starting_price', '')::integer, 0),

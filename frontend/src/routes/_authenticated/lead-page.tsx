@@ -311,7 +311,7 @@ function LeadPage() {
                     <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {[
                         ["Category", property.category || "—"],
-                        ["Subcategory", property.subcategory || "—"],
+                        ["Subcategory", (property.subcategory ?? []).join(", ") || "—"],
                         ["Listed for", list(property.suitable_for)],
                         ["Capacity", property.capacity ? String(property.capacity) : "—"],
                         [

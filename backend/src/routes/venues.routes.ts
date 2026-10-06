@@ -96,6 +96,8 @@ venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
       suitable_for: Array.isArray(rest.suitable_for) ? rest.suitable_for : [],
       booking_purposes: Array.isArray(rest.booking_purposes) ? rest.booking_purposes : [],
       booking_restrictions: Array.isArray(rest.booking_restrictions) ? rest.booking_restrictions : [],
+      subcategory: Array.isArray(rest.subcategory) ? rest.subcategory : [],
+      film_subcategory: Array.isArray(rest.film_subcategory) ? rest.film_subcategory : [],
     };
 
     const { data, error } = await req.client!

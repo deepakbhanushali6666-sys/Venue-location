@@ -164,7 +164,7 @@ export type PropertyDetail = {
   property_code: string;
   name: string;
   category: string;
-  subcategory: string;
+  subcategory: string[];
   city: string;
   state: string;
   area: string;

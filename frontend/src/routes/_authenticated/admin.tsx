@@ -68,9 +68,9 @@ type VenueRow = {
   area: string;
   pincode: string;
   category: string;
-  subcategory: string;
+  subcategory: string[];
   film_category: string;
-  film_subcategory: string;
+  film_subcategory: string[];
   suitable_for: string[];
   booking_purposes: string[];
   booking_restrictions: string[];
@@ -402,14 +402,15 @@ function AdminPanel() {
   };
 
   const saveVenueDetails = async (venue: VenueRow, form: HTMLFormElement) => {
-    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData) as Record<string, string>;
     const updates = {
       city: data["city"]?.trim() ?? "",
       state: data["state"]?.trim() ?? "",
       area: data["area"]?.trim() ?? "",
       pincode: data["pincode"]?.trim() ?? "",
       category: data["category"]?.trim() ?? "",
-      subcategory: data["subcategory"]?.trim() ?? "",
+      subcategory: formData.getAll("subcategory").map((v) => String(v)).filter(Boolean),
     };
     if (!updates.city || !updates.state || !updates.category) {
       toast.error("City, state and category are required");
@@ -1061,7 +1062,7 @@ function AdminPanel() {
                       <details>
                         <summary className="cursor-pointer font-semibold text-navy">
                           {v.category ? v.category : "No category"}
-                          {v.subcategory ? ` / ${v.subcategory}` : ""}
+                          {v.subcategory?.length ? ` / ${v.subcategory.join(", ")}` : ""}
                         </summary>
                         <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                           <li>
@@ -1074,12 +1075,12 @@ function AdminPanel() {
                           </li>
                           <li>
                             <span className="font-medium text-foreground">Subcategory:</span>{" "}
-                            {v.subcategory || "None"}
+                            {v.subcategory?.length ? v.subcategory.join(", ") : "None"}
                           </li>
-                          {(v.film_category || v.film_subcategory) && (
+                          {(v.film_category || v.film_subcategory?.length) && (
                             <li>
                               <span className="font-medium text-foreground">Film location:</span>{" "}
-                              {[v.film_category, v.film_subcategory].filter(Boolean).join(" / ")}
+                              {[v.film_category, ...(v.film_subcategory ?? [])].filter(Boolean).join(" / ")}
                             </li>
                           )}
                         </ul>
@@ -1218,8 +1219,7 @@ function AdminPanel() {
                             <option key={category.id} value={category.slug}>{category.name}</option>
                           ))}
                         </select>
-                        <select name="subcategory" defaultValue={v.subcategory} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
-                          <option value="">No subcategory</option>
+                        <select name="subcategory" multiple defaultValue={v.subcategory} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
                           {((v.suitable_for?.includes("Film Shooting Locations") && !v.suitable_for?.includes("Venue Bookings") ? filmCategories : categories).find((category) => category.slug === v.category)?.subcategories ?? []).map((subcategory) => (
                             <option key={subcategory.id}>{subcategory.name}</option>
                           ))}
