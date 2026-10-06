@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { MapPin, Star, Users } from "lucide-react";
 import { categoryBySlug, formatINR, type Venue } from "@/data/venues";
-import { VenuePhotoWatermark } from "@/components/site/VenuePhotoWatermark";
+import { WatermarkedVenueImage } from "@/components/site/WatermarkedVenueImage";
 
 export function VenueCard({ venue }: { venue: Venue }) {
   return (
@@ -11,7 +11,7 @@ export function VenueCard({ venue }: { venue: Venue }) {
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1"
     >
       <div className="relative aspect-4/3 overflow-hidden @container">
-        <img
+        <WatermarkedVenueImage
           src={venue.images[0]}
           alt={venue.name}
           loading="lazy"
@@ -19,7 +19,6 @@ export function VenueCard({ venue }: { venue: Venue }) {
           height={600}
           className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <VenuePhotoWatermark src={venue.images[0]} />
         <span className="absolute left-3 top-3 rounded bg-gold px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-gold-foreground">
           {categoryBySlug(venue.category)?.name}
         </span>
