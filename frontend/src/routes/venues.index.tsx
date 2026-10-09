@@ -11,7 +11,13 @@ import {
   type Venue,
 } from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
-import { listCategories, listLocations, listPurposes, listVenues, type CategoryRecord } from "@/lib/api";
+import {
+  listCategories,
+  listLocations,
+  listPurposes,
+  listVenues,
+  type CategoryRecord,
+} from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 type VenueSearch = {
@@ -24,12 +30,26 @@ type VenueSearch = {
   event?: string;
   budget?: string;
   capacity?: string;
+  date?: string;
+  browse?: string;
 };
 
 export const Route = createFileRoute("/venues/")({
   validateSearch: (search: Record<string, unknown>): VenueSearch => {
     const out: VenueSearch = {};
-    const keys = ["category", "subcategory", "filmType", "filmSubcategory", "city", "state", "event", "budget", "capacity"] as const;
+    const keys = [
+      "category",
+      "subcategory",
+      "filmType",
+      "filmSubcategory",
+      "city",
+      "state",
+      "event",
+      "budget",
+      "capacity",
+      "date",
+      "browse",
+    ] as const;
     for (const key of keys) {
       const value = search[key];
       if (typeof value === "string" && value) out[key] = value;
@@ -47,7 +67,8 @@ export const Route = createFileRoute("/venues/")({
       { property: "og:title", content: "Browse Venues & Locations Across India | VENUES LOCATION" },
       {
         property: "og:description",
-        content: "Filter verified venues and film locations by city, state, budget, capacity and event type.",
+        content:
+          "Filter verified venues and film locations by city, state, budget, capacity and event type.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -60,7 +81,14 @@ function VenuesPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [liveVenues, setLiveVenues] = useState<Venue[]>([]);
-  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(defaultCategories.map((category, sort_order) => ({ ...category, id: category.slug, sort_order, subcategories: [] })));
+  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(
+    defaultCategories.map((category, sort_order) => ({
+      ...category,
+      id: category.slug,
+      sort_order,
+      subcategories: [],
+    })),
+  );
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [locationCities, setLocationCities] = useState(cities);
   const [locationStates, setLocationStates] = useState(states);
@@ -77,13 +105,27 @@ function VenuesPage() {
   }, []);
 
   useEffect(() => {
-    listCategories().then(({ categories: rows }) => setVenueCategories(rows)).catch(() => undefined);
-    listCategories("film").then(({ categories: rows }) => setFilmCategories(rows)).catch(() => undefined);
-    listLocations().then(({ locations }) => {
-      setLocationCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
-      setLocationStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
-    }).catch(() => undefined);
-    listPurposes().then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name))).catch(() => undefined);
+    listCategories()
+      .then(({ categories: rows }) => setVenueCategories(rows))
+      .catch(() => undefined);
+    listCategories("film")
+      .then(({ categories: rows }) => setFilmCategories(rows))
+      .catch(() => undefined);
+    listLocations()
+      .then(({ locations }) => {
+        setLocationCities(
+          locations.filter((location) => location.kind === "city").map((location) => location.name),
+        );
+        setLocationStates(
+          locations
+            .filter((location) => location.kind === "state")
+            .map((location) => location.name),
+        );
+      })
+      .catch(() => undefined);
+    listPurposes()
+      .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
+      .catch(() => undefined);
   }, []);
 
   const update = (key: keyof VenueSearch, value: string) => {
@@ -97,47 +139,71 @@ function VenuesPage() {
 
   const browsingFilmLocations = search.category === "film-shooting-locations";
   const venueCategorySlugs = new Set(venueCategories.map((category) => category.slug));
-  const filmOnlyCategories = filmCategories.filter((category) => !venueCategorySlugs.has(category.slug));
+  const filmOnlyCategories = filmCategories.filter(
+    (category) => !venueCategorySlugs.has(category.slug),
+  );
   const activeCategoryOptions = browsingFilmLocations ? filmOnlyCategories : venueCategories;
   const selectedCategory = browsingFilmLocations
     ? filmOnlyCategories.find((category) => category.slug === search.filmType)
     : venueCategories.find((category) => category.slug === search.category);
   const selectedSubcategory = browsingFilmLocations ? search.filmSubcategory : search.subcategory;
 
-  const hasCategoryVenues = !search.category || liveVenues.some((venue) => venue.category === search.category);
+  const results = liveVenues
+    .filter((v) => {
+      const listingVisibility = v.suitableFor ?? [];
+      if (browsingFilmLocations) {
+        if (
+          !listingVisibility.includes("Film Shooting Locations") &&
+          !listingVisibility.includes("Film Shoot") &&
+          !(listingVisibility.length === 0 && v.category === "film-shooting-locations")
+        )
+          return false;
+        if (search["filmType"] && (v.filmCategory || v.category) !== search["filmType"])
+          return false;
+        const effectiveFilmSubcategories = v.filmSubcategory?.length
+          ? v.filmSubcategory
+          : (v.subcategory ?? []);
+        if (
+          search["filmSubcategory"] &&
+          !effectiveFilmSubcategories.includes(search["filmSubcategory"])
+        )
+          return false;
+        if (search["subcategory"] && !(v.subcategory ?? []).includes(search["subcategory"]))
+          return false;
+      } else if (listingVisibility.length > 0 && !listingVisibility.includes("Venue Bookings"))
+        return false;
+      if (!browsingFilmLocations && search["category"] && v.category !== search["category"])
+        return false;
+      if (
+        !browsingFilmLocations &&
+        search["subcategory"] &&
+        !(v.subcategory ?? []).includes(search["subcategory"])
+      )
+        return false;
+      if (search["city"] && v.city !== search["city"]) return false;
+      if (search["state"] && v.state !== search["state"]) return false;
+      if (search["event"] && !(v.bookingPurposes ?? v.suitableFor).includes(search["event"]))
+        return false;
+      if (search["budget"]) {
+        const band = budgetBands.find((b) => b.label === search["budget"]);
+        if (band && (v.startingPrice < band.min || v.startingPrice > band.max)) return false;
+      }
+      if (search["capacity"]) {
+        const band = capacityBands.find((b) => b.label === search["capacity"]);
+        if (band && (v.capacity < band.min || v.capacity > band.max)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.featured !== b.featured) return Number(b.featured) - Number(a.featured);
+      if (!a.featured) return 0;
+      const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
+      const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
 
-  const results = liveVenues.filter((v) => {
-    const listingVisibility = v.suitableFor ?? [];
-    if (browsingFilmLocations) {
-      if (!listingVisibility.includes("Film Shooting Locations") && !listingVisibility.includes("Film Shoot") && !(listingVisibility.length === 0 && v.category === "film-shooting-locations")) return false;
-      if (search["filmType"] && (v.filmCategory || v.category) !== search["filmType"]) return false;
-      const effectiveFilmSubcategories = v.filmSubcategory?.length ? v.filmSubcategory : (v.subcategory ?? []);
-      if (search["filmSubcategory"] && !effectiveFilmSubcategories.includes(search["filmSubcategory"])) return false;
-      if (search["subcategory"] && !(v.subcategory ?? []).includes(search["subcategory"])) return false;
-    } else if (listingVisibility.length > 0 && !listingVisibility.includes("Venue Bookings")) return false;
-    if (!browsingFilmLocations && hasCategoryVenues && search["category"] && v.category !== search["category"]) return false;
-    if (!browsingFilmLocations && hasCategoryVenues && search["subcategory"] && !(v.subcategory ?? []).includes(search["subcategory"])) return false;
-    if (search["city"] && v.city !== search["city"]) return false;
-    if (search["state"] && v.state !== search["state"]) return false;
-    if (search["event"] && !(v.bookingPurposes ?? v.suitableFor).includes(search["event"])) return false;
-    if (search["budget"]) {
-      const band = budgetBands.find((b) => b.label === search["budget"]);
-      if (band && (v.startingPrice < band.min || v.startingPrice > band.max)) return false;
-    }
-    if (search["capacity"]) {
-      const band = capacityBands.find((b) => b.label === search["capacity"]);
-      if (band && (v.capacity < band.min || v.capacity > band.max)) return false;
-    }
-    return true;
-  }).sort((a, b) => {
-    if (a.featured !== b.featured) return Number(b.featured) - Number(a.featured);
-    if (!a.featured) return 0;
-    const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
-    const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
-    return aOrder - bOrder;
-  });
-
-  const select = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
+  const select =
+    "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
 
   return (
     <div className="bg-sand">
@@ -145,8 +211,8 @@ function VenuesPage() {
         <div className="mx-auto max-w-7xl px-4">
           <h1 className="font-display text-4xl font-extrabold">Find Your Venue</h1>
           <p className="mt-2 max-w-2xl text-navy-foreground/75">
-            Filter verified venues and film shooting locations by city, state, category, budget, capacity and event
-            type.
+            Filter verified venues and film shooting locations by city, state, category, budget,
+            capacity and event type.
           </p>
         </div>
       </div>
@@ -160,10 +226,20 @@ function VenuesPage() {
             <Filter label={browsingFilmLocations ? "Film Location Type" : "Venue Type"}>
               <select
                 className={select}
-                value={browsingFilmLocations ? search.filmType ?? "" : search.category === "film-shooting-locations" ? "" : search.category ?? ""}
-                onChange={(event) => update(browsingFilmLocations ? "filmType" : "category", event.target.value)}
+                value={
+                  browsingFilmLocations
+                    ? (search.filmType ?? "")
+                    : search.category === "film-shooting-locations"
+                      ? ""
+                      : (search.category ?? "")
+                }
+                onChange={(event) =>
+                  update(browsingFilmLocations ? "filmType" : "category", event.target.value)
+                }
               >
-                <option value="">{browsingFilmLocations ? "All film location types" : "All categories"}</option>
+                <option value="">
+                  {browsingFilmLocations ? "All film location types" : "All categories"}
+                </option>
                 {activeCategoryOptions.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.name}
@@ -175,17 +251,32 @@ function VenuesPage() {
               <select
                 className={select}
                 value={selectedSubcategory ?? ""}
-                onChange={(event) => update(browsingFilmLocations ? "filmSubcategory" : "subcategory", event.target.value)}
-                disabled={browsingFilmLocations ? !search.filmType : !search.category || search.category === "film-shooting-locations"}
+                onChange={(event) =>
+                  update(
+                    browsingFilmLocations ? "filmSubcategory" : "subcategory",
+                    event.target.value,
+                  )
+                }
+                disabled={
+                  browsingFilmLocations
+                    ? !search.filmType
+                    : !search.category || search.category === "film-shooting-locations"
+                }
               >
                 <option value="">All subcategories</option>
                 {selectedCategory?.subcategories.map((subcategory) => (
-                  <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
+                  <option key={subcategory.id} value={subcategory.name}>
+                    {subcategory.name}
+                  </option>
                 ))}
               </select>
             </Filter>
             <Filter label="City">
-              <select className={select} value={search["city"] ?? ""} onChange={(e) => update("city", e.target.value)}>
+              <select
+                className={select}
+                value={search["city"] ?? ""}
+                onChange={(e) => update("city", e.target.value)}
+              >
                 <option value="">All cities</option>
                 {locationCities.map((c) => (
                   <option key={c}>{c}</option>
@@ -193,7 +284,11 @@ function VenuesPage() {
               </select>
             </Filter>
             <Filter label="State">
-              <select className={select} value={search["state"] ?? ""} onChange={(e) => update("state", e.target.value)}>
+              <select
+                className={select}
+                value={search["state"] ?? ""}
+                onChange={(e) => update("state", e.target.value)}
+              >
                 <option value="">All states</option>
                 {locationStates.map((s) => (
                   <option key={s}>{s}</option>
@@ -201,7 +296,11 @@ function VenuesPage() {
               </select>
             </Filter>
             <Filter label="Event Type">
-              <select className={select} value={search["event"] ?? ""} onChange={(e) => update("event", e.target.value)}>
+              <select
+                className={select}
+                value={search["event"] ?? ""}
+                onChange={(e) => update("event", e.target.value)}
+              >
                 <option value="">Any event</option>
                 {purposes.map((e) => (
                   <option key={e}>{e}</option>
@@ -209,7 +308,11 @@ function VenuesPage() {
               </select>
             </Filter>
             <Filter label="Budget">
-              <select className={select} value={search["budget"] ?? ""} onChange={(e) => update("budget", e.target.value)}>
+              <select
+                className={select}
+                value={search["budget"] ?? ""}
+                onChange={(e) => update("budget", e.target.value)}
+              >
                 <option value="">Any budget</option>
                 {budgetBands.map((b) => (
                   <option key={b.label}>{b.label}</option>
@@ -239,20 +342,18 @@ function VenuesPage() {
         </aside>
 
         <section>
-          {!hasCategoryVenues && search.category && (
-            <p className="mb-4 rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-              No approved venues are listed in this category yet. Showing all venues; you can narrow the results with the filters.
-            </p>
-          )}
           <p className="mb-4 text-sm text-muted-foreground">
             Showing <span className="font-bold text-navy">{results.length}</span> venue
             {results.length === 1 ? "" : "s"}
           </p>
           {results.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-              <p className="font-display text-lg font-bold text-navy">No venues match these filters</p>
+              <p className="font-display text-lg font-bold text-navy">
+                No venues match these filters
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Try widening your budget or capacity — or call us on 9768676666 and we'll shortlist for you.
+                Try widening your budget or capacity — or call us on 9768676666 and we'll shortlist
+                for you.
               </p>
             </div>
           ) : (
@@ -271,7 +372,9 @@ function VenuesPage() {
 function Filter({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       {children}
     </div>
   );

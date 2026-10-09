@@ -28,16 +28,18 @@ function Privacy() {
     <LegalPage title="Privacy Policy" updated="22 September 2026">
       <section>
         <h2>1. Introduction</h2>
-        <p>
-          Welcome to VenuesLocation.com ("VenuesLocation", "we", "us" or "our").
-        </p>
+        <p>Welcome to VenuesLocation.com ("VenuesLocation", "we", "us" or "our").</p>
         <p>VenuesLocation.com is owned and operated by Deepak Bhanushali.</p>
         <p>
-          This Privacy Policy explains how VenuesLocation collects, uses, stores, protects and shares information
-          when you visit or use our website, create an account, list a venue, submit an enquiry, communicate with
-          another User, purchase a subscription or otherwise use our services.
+          This Privacy Policy explains how VenuesLocation collects, uses, stores, protects and
+          shares information when you visit or use our website, create an account, list a venue,
+          submit an enquiry, communicate with another User, purchase a subscription or otherwise use
+          our services.
         </p>
-        <p>By using VenuesLocation.com, you acknowledge that you have read and understood this Privacy Policy.</p>
+        <p>
+          By using VenuesLocation.com, you acknowledge that you have read and understood this
+          Privacy Policy.
+        </p>
       </section>
 
       <section>
@@ -61,10 +63,13 @@ function Privacy() {
           </a>
         </p>
         <p>
-          <strong>Address:</strong> Wing B/113, Park Plaza Building, Off Yari Road, Versova, Panch Marg, Next to
-          Panch Vati Tower, Opp. Fisheries Education College, Andheri West, Mumbai – 400061, Maharashtra, India.
+          <strong>Address:</strong> Wing B/113, Park Plaza Building, Off Yari Road, Versova, Panch
+          Marg, Next to Panch Vati Tower, Opp. Fisheries Education College, Andheri West, Mumbai –
+          400061, Maharashtra, India.
         </p>
-        <p>For privacy-related questions or requests, you may contact us using the details above.</p>
+        <p>
+          For privacy-related questions or requests, you may contact us using the details above.
+        </p>
       </section>
 
       <section>
@@ -102,8 +107,13 @@ function Privacy() {
         </ul>
         <p>Some venue information may be displayed publicly on the Platform.</p>
 
-        <h3 className="mt-4 font-display text-base font-bold text-navy">Enquiry and Communication Information</h3>
-        <p>When you contact a Venue Owner or Client through VenuesLocation, we may collect information relating to:</p>
+        <h3 className="mt-4 font-display text-base font-bold text-navy">
+          Enquiry and Communication Information
+        </h3>
+        <p>
+          When you contact a Venue Owner or Client through VenuesLocation, we may collect
+          information relating to:
+        </p>
         <ul>
           <li>Enquiry details;</li>
           <li>Messages;</li>
@@ -114,10 +124,23 @@ function Privacy() {
           <li>Other information voluntarily provided by you.</li>
         </ul>
 
-        <h3 className="mt-4 font-display text-base font-bold text-navy">Subscription Information</h3>
+        <h3 className="mt-4 font-display text-base font-bold text-navy">Visitor Searches</h3>
         <p>
-          If you purchase a VenuesLocation subscription, we may collect information necessary to manage the
-          subscription, such as:
+          Before viewing venue listings, film locations or property details, we request your name
+          and phone number. With your agreement to continue, we record these details together with
+          your searches and property visits, including any category, location, event or shoot date,
+          guest capacity, purpose and budget you select. Our administrators can use this information
+          to help with your requirements. Your contact details are remembered in browser session
+          storage to avoid asking again during the same session. Visitor search records are not
+          displayed publicly.
+        </p>
+
+        <h3 className="mt-4 font-display text-base font-bold text-navy">
+          Subscription Information
+        </h3>
+        <p>
+          If you purchase a VenuesLocation subscription, we may collect information necessary to
+          manage the subscription, such as:
         </p>
         <ul>
           <li>Subscription plan;</li>
@@ -128,16 +151,19 @@ function Privacy() {
           <li>Other information provided during the subscription process.</li>
         </ul>
         <p>
-          Where payments are processed by a third-party payment provider, that provider may separately process
-          payment information under its own privacy policy and terms.
+          Where payments are processed by a third-party payment provider, that provider may
+          separately process payment information under its own privacy policy and terms.
         </p>
         <p>
-          VenuesLocation does not need to store your full card, banking or payment credentials where payment
-          processing is handled by a third-party payment provider.
+          VenuesLocation does not need to store your full card, banking or payment credentials where
+          payment processing is handled by a third-party payment provider.
         </p>
 
         <h3 className="mt-4 font-display text-base font-bold text-navy">Technical Information</h3>
-        <p>When you use our website, certain technical information may automatically be collected, such as:</p>
+        <p>
+          When you use our website, certain technical information may automatically be collected,
+          such as:
+        </p>
         <ul>
           <li>IP address;</li>
           <li>Browser type;</li>
@@ -150,8 +176,8 @@ function Privacy() {
           <li>Technical logs.</li>
         </ul>
         <p>
-          This information may help us maintain security, improve performance and understand how the Platform is
-          being used.
+          This information may help us maintain security, improve performance and understand how the
+          Platform is being used.
         </p>
       </section>
 
@@ -179,8 +205,9 @@ function Privacy() {
           <li>Protecting the rights, property and safety of VenuesLocation and its Users.</li>
         </ul>
         <p>
-          We will not use personal information for purposes that are materially incompatible with the purposes
-          described in this Privacy Policy unless permitted or required by applicable law.
+          We will not use personal information for purposes that are materially incompatible with
+          the purposes described in this Privacy Policy unless permitted or required by applicable
+          law.
         </p>
       </section>
 
@@ -204,8 +231,8 @@ function Privacy() {
           <li>Other information intentionally provided for publication.</li>
         </ul>
         <p>
-          Venue Owners should not upload private, confidential or unnecessary personal information in a public
-          Listing.
+          Venue Owners should not upload private, confidential or unnecessary personal information
+          in a public Listing.
         </p>
       </section>
 
@@ -213,8 +240,8 @@ function Privacy() {
         <h2>6. Sharing Information With Other Users</h2>
         <p>The purpose of VenuesLocation is to connect Venue Owners and Clients.</p>
         <p>
-          When you submit an enquiry or otherwise choose to communicate with another User, certain information may
-          be shared with the relevant User to enable communication.
+          When you submit an enquiry or otherwise choose to communicate with another User, certain
+          information may be shared with the relevant User to enable communication.
         </p>
         <p>For example, depending on the Platform functionality, this may include:</p>
         <ul>
@@ -225,12 +252,12 @@ function Privacy() {
           <li>Other information you voluntarily provide.</li>
         </ul>
         <p>
-          Users should understand that information shared directly with another User may be subject to that User's
-          own handling of the information.
+          Users should understand that information shared directly with another User may be subject
+          to that User's own handling of the information.
         </p>
         <p>
-          VenuesLocation is not responsible for how another User uses information after it has been lawfully shared
-          with that User.
+          VenuesLocation is not responsible for how another User uses information after it has been
+          lawfully shared with that User.
         </p>
       </section>
 
@@ -251,21 +278,28 @@ function Privacy() {
           <li>Subscription management; and</li>
           <li>Other technical services.</li>
         </ul>
-        <p>These providers may process information on our behalf where necessary to provide their services.</p>
         <p>
-          We expect service providers handling personal information on our behalf to apply appropriate safeguards
-          and use information only for permitted purposes.
+          These providers may process information on our behalf where necessary to provide their
+          services.
+        </p>
+        <p>
+          We expect service providers handling personal information on our behalf to apply
+          appropriate safeguards and use information only for permitted purposes.
         </p>
       </section>
 
       <section>
         <h2>8. Payment Information</h2>
         <p>VenuesLocation currently does not collect or hold venue booking payments.</p>
-        <p>Clients pay Venue Owners directly according to the booking arrangements made between them.</p>
-        <p>VenuesLocation may process or facilitate payment for VenuesLocation subscription services.</p>
         <p>
-          Where a third-party payment provider is used, payment information may be processed directly by that
-          provider.
+          Clients pay Venue Owners directly according to the booking arrangements made between them.
+        </p>
+        <p>
+          VenuesLocation may process or facilitate payment for VenuesLocation subscription services.
+        </p>
+        <p>
+          Where a third-party payment provider is used, payment information may be processed
+          directly by that provider.
         </p>
         <p>Users should review the applicable payment provider's terms and privacy policy.</p>
       </section>
@@ -300,7 +334,9 @@ function Privacy() {
           <li>Traffic sources; and</li>
           <li>Website interaction information.</li>
         </ul>
-        <p>Analytics helps us improve the Platform and understand which features are useful to Users.</p>
+        <p>
+          Analytics helps us improve the Platform and understand which features are useful to Users.
+        </p>
       </section>
 
       <section>
@@ -316,18 +352,21 @@ function Privacy() {
           <li>Other information that may be relevant to the User.</li>
         </ul>
         <p>
-          Users may opt out of promotional communications by using the unsubscribe facility provided in the
-          communication or by contacting us.
+          Users may opt out of promotional communications by using the unsubscribe facility provided
+          in the communication or by contacting us.
         </p>
         <p>
-          We may still send essential service-related communications, such as account, security, subscription or
-          transaction-related messages.
+          We may still send essential service-related communications, such as account, security,
+          subscription or transaction-related messages.
         </p>
       </section>
 
       <section>
         <h2>12. Data Security</h2>
-        <p>We take reasonable technical and organisational measures to protect personal information against:</p>
+        <p>
+          We take reasonable technical and organisational measures to protect personal information
+          against:
+        </p>
         <ul>
           <li>Unauthorised access;</li>
           <li>Unauthorised disclosure;</li>
@@ -336,15 +375,18 @@ function Privacy() {
           <li>Alteration; and</li>
           <li>Destruction.</li>
         </ul>
-        <p>However, no internet transmission or electronic storage system can be guaranteed to be completely secure.</p>
+        <p>
+          However, no internet transmission or electronic storage system can be guaranteed to be
+          completely secure.
+        </p>
         <p>Users are responsible for protecting their account passwords and login credentials.</p>
       </section>
 
       <section>
         <h2>13. How Long We Keep Information</h2>
         <p>
-          We retain information for as long as reasonably necessary for the purposes for which it was collected,
-          including:
+          We retain information for as long as reasonably necessary for the purposes for which it
+          was collected, including:
         </p>
         <ul>
           <li>Providing our services;</li>
@@ -358,16 +400,16 @@ function Privacy() {
           <li>Protecting our legal rights.</li>
         </ul>
         <p>
-          When information is no longer reasonably required, we may delete, anonymise or securely dispose of it,
-          subject to applicable legal and operational requirements.
+          When information is no longer reasonably required, we may delete, anonymise or securely
+          dispose of it, subject to applicable legal and operational requirements.
         </p>
       </section>
 
       <section>
         <h2>14. Your Choices and Rights</h2>
         <p>
-          Depending on applicable law and the circumstances, you may have rights concerning your personal
-          information.
+          Depending on applicable law and the circumstances, you may have rights concerning your
+          personal information.
         </p>
         <p>These may include the ability to:</p>
         <ul>
@@ -386,53 +428,62 @@ function Privacy() {
             info@venueslocation.com
           </a>
         </p>
-        <p>We may need to verify your identity or account ownership before acting on certain requests.</p>
+        <p>
+          We may need to verify your identity or account ownership before acting on certain
+          requests.
+        </p>
       </section>
 
       <section>
         <h2>15. Withdrawal of Consent</h2>
         <p>
-          Where we process personal information based on your consent, you may withdraw that consent where
-          applicable.
+          Where we process personal information based on your consent, you may withdraw that consent
+          where applicable.
         </p>
-        <p>Withdrawal of consent does not affect processing that was lawfully carried out before withdrawal.</p>
         <p>
-          If you withdraw consent that is necessary for a particular Platform feature, we may not be able to
-          continue providing that feature.
+          Withdrawal of consent does not affect processing that was lawfully carried out before
+          withdrawal.
+        </p>
+        <p>
+          If you withdraw consent that is necessary for a particular Platform feature, we may not be
+          able to continue providing that feature.
         </p>
       </section>
 
       <section>
         <h2>16. Children's Privacy</h2>
         <p>
-          VenuesLocation is intended primarily for adults and businesses involved in venue, production,
-          photography, events and related activities.
+          VenuesLocation is intended primarily for adults and businesses involved in venue,
+          production, photography, events and related activities.
         </p>
         <p>
-          We do not knowingly request or intentionally collect personal information from children where such
-          collection is not permitted by applicable law.
+          We do not knowingly request or intentionally collect personal information from children
+          where such collection is not permitted by applicable law.
         </p>
         <p>
-          If you believe that a child has provided personal information to us improperly, please contact us so
-          that we can review the matter.
+          If you believe that a child has provided personal information to us improperly, please
+          contact us so that we can review the matter.
         </p>
       </section>
 
       <section>
         <h2>17. Third-Party Websites</h2>
         <p>VenuesLocation may contain links to third-party websites, services or platforms.</p>
-        <p>We are not responsible for the privacy practices, content or security of third-party websites.</p>
         <p>
-          Users should review the privacy policies of third-party services before providing personal information
-          to them.
+          We are not responsible for the privacy practices, content or security of third-party
+          websites.
+        </p>
+        <p>
+          Users should review the privacy policies of third-party services before providing personal
+          information to them.
         </p>
       </section>
 
       <section>
         <h2>18. Publicly Available Venue Information</h2>
         <p>
-          Venue Owners should understand that information intentionally published as part of a public Venue
-          Listing may be accessible to visitors to VenuesLocation.com.
+          Venue Owners should understand that information intentionally published as part of a
+          public Venue Listing may be accessible to visitors to VenuesLocation.com.
         </p>
         <p>Venue Owners should not publish:</p>
         <ul>
@@ -447,10 +498,13 @@ function Privacy() {
 
       <section>
         <h2>19. International Processing</h2>
-        <p>Some of our technology, hosting or service providers may process information in locations outside India.</p>
         <p>
-          Where personal information is processed outside India, we will take steps required by applicable law and
-          our contractual arrangements with relevant service providers.
+          Some of our technology, hosting or service providers may process information in locations
+          outside India.
+        </p>
+        <p>
+          Where personal information is processed outside India, we will take steps required by
+          applicable law and our contractual arrangements with relevant service providers.
         </p>
       </section>
 
@@ -472,19 +526,22 @@ function Privacy() {
       <section>
         <h2>21. Business Transfers</h2>
         <p>
-          If VenuesLocation or its assets are involved in a merger, acquisition, restructuring, sale or other
-          business transaction, information held by us may be transferred as part of that transaction, subject to
-          applicable law and appropriate safeguards.
+          If VenuesLocation or its assets are involved in a merger, acquisition, restructuring, sale
+          or other business transaction, information held by us may be transferred as part of that
+          transaction, subject to applicable law and appropriate safeguards.
         </p>
       </section>
 
       <section>
         <h2>22. Changes to This Privacy Policy</h2>
         <p>We may update this Privacy Policy from time to time.</p>
-        <p>When we make changes, we will update the "Last Updated" date at the beginning of this Policy.</p>
         <p>
-          Where required by applicable law, we may provide additional notice or obtain consent for material
-          changes.
+          When we make changes, we will update the "Last Updated" date at the beginning of this
+          Policy.
+        </p>
+        <p>
+          Where required by applicable law, we may provide additional notice or obtain consent for
+          material changes.
         </p>
         <p>Users should periodically review this Privacy Policy.</p>
       </section>
@@ -496,22 +553,23 @@ function Privacy() {
           data-protection and privacy requirements.
         </p>
         <p>
-          India's Digital Personal Data Protection Act, 2023 establishes a framework governing the processing of
-          digital personal data, including obligations concerning notice, consent and rights of individuals. The
-          Government of India notified the Digital Personal Data Protection Rules, 2025 on 13 November 2025, with
-          provisions coming into force in phases according to the notified commencement schedule.
+          India's Digital Personal Data Protection Act, 2023 establishes a framework governing the
+          processing of digital personal data, including obligations concerning notice, consent and
+          rights of individuals. The Government of India notified the Digital Personal Data
+          Protection Rules, 2025 on 13 November 2025, with provisions coming into force in phases
+          according to the notified commencement schedule.
         </p>
         <p>
-          As the legal and regulatory framework develops, VenuesLocation may update its privacy practices and this
-          Privacy Policy accordingly.
+          As the legal and regulatory framework develops, VenuesLocation may update its privacy
+          practices and this Privacy Policy accordingly.
         </p>
       </section>
 
       <section>
         <h2>24. Contact Us</h2>
         <p>
-          If you have questions, concerns or requests regarding this Privacy Policy or your personal information,
-          please contact:
+          If you have questions, concerns or requests regarding this Privacy Policy or your personal
+          information, please contact:
         </p>
         <p>
           <strong>VenuesLocation.com</strong>
@@ -530,8 +588,9 @@ function Privacy() {
           </a>
         </p>
         <p>
-          Address: Wing B/113, Park Plaza Building, Off Yari Road, Versova, Panch Marg, Next to Panch Vati Tower,
-          Opp. Fisheries Education College, Andheri West, Mumbai – 400061, Maharashtra, India.
+          Address: Wing B/113, Park Plaza Building, Off Yari Road, Versova, Panch Marg, Next to
+          Panch Vati Tower, Opp. Fisheries Education College, Andheri West, Mumbai – 400061,
+          Maharashtra, India.
         </p>
         <p>
           Website:{" "}
@@ -544,9 +603,9 @@ function Privacy() {
       <section>
         <h2>Privacy Commitment</h2>
         <p>
-          VenuesLocation aims to collect only information reasonably necessary to operate and improve the
-          Platform, connect Venue Owners with Clients, provide subscription services, maintain security and comply
-          with applicable requirements.
+          VenuesLocation aims to collect only information reasonably necessary to operate and
+          improve the Platform, connect Venue Owners with Clients, provide subscription services,
+          maintain security and comply with applicable requirements.
         </p>
         <p>We do not sell personal information simply as a source of revenue.</p>
       </section>

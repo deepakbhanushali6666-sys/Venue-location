@@ -20,6 +20,13 @@ import { FounderPortrait } from "@/components/site/FounderPortrait";
 import { SearchPanel } from "@/components/site/SearchPanel";
 import { VenueCard } from "@/components/site/VenueCard";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { CONTACT, categories, testimonials, venues, type Venue } from "@/data/venues";
 import { listVenues } from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
@@ -33,7 +40,10 @@ export const Route = createFileRoute("/")({
         content:
           "India's premium platform for venues and film shooting locations. Book resorts, banquet halls, farmhouses, villas, lawns and studios. 25+ years of industry experience.",
       },
-      { property: "og:title", content: "VENUES LOCATION | Venues & Film Shooting Locations in India" },
+      {
+        property: "og:title",
+        content: "VENUES LOCATION | Venues & Film Shooting Locations in India",
+      },
       {
         property: "og:description",
         content:
@@ -111,7 +121,9 @@ function Home() {
               India's Premium Platform for
               <span className="mt-1 block text-gold">Venues & Film Shooting Locations</span>
             </h1>
-            <p className="mt-5 font-display text-lg font-bold text-navy">Find. Book. Shoot. Celebrate.</p>
+            <p className="mt-5 font-display text-lg font-bold text-navy">
+              Find. Book. Shoot. Celebrate.
+            </p>
             <p className="mt-1 text-foreground/80">Your perfect location is just a search away.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -172,25 +184,56 @@ function Home() {
         <SectionHeading title="Explore Venues" />
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {categories.map((c) => (
-            <Link
-              key={c.slug}
-              to="/venues"
-              search={{ category: c.slug }}
-              className="group relative overflow-hidden rounded-xl"
-            >
-              <img
-                src={c.image}
-                alt={c.name}
-                loading="lazy"
-                width={800}
-                height={600}
-                className="aspect-4/3 w-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-navy/85 px-3 py-2.5">
-                <Building2 className="size-4 shrink-0 text-gold" />
-                <span className="text-xs font-bold uppercase tracking-wide text-navy-foreground">{c.name}</span>
-              </div>
-            </Link>
+            <Dialog key={c.slug}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="group relative overflow-hidden rounded-xl text-left"
+                  aria-label={`Explore ${c.name}`}
+                >
+                  <img
+                    src={c.image}
+                    alt={c.name}
+                    loading="lazy"
+                    width={800}
+                    height={600}
+                    className="aspect-4/3 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-navy/85 px-3 py-2.5">
+                    <Building2 className="size-4 shrink-0 text-gold" />
+                    <span className="text-xs font-bold uppercase tracking-wide text-navy-foreground">
+                      {c.name}
+                    </span>
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle className="pr-6 font-display text-xl font-bold text-navy">
+                  Explore {c.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Are you looking {c.name.toLowerCase()} for Venue Bookings or Film Shooting?
+                </DialogDescription>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Link
+                    to="/venues"
+                    search={{ category: c.slug }}
+                    className="flex items-center justify-center gap-2 rounded-md bg-navy px-4 py-3 text-sm font-bold text-navy-foreground hover:opacity-90"
+                  >
+                    <Building2 className="size-5" />
+                    Venue Bookings
+                  </Link>
+                  <Link
+                    to="/film-locations"
+                    search={{ category: c.slug }}
+                    className="flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-3 text-sm font-bold text-gold-foreground hover:opacity-90"
+                  >
+                    <Clapperboard className="size-5" />
+                    Film Shooting
+                  </Link>
+                </div>
+              </DialogContent>
+            </Dialog>
           ))}
         </div>
       </section>
@@ -223,7 +266,8 @@ function Home() {
             </div>
             <p className="mt-6 flex items-center gap-2 rounded-md bg-navy px-4 py-3 text-sm font-semibold text-navy-foreground">
               <Star className="size-4 shrink-0 fill-gold text-gold" />
-              From finding locations to creating experiences — we've been part of India's biggest stories.
+              From finding locations to creating experiences — we've been part of India's biggest
+              stories.
             </p>
           </div>
         </div>
@@ -233,10 +277,12 @@ function Home() {
       <section className="mx-auto max-w-7xl px-4 py-16">
         <div className="grid overflow-hidden rounded-xl bg-navy text-navy-foreground lg:grid-cols-3">
           <div className="p-8">
-            <h2 className="section-title text-xl text-gold">Built on experience. Driven by trust.</h2>
+            <h2 className="section-title text-xl text-gold">
+              Built on experience. Driven by trust.
+            </h2>
             <p className="mt-4 text-sm leading-relaxed text-navy-foreground/80">
-              Founded by <strong className="text-navy-foreground">Deepak Bhanushali</strong>, a name trusted in the film
-              and event industry for over two decades.
+              Founded by <strong className="text-navy-foreground">Deepak Bhanushali</strong>, a name
+              trusted in the film and event industry for over two decades.
             </p>
             <Link
               to="/founder"
@@ -277,11 +323,13 @@ function Home() {
         {featured.length > 0 ? (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {featured.map((v) => (
-              <VenueCard key={v.slug} venue={v} />
+              <VenueCard key={v.slug} venue={v} choosePurpose />
             ))}
           </div>
         ) : (
-          <p className="mt-5 text-sm text-muted-foreground">No featured venues are available right now.</p>
+          <p className="mt-5 text-sm text-muted-foreground">
+            No featured venues are available right now.
+          </p>
         )}
         <div className="mt-8 text-center">
           <Link
@@ -300,7 +348,9 @@ function Home() {
           <div className="flex gap-3">
             <Building2 className="size-9 shrink-0 text-gold-foreground" />
             <div>
-              <h3 className="section-title text-base text-gold-foreground">Are you a venue owner?</h3>
+              <h3 className="section-title text-base text-gold-foreground">
+                Are you a venue owner?
+              </h3>
               <p className="mt-1 text-sm text-gold-foreground/80">
                 List your venue with VENUES LOCATION and get genuine enquiries from verified users.
               </p>
@@ -320,7 +370,9 @@ function Home() {
           <div className="flex gap-3">
             <Users className="size-9 shrink-0 text-gold-foreground" />
             <div>
-              <h3 className="section-title text-base text-gold-foreground">Looking for the perfect venue?</h3>
+              <h3 className="section-title text-base text-gold-foreground">
+                Looking for the perfect venue?
+              </h3>
               <p className="mt-1 text-sm text-gold-foreground/80">
                 Tell us your requirement and we'll help you find the best match.
               </p>
@@ -367,9 +419,14 @@ function Home() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-xl border border-border bg-card p-6 shadow-card">
+              <figure
+                key={t.name}
+                className="rounded-xl border border-border bg-card p-6 shadow-card"
+              >
                 <Quote className="size-7 text-gold" />
-                <blockquote className="mt-3 text-sm leading-relaxed text-foreground/85">"{t.quote}"</blockquote>
+                <blockquote className="mt-3 text-sm leading-relaxed text-foreground/85">
+                  "{t.quote}"
+                </blockquote>
                 <figcaption className="mt-4 border-t border-border pt-3">
                   <p className="font-display text-sm font-bold text-navy">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role}</p>
@@ -386,8 +443,8 @@ function Home() {
           <div>
             <SectionHeading title="Tell us your requirement" align="left" />
             <p className="mt-4 max-w-lg text-sm leading-relaxed text-foreground/80">
-              Share your dates, budget and purpose — our team shortlists verified options and arranges site visits.
-              Every enquiry gets a Lead ID and a dedicated coordinator.
+              Share your dates, budget and purpose — our team shortlists verified options and
+              arranges site visits. Every enquiry gets a Lead ID and a dedicated coordinator.
             </p>
             <div className="mt-6 space-y-2 text-sm font-semibold text-navy">
               <p>Call: {CONTACT.phone}</p>
@@ -404,7 +461,13 @@ function Home() {
   );
 }
 
-export function SectionHeading({ title, align = "center" }: { title: string; align?: "center" | "left" }) {
+export function SectionHeading({
+  title,
+  align = "center",
+}: {
+  title: string;
+  align?: "center" | "left";
+}) {
   return (
     <div className={`flex items-center gap-4 ${align === "center" ? "justify-center" : ""}`}>
       <span className="h-0.5 w-12 bg-gold" />

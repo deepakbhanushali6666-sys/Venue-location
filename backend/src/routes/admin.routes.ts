@@ -47,11 +47,35 @@ adminRouter.get("/properties", requireAuth, requireAdmin, async (req: AuthedRequ
   try {
     const { data, error } = await req.client!
       .from("venues")
-      .select("id, property_code, name, city, state, category, suitable_for, status")
+      .select("id, owner_id, property_code, name, city, state, category, suitable_for, status")
       .order("created_at")
       .order("id");
     if (error) throw error;
-    res.json({ properties: data });
+    const properties = data ?? [];
+    const ownerIds = [...new Set(properties.map((property) => property.owner_id))];
+    if (ownerIds.length === 0) {
+      res.json({ properties: [] });
+      return;
+    }
+
+    const { data: profiles, error: profilesError } = await req.client!
+      .from("profiles")
+      .select("id, full_name, mobile, email")
+      .in("id", ownerIds);
+    if (profilesError) throw profilesError;
+    const owners = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+    res.json({
+      properties: properties.map(({ owner_id, ...property }) => {
+        const owner = owners.get(owner_id);
+        return {
+          ...property,
+          owner_name: owner?.full_name ?? null,
+          owner_mobile: owner?.mobile ?? null,
+          owner_email: owner?.email ?? null,
+        };
+      }),
+    });
   } catch (err) {
     next(err);
   }
@@ -197,4 +221,3 @@ adminRouter.delete("/team/:userId", requireAuth, requireAdmin, async (req: Authe
     next(err);
   }
 });
-

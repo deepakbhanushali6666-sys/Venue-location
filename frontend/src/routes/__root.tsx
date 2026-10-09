@@ -11,8 +11,8 @@ import { useEffect } from "react";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { VisitorGate } from "@/components/site/VisitorGate";
 import { Toaster } from "@/components/ui/sonner";
-
 
 function NotFoundComponent() {
   return (
@@ -89,14 +89,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "VENUES LOCATION | Venues & Film Shooting Locations" },
       {
         property: "og:description",
-        content: "10,000+ verified venues and film locations across India. 25+ years of industry experience.",
+        content:
+          "10,000+ verified venues and film locations across India. 25+ years of industry experience.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#0b1f3a" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "VENUES LOCATION" },
-
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -109,7 +109,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
-
   }),
 
   component: RootComponent,
@@ -134,16 +133,16 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <HeadContent />
       <div className="flex min-h-screen flex-col">
-
         <Header />
         <main className="flex-1">
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
+          <VisitorGate>
+            <Outlet />
+          </VisitorGate>
         </main>
         <Footer />
       </div>
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
-
   );
 }

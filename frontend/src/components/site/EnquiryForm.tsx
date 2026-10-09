@@ -7,7 +7,10 @@ import { listPurposes } from "@/lib/api";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(80),
-  mobile: z.string().trim().regex(/^[0-9+\s-]{8,15}$/, "Enter a valid mobile number"),
+  mobile: z
+    .string()
+    .trim()
+    .regex(/^[0-9+\s-]{8,15}$/, "Enter a valid mobile number"),
   email: z.string().trim().email("Enter a valid email").max(120),
   purpose: z.string().min(1, "Select a purpose"),
   eventDate: z.string().optional(),
@@ -18,10 +21,12 @@ const schema = z.object({
 export function EnquiryForm({
   venueName,
   venueId,
+  listingPurpose,
   compact = false,
 }: {
   venueName?: string;
   venueId?: string | undefined;
+  listingPurpose?: "Venue Bookings" | "Film Shooting" | undefined;
   compact?: boolean;
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,7 +61,9 @@ export function EnquiryForm({
         purpose: parsed.data.purpose,
         venue_name: venueName ?? "",
         budget: parsed.data.budget ?? "",
-        message: parsed.data.message ?? "",
+        message: [listingPurpose ? `Listing purpose: ${listingPurpose}` : "", parsed.data.message]
+          .filter(Boolean)
+          .join("\n"),
         ...(venueId ? { venue_id: venueId } : {}),
         ...(parsed.data.eventDate ? { event_date: parsed.data.eventDate } : {}),
       });
@@ -71,8 +78,8 @@ export function EnquiryForm({
     }
   };
 
-
-  const field = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
+  const field =
+    "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold";
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -101,7 +108,9 @@ export function EnquiryForm({
               </option>
             ))}
           </select>
-          {errors["purpose"] && <p className="mt-1 text-xs text-destructive">{errors["purpose"]}</p>}
+          {errors["purpose"] && (
+            <p className="mt-1 text-xs text-destructive">{errors["purpose"]}</p>
+          )}
         </div>
         <input name="eventDate" type="date" aria-label="Event date" className={field} />
       </div>

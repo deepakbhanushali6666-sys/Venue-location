@@ -1,11 +1,25 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Clapperboard, Film, Music, Tv } from "lucide-react";
-import { budgetBands, capacityBands, categories as defaultVenueCategories, cities as defaultCities, eventTypes, states as defaultStates, type Venue } from "@/data/venues";
+import {
+  budgetBands,
+  capacityBands,
+  categories as defaultVenueCategories,
+  cities as defaultCities,
+  eventTypes,
+  states as defaultStates,
+  type Venue,
+} from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import filmImage from "@/assets/cat-film.jpg";
-import { listCategories, listLocations, listPurposes, listVenues, type CategoryRecord } from "@/lib/api";
+import {
+  listCategories,
+  listLocations,
+  listPurposes,
+  listVenues,
+  type CategoryRecord,
+} from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 type FilmSearch = {
@@ -16,12 +30,22 @@ type FilmSearch = {
   event?: string;
   budget?: string;
   capacity?: string;
+  date?: string;
 };
 
 export const Route = createFileRoute("/film-locations")({
   validateSearch: (search: Record<string, unknown>): FilmSearch => {
     const out: FilmSearch = {};
-    const keys = ["category", "subcategory", "city", "state", "event", "budget", "capacity"] as const;
+    const keys = [
+      "category",
+      "subcategory",
+      "city",
+      "state",
+      "event",
+      "budget",
+      "capacity",
+      "date",
+    ] as const;
     for (const key of keys) {
       const value = search[key];
       if (typeof value === "string" && value) out[key] = value;
@@ -39,7 +63,8 @@ export const Route = createFileRoute("/film-locations")({
       { property: "og:title", content: "Film Shooting Locations in India | VENUES LOCATION" },
       {
         property: "og:description",
-        content: "Production-ready shooting locations with permissions, unit parking and on-ground support.",
+        content:
+          "Production-ready shooting locations with permissions, unit parking and on-ground support.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -49,10 +74,26 @@ export const Route = createFileRoute("/film-locations")({
 });
 
 const services = [
-  { icon: Film, title: "Feature Films", text: "Period havelis, streets, mansions and industrial locations with permissions handled." },
-  { icon: Tv, title: "TV & OTT", text: "Long-schedule friendly locations and studio floors for serials and web series." },
-  { icon: Music, title: "Music Videos", text: "Striking villas, beaches, lawns and rooftops that shoot beautifully on camera." },
-  { icon: Clapperboard, title: "Ad Films", text: "Fast turnaround recces, budget-fit options and unit-ready logistics." },
+  {
+    icon: Film,
+    title: "Feature Films",
+    text: "Period havelis, streets, mansions and industrial locations with permissions handled.",
+  },
+  {
+    icon: Tv,
+    title: "TV & OTT",
+    text: "Long-schedule friendly locations and studio floors for serials and web series.",
+  },
+  {
+    icon: Music,
+    title: "Music Videos",
+    text: "Striking villas, beaches, lawns and rooftops that shoot beautifully on camera.",
+  },
+  {
+    icon: Clapperboard,
+    title: "Ad Films",
+    text: "Fast turnaround recces, budget-fit options and unit-ready logistics.",
+  },
 ];
 
 function FilmLocations() {
@@ -60,7 +101,14 @@ function FilmLocations() {
   const navigate = useNavigate();
   const [shootVenues, setShootVenues] = useState<Venue[]>([]);
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
-  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(defaultVenueCategories.map((category, sort_order) => ({ ...category, id: category.slug, sort_order, subcategories: [] })));
+  const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>(
+    defaultVenueCategories.map((category, sort_order) => ({
+      ...category,
+      id: category.slug,
+      sort_order,
+      subcategories: [],
+    })),
+  );
   const [locationCities, setLocationCities] = useState(defaultCities);
   const [locationStates, setLocationStates] = useState(defaultStates);
   const [purposes, setPurposes] = useState(eventTypes);
@@ -70,16 +118,14 @@ function FilmLocations() {
     listVenues()
       .then(({ venues }) => {
         if (cancelled) return;
-        const next = (venues as unknown as VenueRow[])
-          .map(rowToVenue)
-          .filter((v) => {
-            const purposeValues = v.suitableFor ?? [];
-            return (
-              purposeValues.includes("Film Shooting Locations") ||
-              purposeValues.includes("Film Shoot") ||
-              (!purposeValues.length && v.category === "film-shooting-locations")
-            );
-          });
+        const next = (venues as unknown as VenueRow[]).map(rowToVenue).filter((v) => {
+          const purposeValues = v.suitableFor ?? [];
+          return (
+            purposeValues.includes("Film Shooting Locations") ||
+            purposeValues.includes("Film Shoot") ||
+            (!purposeValues.length && v.category === "film-shooting-locations")
+          );
+        });
         setShootVenues(next);
       })
       .catch(() => {
@@ -95,17 +141,32 @@ function FilmLocations() {
     listCategories("film")
       .then(({ categories }) => setFilmCategories(categories))
       .catch(() => undefined);
-    listCategories().then(({ categories }) => setVenueCategories(categories)).catch(() => undefined);
-    listLocations().then(({ locations }) => {
-      setLocationCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
-      setLocationStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
-    }).catch(() => undefined);
-    listPurposes().then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name))).catch(() => undefined);
+    listCategories()
+      .then(({ categories }) => setVenueCategories(categories))
+      .catch(() => undefined);
+    listLocations()
+      .then(({ locations }) => {
+        setLocationCities(
+          locations.filter((location) => location.kind === "city").map((location) => location.name),
+        );
+        setLocationStates(
+          locations
+            .filter((location) => location.kind === "state")
+            .map((location) => location.name),
+        );
+      })
+      .catch(() => undefined);
+    listPurposes()
+      .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
+      .catch(() => undefined);
   }, []);
 
-  const venueCategorySlugs = new Set(venueCategories.map((category) => category.slug));
-  const filmOnlyCategories = filmCategories.filter((category) => !venueCategorySlugs.has(category.slug));
-  const selectedCategory = filmOnlyCategories.find((category) => category.slug === search.category);
+  const locationCategories = Array.from(
+    new Map(
+      [...venueCategories, ...filmCategories].map((category) => [category.slug, category]),
+    ).values(),
+  );
+  const selectedCategory = locationCategories.find((category) => category.slug === search.category);
   const update = (key: keyof FilmSearch, value: string) => {
     const next: FilmSearch = { ...search };
     if (key === "category") delete next.subcategory;
@@ -113,31 +174,38 @@ function FilmLocations() {
     else delete next[key];
     void navigate({ to: "/film-locations", search: next });
   };
-  const visibleVenues = shootVenues.filter((venue) => {
-    if (search.category && (venue.filmCategory || venue.category) !== search.category) return false;
-    if (search.subcategory) {
-      const effectiveSubcategories = venue.filmSubcategory?.length ? venue.filmSubcategory : (venue.subcategory ?? []);
-      if (!effectiveSubcategories.includes(search.subcategory)) return false;
-    }
-    if (search.city && venue.city !== search.city) return false;
-    if (search.state && venue.state !== search.state) return false;
-    if (search.event && !(venue.bookingPurposes ?? venue.suitableFor).includes(search.event)) return false;
-    if (search.budget) {
-      const band = budgetBands.find((item) => item.label === search.budget);
-      if (band && (venue.startingPrice < band.min || venue.startingPrice > band.max)) return false;
-    }
-    if (search.capacity) {
-      const band = capacityBands.find((item) => item.label === search.capacity);
-      if (band && (venue.capacity < band.min || venue.capacity > band.max)) return false;
-    }
-    return true;
-  }).sort((a, b) => {
-    if (a.featured !== b.featured) return Number(b.featured) - Number(a.featured);
-    if (!a.featured) return 0;
-    const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
-    const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
-    return aOrder - bOrder;
-  });
+  const visibleVenues = shootVenues
+    .filter((venue) => {
+      if (search.category && (venue.filmCategory || venue.category) !== search.category)
+        return false;
+      if (search.subcategory) {
+        const effectiveSubcategories = venue.filmSubcategory?.length
+          ? venue.filmSubcategory
+          : (venue.subcategory ?? []);
+        if (!effectiveSubcategories.includes(search.subcategory)) return false;
+      }
+      if (search.city && venue.city !== search.city) return false;
+      if (search.state && venue.state !== search.state) return false;
+      if (search.event && !(venue.bookingPurposes ?? venue.suitableFor).includes(search.event))
+        return false;
+      if (search.budget) {
+        const band = budgetBands.find((item) => item.label === search.budget);
+        if (band && (venue.startingPrice < band.min || venue.startingPrice > band.max))
+          return false;
+      }
+      if (search.capacity) {
+        const band = capacityBands.find((item) => item.label === search.capacity);
+        if (band && (venue.capacity < band.min || venue.capacity > band.max)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.featured !== b.featured) return Number(b.featured) - Number(a.featured);
+      if (!a.featured) return 0;
+      const aOrder = a.featuredOrder || Number.MAX_SAFE_INTEGER;
+      const bOrder = b.featuredOrder || Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
 
   return (
     <div>
@@ -154,8 +222,8 @@ function FilmLocations() {
             Film Shooting Locations <span className="text-gold">across India</span>
           </h1>
           <p className="mt-4 max-w-2xl text-navy-foreground/80">
-            25+ years of location scouting for feature films, television, ad films and music videos. We know which
-            location works for your schedule, budget and lighting — and we get you in.
+            25+ years of location scouting for feature films, television, ad films and music videos.
+            We know which location works for your schedule, budget and lighting — and we get you in.
           </p>
         </div>
       </section>
@@ -183,7 +251,9 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">All cities</option>
-              {locationCities.map((city) => <option key={city}>{city}</option>)}
+              {locationCities.map((city) => (
+                <option key={city}>{city}</option>
+              ))}
             </select>
             <select
               value={search.state ?? ""}
@@ -192,7 +262,9 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">All states</option>
-              {locationStates.map((state) => <option key={state}>{state}</option>)}
+              {locationStates.map((state) => (
+                <option key={state}>{state}</option>
+              ))}
             </select>
             <select
               value={search.category ?? ""}
@@ -201,7 +273,11 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">All film location types</option>
-              {filmOnlyCategories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
+              {locationCategories.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
             </select>
             <select
               value={search.subcategory ?? ""}
@@ -211,7 +287,11 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm disabled:opacity-60"
             >
               <option value="">All subcategories</option>
-              {selectedCategory?.subcategories.map((subcategory) => <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>)}
+              {selectedCategory?.subcategories.map((subcategory) => (
+                <option key={subcategory.id} value={subcategory.name}>
+                  {subcategory.name}
+                </option>
+              ))}
             </select>
             <select
               value={search.event ?? ""}
@@ -220,7 +300,9 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">Any purpose</option>
-              {purposes.map((purpose) => <option key={purpose}>{purpose}</option>)}
+              {purposes.map((purpose) => (
+                <option key={purpose}>{purpose}</option>
+              ))}
             </select>
             <select
               value={search.capacity ?? ""}
@@ -229,7 +311,9 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">Any capacity</option>
-              {capacityBands.map((band) => <option key={band.label}>{band.label}</option>)}
+              {capacityBands.map((band) => (
+                <option key={band.label}>{band.label}</option>
+              ))}
             </select>
             <select
               value={search.budget ?? ""}
@@ -238,15 +322,21 @@ function FilmLocations() {
               className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
             >
               <option value="">Any budget</option>
-              {budgetBands.map((band) => <option key={band.label}>{band.label}</option>)}
+              {budgetBands.map((band) => (
+                <option key={band.label}>{band.label}</option>
+              ))}
             </select>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">Showing {visibleVenues.length} film location{visibleVenues.length === 1 ? "" : "s"}</p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Showing {visibleVenues.length} film location{visibleVenues.length === 1 ? "" : "s"}
+          </p>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {visibleVenues.length > 0 ? (
               visibleVenues.map((v) => <VenueCard key={v.slug} venue={v} />)
             ) : (
-              <p className="text-sm text-muted-foreground">No film locations match these filters yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No film locations match these filters yet.
+              </p>
             )}
           </div>
           <div className="mt-8">

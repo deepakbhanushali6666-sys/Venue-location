@@ -24,6 +24,9 @@ Run [`supabase/migration.sql`](supabase/migration.sql) once in your Supabase
 project's SQL editor. It creates every table, function, trigger, RLS policy
 and the `venue-photos` storage bucket.
 
+Run [`supabase/visitors.sql`](supabase/visitors.sql) after the schema setup for
+both new and existing projects to enable visitor search capture.
+
 For an existing database, run [`supabase/film_categories.sql`](supabase/film_categories.sql)
 once in the Supabase SQL editor before deploying the separate Film Locations
 category panel. It copies the current venue categories and subcategories as the
@@ -60,11 +63,59 @@ cp .env.example .env   # fill in your Supabase + backend API values
 npm run dev            # http://localhost:5173
 ```
 
+## Exploring categories
+
+Each category in the home page's Explore Venues section opens a choice between
+Venue Bookings and Film Shooting. The choice opens the corresponding listing
+page with the selected category in the URL. The Film Locations category filter
+includes shared venue categories as well as film-specific categories, using the
+listing's film category when set and its venue category otherwise. Categories
+without matching listings show an empty result rather than unrelated properties.
+
+Home page Featured Venues cards also offer a purpose choice, opening the selected
+property's details rather than a category listing. Only purposes offered by the
+property are enabled. The choice is preserved in the details URL and displayed
+beside the enquiry form, and included in submitted enquiry messages and the
+WhatsApp enquiry text.
+
+## Visitor search capture
+
+Before viewing venue listings, film-location listings or property details,
+visitors enter their name and phone number. Details are remembered in session
+storage for the browser session, not placed in URLs. Each page visit or filter
+change is saved before results are shown, including category, subcategory,
+location, capacity, purpose, budget and event/shoot date when supplied.
+The selected date is recorded as a requirement, not an availability guarantee.
+
+The admin panel's Visitors section shows these searches and property visits with
+pagination and a refresh button.
+The Download CSV button exports all pages, including contact details, UTC
+timestamps, search type, property and separate columns for every search
+requirement. If records change during pagination, export reports an error so
+the admin can retry instead of downloading an incomplete file.
+Only admins can read visitor records; public
+submission uses a validated write-only database function. A failed save keeps
+results behind the gate and offers retry. This is a contact-capture UX, not an
+authentication system or protection against direct public API access.
+
+Deploy both frontend and backend after running `supabase/visitors.sql`.
+The form discloses that contact details and searches are shared with the team.
+
+To run the visitor API regression tests from `backend`, run `npm run build`
+followed by `node --test tests/visitors.test.mjs`.
+
 ## Admin access
 
 Sign up with an email listed in the `admin_bootstrap_emails` table (seeded
 with `info@venueslocation.com` by the migration) to automatically get the
 `admin` role. Otherwise every new sign-up gets the `owner` role.
+
+The admin-only Property Codes page shows each property's current owner's name,
+phone number and email from their account profile. Search includes these contact
+details; missing profile fields are displayed as "Not provided". The All properties,
+Venues and Film Shooting Locations filter works together with search. Properties
+listed for both purposes appear under either purpose filter. Deploy both the
+backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
@@ -100,4 +151,3 @@ and environment variables; it auto-detects the Node app from `package.json`.
 1. Update the backend's `CORS_ORIGIN` to the real Vercel frontend URL.
 2. Update the frontend's `VITE_API_URL` to the real backend URL, then
    redeploy the frontend so the new env var is baked into the build.
-

@@ -40,6 +40,20 @@ const patch = <T>(path: string, body?: unknown) =>
   );
 const del = <T>(path: string) => apiFetch<T>(path, { method: "DELETE" });
 
+export type VisitorSearch = {
+  id: string;
+  visitor_name: string;
+  mobile: string;
+  search_type: "venue" | "film" | "all" | "property";
+  property_slug: string | null;
+  requirements: Record<string, string>;
+  created_at: string;
+};
+export const recordVisitorSearch = (payload: Omit<VisitorSearch, "created_at">) =>
+  post<{ recorded: true }>("/visitors", payload);
+export const listVisitors = (page = 0) =>
+  get<{ visitors: VisitorSearch[]; total: number }>(`/visitors?page=${page}`);
+
 // Venues
 export const listVenues = (filters?: { category?: string; city?: string; search?: string }) => {
   const qs = new URLSearchParams(
@@ -83,8 +97,15 @@ export type VenueTransferPreview = {
   new_owner: VenueTransferOwner;
   lead_count: number;
 };
-export const previewVenueTransfer = (id: string, property_code: string, account_identifier: string) =>
-  post<{ preview: VenueTransferPreview }>(`/venues/${id}/transfer-preview`, { property_code, account_identifier });
+export const previewVenueTransfer = (
+  id: string,
+  property_code: string,
+  account_identifier: string,
+) =>
+  post<{ preview: VenueTransferPreview }>(`/venues/${id}/transfer-preview`, {
+    property_code,
+    account_identifier,
+  });
 export const transferVenueOwner = (id: string, property_code: string, new_owner_id: string) =>
   post<{ transfer: { venue_id: string; previous_owner_id: string; new_owner_id: string } }>(
     `/venues/${id}/transfer-owner`,
@@ -155,6 +176,9 @@ export type AdminProperty = {
   category: string;
   suitable_for: string[] | null;
   status: string;
+  owner_name: string | null;
+  owner_mobile: string | null;
+  owner_email: string | null;
 };
 export const getAdminProperties = () => get<{ properties: AdminProperty[] }>("/admin/properties");
 
@@ -282,8 +306,11 @@ export type CategoryRecord = {
 export type CategoryKind = "venue" | "film";
 export const listCategories = (kind: CategoryKind = "venue") =>
   get<{ categories: CategoryRecord[] }>(`/categories?kind=${kind}`);
-export const createCategory = (payload: { name: string; sort_order?: number; kind?: CategoryKind }) =>
-  post<{ category: CategoryRecord }>("/categories", payload);
+export const createCategory = (payload: {
+  name: string;
+  sort_order?: number;
+  kind?: CategoryKind;
+}) => post<{ category: CategoryRecord }>("/categories", payload);
 export const updateCategory = (id: string, payload: { name?: string; sort_order?: number }) =>
   patch<{ category: CategoryRecord }>(`/categories/${id}`, payload);
 export const deleteCategory = (id: string) => del<void>(`/categories/${id}`);
@@ -338,10 +365,18 @@ export const createAmenity = (payload: { name: string; sort_order?: number }) =>
 export const deleteAmenity = (id: string) => del<void>(`/amenities/${id}`);
 
 // Venue state and city options (admin-managed)
-export type LocationRecord = { id: string; kind: "state" | "city"; name: string; sort_order: number };
+export type LocationRecord = {
+  id: string;
+  kind: "state" | "city";
+  name: string;
+  sort_order: number;
+};
 export const listLocations = () => get<{ locations: LocationRecord[] }>("/locations");
-export const createLocation = (payload: { kind: "state" | "city"; name: string; sort_order?: number }) =>
-  post<{ location: LocationRecord }>("/locations", payload);
+export const createLocation = (payload: {
+  kind: "state" | "city";
+  name: string;
+  sort_order?: number;
+}) => post<{ location: LocationRecord }>("/locations", payload);
 export const deleteLocation = (id: string) => del<void>(`/locations/${id}`);
 
 // Lead purposes (admin-managed options)

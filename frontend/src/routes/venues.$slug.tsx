@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Car, MapPin, Maximize2, MessageCircle, Phone, Star, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Car,
+  MapPin,
+  Maximize2,
+  MessageCircle,
+  Phone,
+  Star,
+  Users,
+} from "lucide-react";
 import { CONTACT, categoryBySlug, formatINR, venueBySlug, venues, type Venue } from "@/data/venues";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { VenueCard } from "@/components/site/VenueCard";
@@ -19,6 +28,10 @@ import { getVenueBySlug } from "@/lib/api";
 import { rowToVenue, type VenueRow } from "@/lib/venue-mapping";
 
 export const Route = createFileRoute("/venues/$slug")({
+  validateSearch: (search: Record<string, unknown>): { purpose?: "venue" | "film" } =>
+    search["purpose"] === "venue" || search["purpose"] === "film"
+      ? { purpose: search["purpose"] }
+      : {},
   loader: ({ params }) => {
     return { venue: venueBySlug(params.slug) ?? null };
   },
@@ -29,9 +42,15 @@ export const Route = createFileRoute("/venues/$slug")({
       return {
         meta: [
           { title },
-          { name: "description", content: "Venue photos, amenities, capacity and booking enquiry on VENUES LOCATION." },
+          {
+            name: "description",
+            content: "Venue photos, amenities, capacity and booking enquiry on VENUES LOCATION.",
+          },
           { property: "og:title", content: title },
-          { property: "og:description", content: "Venue photos, amenities, capacity and booking enquiry." },
+          {
+            property: "og:description",
+            content: "Venue photos, amenities, capacity and booking enquiry.",
+          },
           { property: "og:type", content: "website" },
           { name: "twitter:card", content: "summary_large_image" },
         ],
@@ -80,7 +99,11 @@ function VenueDetailRoute() {
   }, [slug]);
 
   if (loading) {
-    return <div className="grid min-h-[60vh] place-items-center bg-sand text-muted-foreground">Loading venue…</div>;
+    return (
+      <div className="grid min-h-[60vh] place-items-center bg-sand text-muted-foreground">
+        Loading venue…
+      </div>
+    );
   }
 
   if (dbVenue) return <VenueDetail venue={dbVenue.venue} venueId={dbVenue.id} />;
@@ -92,7 +115,9 @@ function VenueDetailRoute() {
     <div className="grid min-h-[60vh] place-items-center bg-sand px-4 text-center">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-navy">Venue not found</h1>
-        <p className="mt-2 text-sm text-muted-foreground">This listing may have been removed or is pending approval.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This listing may have been removed or is pending approval.
+        </p>
         <Link to="/venues" className="mt-4 inline-block font-bold text-gold">
           Browse all venues
         </Link>
@@ -102,10 +127,23 @@ function VenueDetailRoute() {
 }
 
 function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
-  const similar = venues.filter((v) => v.category === venue.category && v.slug !== venue.slug).slice(0, 3);
+  const { purpose } = Route.useSearch();
+  const purposes = venue.suitableFor ?? [];
+  const selectedPurpose =
+    purpose === "film" &&
+    (purposes.includes("Film Shooting Locations") ||
+      purposes.includes("Film Shoot") ||
+      (purposes.length === 0 && venue.category === "film-shooting-locations"))
+      ? "Film Shooting"
+      : purpose === "venue" && (purposes.length === 0 || purposes.includes("Venue Bookings"))
+        ? "Venue Bookings"
+        : undefined;
+  const similar = venues
+    .filter((v) => v.category === venue.category && v.slug !== venue.slug)
+    .slice(0, 3);
 
   const waText = encodeURIComponent(
-    `Hi VENUES LOCATION, I'm interested in ${venue.name} (${venue.city}). Please share availability and pricing.`,
+    `Hi VENUES LOCATION, I'm interested in ${venue.name} (${venue.city})${selectedPurpose ? ` for ${selectedPurpose.toLowerCase()}` : ""}. Please share availability and pricing.`,
   );
 
   return (
@@ -143,7 +181,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
                 <span className="flex min-w-0 items-start gap-1.5 sm:col-span-2 xl:col-span-2">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-gold" />
                   <span className="min-w-0 wrap-break-word">
-                    <span className="block">{[venue.area, venue.city, venue.state].filter(Boolean).join(", ")}</span>
+                    <span className="block">
+                      {[venue.area, venue.city, venue.state].filter(Boolean).join(", ")}
+                    </span>
                     {venue.pincode && (
                       <span className="mt-1 inline-flex rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-navy">
                         PIN {venue.pincode}
@@ -152,16 +192,20 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
                   </span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <Users className="size-4 shrink-0 text-gold" /> <span>Up to {venue.capacity} guests</span>
+                  <Users className="size-4 shrink-0 text-gold" />{" "}
+                  <span>Up to {venue.capacity} guests</span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
                   <Car className="size-4 shrink-0 text-gold" /> <span>{venue.parking}</span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <Star className="size-4 shrink-0 fill-gold text-gold" /> <span>{venue.rating}</span>
+                  <Star className="size-4 shrink-0 fill-gold text-gold" />{" "}
+                  <span>{venue.rating}</span>
                 </span>
               </div>
-              <p className="mt-4 text-[15px] leading-relaxed text-foreground/85">{venue.description}</p>
+              <p className="mt-4 text-[15px] leading-relaxed text-foreground/85">
+                {venue.description}
+              </p>
 
               <h2 className="section-title mt-8 text-base text-navy">Amenities</h2>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -175,7 +219,10 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               <h2 className="section-title mt-8 text-base text-navy">Suitable for</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {venue.suitableFor.map((s) => (
-                  <span key={s} className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy">
+                  <span
+                    key={s}
+                    className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy"
+                  >
                     {s}
                   </span>
                 ))}
@@ -183,10 +230,15 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
               {venue.bookingPurposes && venue.bookingPurposes.length > 0 && (
                 <>
-                  <h2 className="section-title mt-8 text-base text-navy">What types of bookings we accept</h2>
+                  <h2 className="section-title mt-8 text-base text-navy">
+                    What types of bookings we accept
+                  </h2>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {venue.bookingPurposes.map((purpose) => (
-                      <span key={purpose} className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy">
+                      <span
+                        key={purpose}
+                        className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-navy"
+                      >
                         {purpose}
                       </span>
                     ))}
@@ -196,7 +248,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
 
               {venue.bookingRestrictions && venue.bookingRestrictions.length > 0 && (
                 <>
-                  <h2 className="section-title mt-8 text-base text-navy">Restrictions for booking</h2>
+                  <h2 className="section-title mt-8 text-base text-navy">
+                    Restrictions for booking
+                  </h2>
                   <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                     {venue.bookingRestrictions.map((restriction) => (
                       <li key={restriction} className="flex items-center gap-2 text-sm">
@@ -209,7 +263,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
             </div>
 
             <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
-              <h2 className="section-title border-b border-border p-5 text-base text-navy">Venue Video</h2>
+              <h2 className="section-title border-b border-border p-5 text-base text-navy">
+                Venue Video
+              </h2>
               <iframe
                 title={`${venue.name} video`}
                 src={`https://www.youtube.com/embed/${venue.videoId}`}
@@ -222,7 +278,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
             {venueId && <VenueReviews venueId={venueId} venueName={venue.name} />}
 
             <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
-              <h2 className="section-title border-b border-border p-5 text-base text-navy">Location</h2>
+              <h2 className="section-title border-b border-border p-5 text-base text-navy">
+                Location
+              </h2>
               <iframe
                 title={`${venue.name} map`}
                 src={`https://www.google.com/maps?q=${encodeURIComponent(venue.mapQuery)}&output=embed`}
@@ -235,13 +293,29 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-xl border border-border bg-card p-6 shadow-card">
               <p className="text-sm text-muted-foreground">Starting from</p>
-              <p className="font-display text-3xl font-extrabold text-navy">{formatINR(venue.startingPrice)}</p>
+              <p className="font-display text-3xl font-extrabold text-navy">
+                {formatINR(venue.startingPrice)}
+              </p>
               <p className="text-xs text-muted-foreground">per event / shoot day (indicative)</p>
 
               <div className="mt-5">
-                <h2 className="section-title text-base text-navy">Request Booking</h2>
+                <h2 className="section-title text-base text-navy">
+                  {selectedPurpose === "Film Shooting"
+                    ? "Request Film Shooting"
+                    : "Request Booking"}
+                </h2>
+                {selectedPurpose && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selected purpose: {selectedPurpose}
+                  </p>
+                )}
                 <div className="mt-3">
-                  <EnquiryForm venueName={venue.name} venueId={venueId} compact />
+                  <EnquiryForm
+                    venueName={venue.name}
+                    venueId={venueId}
+                    listingPurpose={selectedPurpose}
+                    compact
+                  />
                 </div>
               </div>
 
@@ -362,12 +436,17 @@ function VenuePhotoCarousel({ venue }: { venue: Venue }) {
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="h-[94dvh] w-[96vw] max-w-none grid-rows-[auto_1fr_auto] gap-2 border-0 bg-navy p-3 text-white sm:p-6">
-          <DialogTitle className="sr-only">{venue.name} photo {active + 1}</DialogTitle>
+          <DialogTitle className="sr-only">
+            {venue.name} photo {active + 1}
+          </DialogTitle>
           <div className="min-h-0">
             <Carousel setApi={setPreviewApi} opts={{ loop: true }} className="h-full">
               <CarouselContent className="ml-0 h-full">
                 {venue.images.map((image, index) => (
-                  <CarouselItem key={`${image}-${index}`} className="grid h-full place-items-center pl-0">
+                  <CarouselItem
+                    key={`${image}-${index}`}
+                    className="grid h-full place-items-center pl-0"
+                  >
                     <div className="relative inline-block max-h-full max-w-full">
                       <WatermarkedVenueImage
                         src={image}

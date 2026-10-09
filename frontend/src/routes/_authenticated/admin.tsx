@@ -40,6 +40,7 @@ import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 import { LocationsPanel } from "@/components/site/LocationsPanel";
 import { PurposesPanel } from "@/components/site/PurposesPanel";
 import { TeamMembersPanel } from "@/components/site/TeamMembersPanel";
+import { VisitorsPanel } from "@/components/site/VisitorsPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -1272,6 +1273,7 @@ function AdminPanel() {
           venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
         />
 
+        <VisitorsPanel />
         <CategoriesPanel />
 
         <CategoriesPanel kind="film" />
