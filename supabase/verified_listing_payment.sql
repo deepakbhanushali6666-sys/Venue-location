@@ -61,6 +61,8 @@ declare
   v_start date;
   v_expiry date;
   v_current date;
+  v_current_amount integer;
+  v_photo_limit integer;
 begin
   if not public.has_role(auth.uid(), 'admin') then
     raise exception 'Only admins can verify payments';
@@ -79,12 +81,41 @@ begin
   else
     v_plan_name := 'VENUES LOCATION Verified Listing';
   end if;
-  if v_pay.venue_draft_id is not null and (
+  if (
     (v_pay.plan_code = 'verified_listing' and v_pay.amount <> 3650)
     or (v_pay.plan_code = 'pro_marketing' and v_pay.amount <> 36500)
   ) then
     raise exception 'Payment amount does not match the selected plan';
   end if;
+
+  -- Serialize account renewals and upgrades, including payments for different drafts.
+  perform pg_advisory_xact_lock(hashtextextended(v_pay.owner_id::text, 0));
+  select expires_on, amount into v_current, v_current_amount
+    from public.subscriptions
+    where owner_id = v_pay.owner_id and status = 'active'
+    for update;
+  if (v_current is null or v_current >= current_date) and v_current_amount > v_pay.amount then
+    raise exception 'An active account plan cannot be downgraded through a payment';
+  end if;
+
+  v_invoice := 'OMS/INV/' || to_char(now(), 'YYYY') || '/' || nextval('public.invoice_seq');
+  v_start := current_date;
+  if v_current is not null and v_current > current_date then
+    v_expiry := v_current + interval '1 year';
+  else
+    v_expiry := current_date + interval '1 year';
+  end if;
+
+  -- Activate within this transaction before inserting the paid listing.
+  -- Any draft validation failure rolls back both changes.
+  insert into public.subscriptions (owner_id, plan_name, status, amount, started_on, expires_on, invoice_number)
+  values (v_pay.owner_id, v_plan_name, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
+  on conflict (owner_id) do update
+    set plan_name = excluded.plan_name, status = 'active', amount = excluded.amount,
+        started_on = coalesce(public.subscriptions.started_on, excluded.started_on),
+        expires_on = excluded.expires_on, invoice_number = excluded.invoice_number;
+
+  v_photo_limit := case when v_pay.plan_code = 'pro_marketing' then 60 else 20 end;
 
   if v_pay.venue_draft_id is not null then
     select * into v_draft
@@ -100,8 +131,8 @@ begin
       raise exception 'Payment plan does not match the saved listing draft';
     end if;
     if jsonb_typeof(v_payload->'photos') = 'array'
-      and jsonb_array_length(v_payload->'photos') > 20 then
-      raise exception 'Paid listings allow up to 20 photos';
+      and jsonb_array_length(v_payload->'photos') > v_photo_limit then
+      raise exception 'This listing allows up to % photos', v_photo_limit;
     end if;
     if coalesce(trim(v_payload->>'name'), '') = ''
       or coalesce(trim(v_payload->>'slug'), '') = ''
@@ -156,29 +187,12 @@ begin
       where id = v_draft.id;
   end if;
 
-  v_invoice := 'OMS/INV/' || to_char(now(), 'YYYY') || '/' || nextval('public.invoice_seq');
-
-  select expires_on into v_current from public.subscriptions where owner_id = v_pay.owner_id;
-  v_start := current_date;
-  if v_current is not null and v_current > current_date then
-    v_expiry := v_current + interval '1 year';
-  else
-    v_expiry := current_date + interval '1 year';
-  end if;
-
-  insert into public.subscriptions (owner_id, plan_name, status, amount, started_on, expires_on, invoice_number)
-  values (v_pay.owner_id, v_plan_name, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
-  on conflict (owner_id) do update
-    set plan_name = excluded.plan_name, status = 'active', amount = excluded.amount,
-        started_on = coalesce(public.subscriptions.started_on, excluded.started_on),
-        expires_on = excluded.expires_on, invoice_number = excluded.invoice_number;
-
   update public.payments
     set status = 'verified', invoice_number = v_invoice, verified_by = auth.uid(), verified_at = now()
     where id = p_payment_id;
 
   insert into public.audit_log (actor_id, action, entity_type, entity_id, entity_label, from_value, to_value)
-  values (auth.uid(), 'payment_verified', 'payment', p_payment_id, v_invoice, 'pending', 'verified');
+  values (auth.uid(), 'payment_verified', 'payment', p_payment_id, v_plan_name, 'pending', 'verified');
 
   return v_invoice;
 end;

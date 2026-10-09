@@ -15,6 +15,7 @@ import {
   updateLeadStatus,
   updateVenue,
   type CategoryRecord,
+  type AccountSubscription,
   type MyLeadContactRequest,
 } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
@@ -83,16 +84,6 @@ type LeadRow = {
   created_at: string;
 };
 
-type SubRow = {
-  id: string;
-  plan_name: string;
-  status: string;
-  amount: number;
-  started_on: string | null;
-  expires_on: string | null;
-  invoice_number: string;
-};
-
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
 
@@ -102,7 +93,7 @@ function OwnerDashboard() {
   const { isAdmin, isTeam } = useRoles(userId);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [leads, setLeads] = useState<LeadRow[]>([]);
-  const [sub, setSub] = useState<SubRow | null>(null);
+  const [sub, setSub] = useState<AccountSubscription | null>(null);
   const [editing, setEditing] = useState<VenueRow | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -130,7 +121,7 @@ function OwnerDashboard() {
         listMyLeadContactRequests(),
       ]);
       setVenues(v as unknown as VenueRow[]);
-      setSub(s as unknown as SubRow | null);
+      setSub(s);
       setLeads(l as unknown as LeadRow[]);
       setContactRequests(cr);
     } catch (err) {
@@ -142,9 +133,12 @@ function OwnerDashboard() {
 
   useEffect(() => {
     void load();
+    const refresh = () => void load();
+    window.addEventListener("focus", refresh);
     listCategories()
       .then(({ categories: rows }) => setCategoryRecords(rows))
       .catch(() => undefined);
+    return () => window.removeEventListener("focus", refresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -423,7 +417,10 @@ function OwnerDashboard() {
                   userId={userId}
                   value={photos}
                   onChange={setPhotos}
-                  maxPhotos={sub?.status === "active" && (!sub.expires_on || new Date(sub.expires_on).getTime() > Date.now()) ? 20 : 10}
+                  maxPhotos={sub?.photo_limit ?? 10}
+                  onUpgrade={(sub?.photo_limit ?? 10) < 60
+                    ? () => document.getElementById("account-subscription")?.scrollIntoView({ behavior: "smooth" })
+                    : undefined}
                 />
               )}
 

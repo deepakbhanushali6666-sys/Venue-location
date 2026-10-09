@@ -92,9 +92,14 @@ Postgres RLS are the real gate.
    homepage's featured section.
 5. **Verify/reject payments**: `POST /api/payments/:id/verify` or
    `/reject`. Verifying calls the `verify_payment` Postgres function, which
-   atomically: generates an invoice number, activates/extends the owner's
+   atomically: issues an invoice number, activates/extends the owner's account-wide
    `subscriptions` row by 1 year, marks the payment `verified`, and writes an
    audit log entry — all in one transaction.
+   Invoice numbers appear as plain text in the owner's dashboard. Document
+   generation and viewing/download options are disabled until an approved
+   invoice template is added. The separate **Subscriptions** admin
+   page shows owner name, phone, email, current property count, purchased plan,
+   photo allowance, status, validity dates and latest invoice number as plain text.
 6. **Moderate reviews**: approve/reject pending reviews
    (`PATCH /api/reviews/:id/moderate`) — only approved reviews become public.
 7. **Audit log**: every status change (venue approval, featured toggle, lead
@@ -149,8 +154,9 @@ but all need attention before a real public launch:
    manual (owner pays via UPI/bank transfer, admin verifies the reference
    number), **there is currently no real account for owners to actually pay
    into.** Needs the real business UPI ID and bank details.
-2. **`BUSINESS.gstin` and `BUSINESS.pan` are blank** — shown on the tax
-   invoice generated after a payment is verified.
+2. **Invoice templates are not configured** — invoice numbers are issued,
+   but no invoice document is generated or offered for download. Business tax
+   details and an approved template must be configured before enabling downloads.
 3. **Only one test venue exists** ("Test Grand Resort") — no real venue
    content has been seeded yet.
 4. **No custom domain** — running on `*.vercel.app` / `*.onrender.com`

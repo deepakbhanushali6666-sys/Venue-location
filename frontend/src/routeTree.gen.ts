@@ -29,9 +29,9 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDeletionRequestsRouteImport } from './routes/_authenticated/deletion-requests'
 import { Route as AuthenticatedLeadPageRouteImport } from './routes/_authenticated/lead-page'
 import { Route as AuthenticatedPropertyCodesRouteImport } from './routes/_authenticated/property-codes'
+import { Route as AuthenticatedSubscriptionsRouteImport } from './routes/_authenticated/subscriptions'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
-import { Route as AuthenticatedInvoicePaymentIdRouteImport } from './routes/_authenticated/invoice.$paymentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -134,6 +134,12 @@ const AuthenticatedPropertyCodesRoute =
     path: '/property-codes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSubscriptionsRoute =
+  AuthenticatedSubscriptionsRouteImport.update({
+    id: '/subscriptions',
+    path: '/subscriptions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const VenuesIndexRoute = VenuesIndexRouteImport.update({
   id: '/venues/',
   path: '/venues/',
@@ -144,12 +150,6 @@ const VenuesSlugRoute = VenuesSlugRouteImport.update({
   path: '/venues/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedInvoicePaymentIdRoute =
-  AuthenticatedInvoicePaymentIdRouteImport.update({
-    id: '/invoice/$paymentId',
-    path: '/invoice/$paymentId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -171,9 +171,9 @@ export interface FileRoutesByFullPath {
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
+  '/subscriptions': typeof AuthenticatedSubscriptionsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
-  '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,9 +195,9 @@ export interface FileRoutesByTo {
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
+  '/subscriptions': typeof AuthenticatedSubscriptionsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues': typeof VenuesIndexRoute
-  '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -221,9 +221,9 @@ export interface FileRoutesById {
   '/_authenticated/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
   '/_authenticated/lead-page': typeof AuthenticatedLeadPageRoute
   '/_authenticated/property-codes': typeof AuthenticatedPropertyCodesRoute
+  '/_authenticated/subscriptions': typeof AuthenticatedSubscriptionsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
-  '/_authenticated/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -247,9 +247,9 @@ export interface FileRouteTypes {
     | '/deletion-requests'
     | '/lead-page'
     | '/property-codes'
+    | '/subscriptions'
     | '/venues/$slug'
     | '/venues/'
-    | '/invoice/$paymentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -271,9 +271,9 @@ export interface FileRouteTypes {
     | '/deletion-requests'
     | '/lead-page'
     | '/property-codes'
+    | '/subscriptions'
     | '/venues/$slug'
     | '/venues'
-    | '/invoice/$paymentId'
   id:
     | '__root__'
     | '/'
@@ -296,9 +296,9 @@ export interface FileRouteTypes {
     | '/_authenticated/deletion-requests'
     | '/_authenticated/lead-page'
     | '/_authenticated/property-codes'
+    | '/_authenticated/subscriptions'
     | '/venues/$slug'
     | '/venues/'
-    | '/_authenticated/invoice/$paymentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -463,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropertyCodesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/subscriptions': {
+      id: '/_authenticated/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof AuthenticatedSubscriptionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/venues/': {
       id: '/venues/'
       path: '/venues'
@@ -477,13 +484,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VenuesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/invoice/$paymentId': {
-      id: '/_authenticated/invoice/$paymentId'
-      path: '/invoice/$paymentId'
-      fullPath: '/invoice/$paymentId'
-      preLoaderRoute: typeof AuthenticatedInvoicePaymentIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
@@ -493,7 +493,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDeletionRequestsRoute: typeof AuthenticatedDeletionRequestsRoute
   AuthenticatedLeadPageRoute: typeof AuthenticatedLeadPageRoute
   AuthenticatedPropertyCodesRoute: typeof AuthenticatedPropertyCodesRoute
-  AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
+  AuthenticatedSubscriptionsRoute: typeof AuthenticatedSubscriptionsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -502,7 +502,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDeletionRequestsRoute: AuthenticatedDeletionRequestsRoute,
   AuthenticatedLeadPageRoute: AuthenticatedLeadPageRoute,
   AuthenticatedPropertyCodesRoute: AuthenticatedPropertyCodesRoute,
-  AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
+  AuthenticatedSubscriptionsRoute: AuthenticatedSubscriptionsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

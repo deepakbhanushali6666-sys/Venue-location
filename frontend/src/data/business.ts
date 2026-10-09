@@ -13,14 +13,15 @@ export const PLAN = {
   code: "verified_listing",
   name: "VENUES LOCATION Verified Listing",
   amount: 3650,
+  photoLimit: 20,
   currency: "INR",
   period: "12 months",
   features: [
+    "Up to 20 photos per property across your account",
     "Verified venue listing with photos & video",
     "Unlimited enquiries and lead pipeline",
     "Owner dashboard with lead status tracking",
     "Featured placement eligibility",
-    "GST invoice for every payment",
   ],
 };
 
@@ -28,9 +29,11 @@ export const PRO_MARKETING_PLAN = {
   code: "pro_marketing",
   name: "VENUES LOCATION Pro Marketing",
   amount: 36500,
+  photoLimit: 60,
   currency: "INR",
   period: "12 months",
   features: [
+    "Up to 60 photos per property across your account",
     "Everything in Premium",
     "Dedicated promotional support",
     "Social media promotion",

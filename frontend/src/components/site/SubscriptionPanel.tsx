@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { createPayment, listMyPayments } from "@/lib/api";
+import { createPayment, listMyPayments, type AccountSubscription } from "@/lib/api";
 import { BUSINESS, PAYMENT_DETAILS, PLAN, PRO_MARKETING_PLAN, formatINR, upiLink } from "@/data/business";
 
 type PaymentRow = {
@@ -16,15 +15,6 @@ type PaymentRow = {
   created_at: string;
 };
 
-type SubRow = {
-  status: string;
-  amount: number;
-  plan_name?: string;
-  started_on: string | null;
-  expires_on: string | null;
-  invoice_number: string;
-};
-
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
 
 function daysLeft(expires: string | null) {
@@ -33,14 +23,19 @@ function daysLeft(expires: string | null) {
   return Math.ceil(ms / 86400000);
 }
 
-export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; sub: SubRow | null; onChange: () => void }) {
+export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; sub: AccountSubscription | null; onChange: () => void }) {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedCode, setSelectedCode] = useState(PLAN.code);
 
   const loadPayments = async () => {
-    const { payments } = await listMyPayments();
-    setPayments(payments as unknown as PaymentRow[]);
+    try {
+      const { payments } = await listMyPayments();
+      setPayments(payments as unknown as PaymentRow[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load payment history");
+    }
   };
 
   useEffect(() => {
@@ -50,11 +45,13 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
 
   const pending = payments.find((p) => p.status === "pending");
   const currentPlan =
-    sub?.plan_name === PRO_MARKETING_PLAN.name || sub?.amount === PRO_MARKETING_PLAN.amount || pending?.plan_code === PRO_MARKETING_PLAN.code
+    sub?.amount === PRO_MARKETING_PLAN.amount
       ? PRO_MARKETING_PLAN
       : PLAN;
+  const selectedPlan = selectedCode === PRO_MARKETING_PLAN.code ? PRO_MARKETING_PLAN : PLAN;
+  const photoLimit = sub?.photo_limit ?? 10;
   const left = daysLeft(sub?.expires_on ?? null);
-  const isActive = sub?.status === "active" && (left === null || left > 0);
+  const isActive = photoLimit > 10;
 
   const submitPayment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,8 +64,8 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
     setSaving(true);
     try {
       await createPayment({
-        amount: currentPlan.amount,
-        plan_code: currentPlan.code,
+        amount: selectedPlan.amount,
+        plan_code: selectedPlan.code,
         method: String(f.get("method") ?? "upi"),
         reference,
         payer_name: String(f.get("payer_name") ?? "").trim(),
@@ -76,7 +73,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
       });
       toast.success("Payment submitted. We'll verify and activate within 24 hours.");
       setOpen(false);
-      void loadPayments();
+      await loadPayments();
       onChange();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit payment");
@@ -86,12 +83,16 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
   };
 
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+    <section id="account-subscription" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-extrabold text-navy">Subscription</h2>
+          <p className="mt-1 text-sm font-bold text-navy">
+            {isActive ? currentPlan.name : "Basic / Free"}: {photoLimit} photos per property.
+            {" "}One account plan covers all your existing and future properties.
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {currentPlan.name} — {formatINR(currentPlan.amount)} for {currentPlan.period}.
+            {isActive ? `${formatINR(currentPlan.amount)} for ${currentPlan.period}.` : "Upgrade below to upload more photos."}
           </p>
         </div>
         <span
@@ -103,7 +104,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-border p-3">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Valid till</div>
           <div className="font-bold text-navy">{sub?.expires_on ?? "—"}</div>
@@ -113,13 +114,20 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
           <div className="font-bold text-navy">{left !== null && left > 0 ? left : "—"}</div>
         </div>
         <div className="rounded-lg border border-border p-3">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Latest invoice</div>
-          <div className="font-bold text-navy">{sub?.invoice_number || "—"}</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Photos per property</div>
+          <div className="font-bold text-navy">{photoLimit}</div>
+        </div>
+        <div className="rounded-lg border border-border p-3">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Latest invoice number</div>
+          <div className="font-bold text-navy">{sub?.invoice_number || "Not issued"}</div>
         </div>
       </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Invoice numbers are issued after payment verification. Invoice downloads are not available yet.
+      </p>
 
       <ul className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-        {currentPlan.features.map((f) => (
+        {(isActive ? currentPlan.features : ["Free listing", "Up to 10 photos per property"]).map((f) => (
           <li key={f}>• {f}</li>
         ))}
       </ul>
@@ -132,10 +140,13 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => {
+            if (!open) setSelectedCode(currentPlan.code);
+            setOpen((o) => !o);
+          }}
           className="rounded-md bg-gold px-5 py-2 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground"
         >
-          {open ? "Close" : isActive ? `Renew ${formatINR(currentPlan.amount)}` : `Pay ${formatINR(currentPlan.amount)} / year`}
+          {open ? "Close" : isActive ? "Upgrade / Renew plan" : "Upgrade plan"}
         </button>
         <a
           href={`https://wa.me/91${BUSINESS.phone}?text=${encodeURIComponent("Hi, I need help with my VENUES LOCATION subscription payment.")}`}
@@ -149,8 +160,22 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
 
       {open && (
         <div className="mt-5 grid gap-5 rounded-lg border border-border p-4 lg:grid-cols-2">
+          <label className="grid gap-2 text-sm font-bold text-navy lg:col-span-2">
+            Choose your account plan
+            <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value)} className={input} disabled={saving}>
+              <option value={PLAN.code} disabled={photoLimit > PLAN.photoLimit}>
+                {formatINR(PLAN.amount)} / year - 20 photos per property
+              </option>
+              <option value={PRO_MARKETING_PLAN.code}>
+                {formatINR(PRO_MARKETING_PLAN.amount)} / year - 60 photos per property
+              </option>
+            </select>
+            <span className="font-normal text-muted-foreground">
+              The selected allowance starts after payment verification. Existing photos are kept.
+            </span>
+          </label>
           <div>
-            <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(currentPlan.amount)}</h3>
+            <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(selectedPlan.amount)}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Pay by UPI or bank transfer, then submit the reference number for verification.
             </p>
@@ -181,7 +206,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
               </div>
             </dl>
             <a
-              href={upiLink(currentPlan.amount, currentPlan.name)}
+              href={upiLink(selectedPlan.amount, selectedPlan.name)}
               className="mt-3 inline-block rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy"
             >
               Open UPI app
@@ -219,7 +244,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
                 <th>Method</th>
                 <th>Reference</th>
                 <th>Status</th>
-                <th>Invoice</th>
+                <th>Invoice number</th>
               </tr>
             </thead>
             <tbody>
@@ -233,15 +258,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
                     {p.status}
                     {p.status === "rejected" && p.admin_note ? ` — ${p.admin_note}` : ""}
                   </td>
-                  <td>
-                    {p.status === "verified" ? (
-                      <Link to="/invoice/$paymentId" params={{ paymentId: p.id }} className="font-bold text-gold">
-                        {p.invoice_number || "View"}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
+                  <td>{p.status === "verified" ? p.invoice_number || "Not issued" : "Awaiting verification"}</td>
                 </tr>
               ))}
             </tbody>

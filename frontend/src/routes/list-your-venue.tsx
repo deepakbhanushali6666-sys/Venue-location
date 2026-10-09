@@ -1,4 +1,4 @@
-import { createPayment, createVenue, createVenueDraft, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
+import { createPayment, createVenue, createVenueDraft, getMySubscription, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -109,7 +109,7 @@ const listingPlans = [
     price: "₹36,500",
     period: "/ year",
     description: "Complete marketing support for maximum exposure.",
-    features: ["Everything in Premium", "Up to 20 venue photos", "Dedicated promotional support", "Social media promotion", "Reels and video promotion", "The Location Magazine promotion", "Content and campaign support"],
+    features: ["Everything in Premium", "Up to 60 venue photos", "Dedicated promotional support", "Social media promotion", "Reels and video promotion", "The Location Magazine promotion", "Content and campaign support"],
     image: proPlanImage,
     imageAlt: "Film production studio with lighting equipment",
     theme: "border-rose-200 bg-rose-50/80",
@@ -193,6 +193,31 @@ function ListYourVenue() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const ownerId = user?.id;
+  const [accountPhotoLimit, setAccountPhotoLimit] = useState<number | null>(null);
+  const selectedPhotoLimit = selectedPlan === "basic" ? 10
+    : selectedPlan === "pro" ? PRO_MARKETING_PLAN.photoLimit : PLAN.photoLimit;
+  const photoLimit = Math.max(accountPhotoLimit ?? 10, selectedPhotoLimit);
+  const needsPayment = selectedPlan !== "basic" && (accountPhotoLimit ?? 10) < selectedPhotoLimit;
+
+  useEffect(() => {
+    let cancelled = false;
+    setAccountPhotoLimit(null);
+    if (!ownerId) return;
+    const refresh = async () => {
+      try {
+        const { subscription } = await getMySubscription();
+        if (!cancelled) setAccountPhotoLimit(subscription?.photo_limit ?? 10);
+      } catch (err) {
+        if (!cancelled) toast.error(err instanceof Error ? err.message : "Could not load your account plan");
+      }
+    };
+    void refresh();
+    window.addEventListener("focus", refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", refresh);
+    };
+  }, [ownerId]);
 
   useEffect(() => {
     listCategories()
@@ -297,7 +322,10 @@ function ListYourVenue() {
       toast.error("Select a film location category");
       return;
     }
-    const photoLimit = selectedPlan === "basic" ? 10 : 20;
+    if (ownerId && accountPhotoLimit === null) {
+      toast.error("Your account plan has not loaded. Refresh the page before submitting.");
+      return;
+    }
     if (photos.length > photoLimit) {
       toast.error(`${selectedPlan === "basic" ? "Basic" : "Paid"} listings allow up to ${photoLimit} photos. Remove ${photos.length - photoLimit} photo${photos.length - photoLimit === 1 ? "" : "s"} to continue.`);
       return;
@@ -368,7 +396,7 @@ function ListYourVenue() {
       map_query: `${d.venueName}, ${d.city}`,
     };
     try {
-      if (selectedPlan !== "basic") {
+      if (needsPayment) {
         const { draft } = await createVenueDraft({ ...listingPayload, plan_code: selectedPaymentPlan.code });
         setDraftId(draft.id);
         setAccountNotice(null);
@@ -490,6 +518,12 @@ function ListYourVenue() {
           <p className="mt-1 text-sm text-muted-foreground">
             Selected plan: <strong className="text-navy">{selectedPlan === "basic" ? "Basic Listing · Free" : `${selectedPaymentPlan.name.replace("VENUES LOCATION ", "")} · ${selectedPaymentPlan.amount.toLocaleString("en-IN")}/year`}</strong>
           </p>
+          {accountPhotoLimit !== null && accountPhotoLimit > 10 && (
+            <p className="mt-2 text-sm font-bold text-navy">
+              Your account already includes {accountPhotoLimit} photos per property.
+              {!needsPayment && " This listing is covered without another payment."}
+            </p>
+          )}
           <form onSubmit={onSubmit} className="mt-5 space-y-3">
             <fieldset disabled={Boolean(draftId)} className="space-y-3 disabled:opacity-75">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -751,7 +785,8 @@ function ListYourVenue() {
                   value={photos}
                   onChange={setPhotos}
                   onBusyChange={setUploading}
-                  maxPhotos={selectedPlan === "basic" ? 10 : 20}
+                  maxPhotos={photoLimit}
+                  disabled={accountPhotoLimit === null}
                 />
               </div>
             ) : (
@@ -865,10 +900,10 @@ function ListYourVenue() {
             </fieldset>
             <button
               type="submit"
-              disabled={busy || authLoading || uploading || Boolean(draftId) || (!ownerId && accountNotice !== null)}
+              disabled={busy || authLoading || uploading || Boolean(draftId) || Boolean(ownerId && accountPhotoLimit === null) || (!ownerId && accountNotice !== null)}
               className="w-full rounded-md bg-gold px-6 py-3 font-display text-sm font-extrabold uppercase tracking-wide text-gold-foreground hover:opacity-90 disabled:opacity-60"
             >
-              {uploading ? "Uploading photos…" : busy ? "Please wait…" : draftId ? "Listing draft saved" : !ownerId && accountNotice === "created" ? "Signing you in…" : !ownerId ? "Create Account & Continue" : selectedPlan !== "basic" ? "Save Draft & Continue to Payment" : "Submit for Approval"}
+              {uploading ? "Uploading photos…" : busy ? "Please wait…" : draftId ? "Listing draft saved" : !ownerId && accountNotice === "created" ? "Signing you in…" : !ownerId ? "Create Account & Continue" : needsPayment ? "Save Draft & Continue to Payment" : "Submit for Approval"}
             </button>
             {draftId && (
               <section className="rounded-lg border border-blue-200 bg-blue-50 p-4" aria-labelledby="verified-payment-heading">
@@ -954,7 +989,7 @@ function ListYourVenue() {
             {accountNotice && (
               <div role="status" aria-live="polite" className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-950">
                 {accountNotice === "created" && (
-                  <p><strong>Account created.</strong> Upload photos above, then click “{selectedPlan !== "basic" ? "Save Draft & Continue to Payment" : "Submit for Approval"}”. Your listing has not been submitted yet.</p>
+                  <p><strong>Account created.</strong> Upload photos above, then click “{needsPayment ? "Save Draft & Continue to Payment" : "Submit for Approval"}”. Your listing has not been submitted yet.</p>
                 )}
                 {accountNotice === "confirmation" && (
                   <p><strong>Account created.</strong> Confirm your email, then <Link to="/auth" target="_blank" rel="noreferrer" className="font-bold underline">sign in in a new tab</Link> and return here to submit your listing. This form will stay open.</p>
@@ -965,7 +1000,7 @@ function ListYourVenue() {
               </div>
             )}
             <p className="text-center text-xs text-muted-foreground">
-              {selectedPlan !== "basic" ? "Payment is manually verified. Listings are then submitted for admin approval and do not go live until approved." : "Basic listings are free and go live after admin approval."}
+              {needsPayment ? "Payment is manually verified. Listings are then submitted for admin approval and do not go live until approved." : "Your account photo allowance applies to this property. Listings go live after admin approval."}
             </p>
           </form>
         </div>

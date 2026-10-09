@@ -1,21 +1,18 @@
 import { Router } from "express";
 import { supabasePublic } from "../lib/supabasePublic.js";
 import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { subscriptionPhotoLimit } from "../lib/subscriptions.js";
 
 export const venuesRouter = Router();
 
 async function maxVenuePhotosForOwner(req: AuthedRequest, ownerId: string) {
-  if (req.user!.isAdmin) return 20;
   const { data: subscription, error } = await req.client!
     .from("subscriptions")
-    .select("status, expires_on")
+    .select("status, amount, expires_on")
     .eq("owner_id", ownerId)
     .maybeSingle();
   if (error) throw error;
-  const expiresAt = subscription?.expires_on
-    ? new Date(`${subscription.expires_on}T23:59:59.999`).getTime()
-    : null;
-  return subscription?.status === "active" && (expiresAt === null || expiresAt >= Date.now()) ? 20 : 10;
+  return subscriptionPhotoLimit(subscription);
 }
 
 // Public: approved venues only, with optional filters.
@@ -117,7 +114,7 @@ venuesRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) =>
   try {
     const { data: existing, error: fetchError } = await req.client!
       .from("venues")
-      .select("owner_id")
+      .select("owner_id, photos")
       .eq("id", req.params.id)
       .maybeSingle();
     if (fetchError) throw fetchError;
@@ -138,7 +135,7 @@ venuesRouter.patch("/:id", requireAuth, async (req: AuthedRequest, res, next) =>
         return;
       }
       const maxPhotos = await maxVenuePhotosForOwner(req, existing.owner_id);
-      if (rest.photos.length > maxPhotos) {
+      if (rest.photos.length > maxPhotos && rest.photos.length > (existing.photos?.length ?? 0)) {
         res.status(400).json({ error: `This listing allows up to ${maxPhotos} photos` });
         return;
       }
@@ -311,4 +308,3 @@ venuesRouter.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest
     next(err);
   }
 });
-

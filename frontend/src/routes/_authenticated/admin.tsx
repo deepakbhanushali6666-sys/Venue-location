@@ -209,8 +209,8 @@ function AdminPanel() {
 
   const verifyPayment = async (id: string) => {
     try {
-      const { invoiceNumber } = await apiVerifyPayment(id);
-      toast.success(`Payment verified. Invoice ${invoiceNumber ?? ""}`);
+      await apiVerifyPayment(id);
+      toast.success("Payment verified. Account subscription activated.");
       void loadAll();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not verify payment");
@@ -585,6 +585,12 @@ function AdminPanel() {
               Property Codes
             </Link>
             <Link
+              to="/subscriptions"
+              className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
+            >
+              Subscriptions
+            </Link>
+            <Link
               to="/lead-page"
               className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
             >
@@ -860,14 +866,14 @@ function AdminPanel() {
                 Subscription Payments
               </h2>
               <p className="text-sm text-muted-foreground">
-                Verify a payment to activate or extend the owner's annual plan and issue an invoice.
+                Verify a payment to activate or extend the owner's account-wide annual plan.
               </p>
             </div>
             <button
               onClick={() =>
                 downloadCsv(
                   "oms-payments",
-                  ["Date", "Owner", "Amount", "Method", "Reference", "Status", "Invoice"],
+                  ["Date", "Owner", "Amount", "Method", "Reference", "Status"],
                   payments.map((p) => [
                     new Date(p.created_at).toLocaleDateString("en-IN"),
                     p.payer_name || p.owner_id,
@@ -875,7 +881,6 @@ function AdminPanel() {
                     p.method,
                     p.reference,
                     p.status,
-                    p.invoice_number,
                   ]),
                 )
               }
@@ -895,7 +900,6 @@ function AdminPanel() {
                   <th>Method</th>
                   <th>Reference</th>
                   <th>Status</th>
-                  <th>Invoice</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -911,19 +915,6 @@ function AdminPanel() {
                     <td className="uppercase">{p.method}</td>
                     <td>{p.reference}</td>
                     <td className="font-bold capitalize text-navy">{p.status}</td>
-                    <td>
-                      {p.status === "verified" ? (
-                        <Link
-                          to="/invoice/$paymentId"
-                          params={{ paymentId: p.id }}
-                          className="font-bold text-gold"
-                        >
-                          {p.invoice_number || "View"}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
                     <td>
                       {p.status === "pending" ? (
                         <div className="flex gap-2">

@@ -46,18 +46,22 @@ export function PhotoUploader({
   onChange,
   onBusyChange,
   maxPhotos = DEFAULT_MAX_PHOTOS,
+  onUpgrade,
+  disabled = false,
 }: {
   userId: string;
   value: string[];
   onChange: (next: string[]) => void;
   onBusyChange?: (busy: boolean) => void;
   maxPhotos?: number;
+  onUpgrade?: (() => void) | undefined;
+  disabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (busy || disabled || !files || files.length === 0) return;
     const remaining = maxPhotos - value.length;
     if (remaining <= 0) {
       toast.error(`You can upload up to ${maxPhotos} photos`);
@@ -143,7 +147,7 @@ export function PhotoUploader({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled={busy || value.length >= maxPhotos}
+          disabled={disabled || busy || value.length >= maxPhotos}
           onClick={() => inputRef.current?.click()}
           className="rounded-md border border-navy px-4 py-2 font-display text-xs font-extrabold uppercase tracking-wide text-navy disabled:opacity-60"
         >
@@ -152,6 +156,11 @@ export function PhotoUploader({
         <span className="text-xs text-muted-foreground">
           JPG or PNG, up to 8 MB each. First photo is the cover. {value.length}/{maxPhotos} photos.
         </span>
+        {onUpgrade && value.length >= maxPhotos && (
+          <button type="button" onClick={onUpgrade} className="text-sm font-bold text-gold">
+            Upgrade plan for more photos
+          </button>
+        )}
       </div>
 
       <input

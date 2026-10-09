@@ -122,10 +122,38 @@ export const updateLeadStatus = (id: string, status: string) =>
 export const deleteLead = (id: string) => del<void>(`/leads/${id}`);
 
 // Subscriptions
+export type AccountSubscription = {
+  id: string;
+  plan_name: string;
+  status: string;
+  amount: number;
+  started_on: string | null;
+  expires_on: string | null;
+  invoice_number: string;
+  photo_limit: number;
+};
+
 export const getMySubscription = () =>
-  get<{ subscription: Record<string, unknown> | null }>("/subscriptions/mine");
+  get<{ subscription: AccountSubscription | null }>("/subscriptions/mine");
 export const listSubscriptions = () =>
   get<{ subscriptions: Record<string, unknown>[] }>("/subscriptions");
+export type AdminSubscription = {
+  id: string;
+  owner_id: string;
+  owner_name: string | null;
+  owner_mobile: string | null;
+  owner_email: string | null;
+  property_count: number;
+  invoice_number: string;
+  plan_name: string;
+  amount: number;
+  status: string;
+  started_on: string | null;
+  expires_on: string | null;
+  photo_limit: number;
+};
+export const listSubscriptionOwners = (page = 0) =>
+  get<{ subscriptions: AdminSubscription[]; total: number; pageSize: number }>(`/subscriptions/owners?page=${page}`);
 
 // Payments
 export const createPayment = (payload: Record<string, unknown>) =>
@@ -135,7 +163,7 @@ export const listPayments = () => get<{ payments: Record<string, unknown>[] }>("
 export const getPayment = (id: string) =>
   get<{ payment: Record<string, unknown> }>(`/payments/${id}`);
 export const verifyPayment = (id: string) =>
-  post<{ invoiceNumber: string }>(`/payments/${id}/verify`);
+  post<{ success: boolean }>(`/payments/${id}/verify`);
 export const rejectPayment = (id: string, reason: string) =>
   post<{ success: boolean }>(`/payments/${id}/reject`, { reason });
 

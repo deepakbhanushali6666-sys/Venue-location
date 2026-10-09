@@ -1,12 +1,8 @@
 import { Router } from "express";
 import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { PAID_LISTING_PLANS } from "../lib/subscriptions.js";
 
 export const paymentsRouter = Router();
-
-const PAID_LISTING_PLANS = {
-  verified_listing: { amount: 3650, name: "VENUES LOCATION Verified Listing" },
-  pro_marketing: { amount: 36500, name: "VENUES LOCATION Pro Marketing" },
-} as const;
 
 // Auth: owner submits a payment for their annual subscription.
 paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
@@ -19,11 +15,11 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
       note = "",
       venue_draft_id,
     } = req.body;
-    const plan = PAID_LISTING_PLANS[plan_code as keyof typeof PAID_LISTING_PLANS];
-    if (!plan) {
+    if (plan_code !== "verified_listing" && plan_code !== "pro_marketing") {
       res.status(400).json({ error: "Select a valid subscription plan" });
       return;
     }
+    const plan = plan_code === "pro_marketing" ? PAID_LISTING_PLANS.pro_marketing : PAID_LISTING_PLANS.verified_listing;
     if (!String(reference).trim()) {
       res.status(400).json({ error: "Enter the UPI transaction reference" });
       return;
@@ -122,7 +118,7 @@ paymentsRouter.get("/", requireAuth, requireAdmin, async (req: AuthedRequest, re
   }
 });
 
-// Auth: single payment, viewable by its owner or an admin (invoice page).
+// Auth: single payment, viewable by its owner or an admin.
 paymentsRouter.get("/:id", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
     const { data, error } = await req.client!
@@ -149,9 +145,9 @@ paymentsRouter.get("/:id", requireAuth, async (req: AuthedRequest, res, next) =>
 // SECURITY DEFINER function's auth.uid() checks and audit log resolve correctly.
 paymentsRouter.post("/:id/verify", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
   try {
-    const { data, error } = await req.client!.rpc("verify_payment", { p_payment_id: req.params.id });
+    const { error } = await req.client!.rpc("verify_payment", { p_payment_id: req.params.id });
     if (error) throw error;
-    res.json({ invoiceNumber: data });
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
@@ -171,4 +167,3 @@ paymentsRouter.post("/:id/reject", requireAuth, requireAdmin, async (req: Authed
     next(err);
   }
 });
-

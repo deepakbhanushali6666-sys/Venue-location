@@ -24,6 +24,39 @@ Run [`supabase/migration.sql`](supabase/migration.sql) once in your Supabase
 project's SQL editor. It creates every table, function, trigger, RLS policy
 and the `venue-photos` storage bucket.
 
+For account-wide subscription upgrades, run these scripts in order for both
+new and existing databases:
+
+1. [`supabase/verified_listing_payment.sql`](supabase/verified_listing_payment.sql)
+2. [`supabase/account_photo_limits.sql`](supabase/account_photo_limits.sql)
+
+The dashboard lets an owner upgrade or renew their account plan. Basic accounts
+allow 10 photos per property, the INR 3,650 annual plan allows 20, and the
+INR 36,500 annual plan allows 60. One verified subscription covers all existing
+and future properties; pending or rejected payments do not increase the limit.
+Verification updates the account without replacing existing listings or photos.
+New properties within an active account's allowance do not need another payment.
+Expiry keeps existing photos, but further uploads above the free allowance require
+renewal. Upgrades charge the full selected annual price (no proration); verification
+uses the existing renewal rule of extending a future expiry by one year.
+The database enforces the allowance even for direct Supabase writes and restricts
+subscription activation to admins/payment verification. Deploy both applications
+after applying the SQL scripts.
+
+Admins can open **Subscriptions** from the admin panel (`/subscriptions`) to
+view purchased account plans, owner name, phone, email, exact property counts
+(including pending/rejected listings), current photo allowance, status, dates
+and latest invoice number (plain text, without a download option).
+The table is admin-only and paginated. Pending payments stay in the admin panel's
+payment verification table until an account subscription is activated.
+
+Payment verification issues an invoice number and activates the subscription.
+The dashboard shows the latest invoice number and each verified payment's number
+as plain text. Invoice documents and viewing/download options remain disabled
+until an approved invoice template is added.
+For an existing database, rerun `supabase/verified_listing_payment.sql` to replace
+the verification function with this number-only version.
+
 Run [`supabase/visitors.sql`](supabase/visitors.sql) after the schema setup for
 both new and existing projects to enable visitor search capture.
 

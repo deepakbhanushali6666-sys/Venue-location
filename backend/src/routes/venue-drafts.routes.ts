@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { PAID_LISTING_PLANS } from "../lib/subscriptions.js";
 
 export const venueDraftsRouter = Router();
 
@@ -18,8 +19,10 @@ venueDraftsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) =
       res.status(400).json({ error: "Choose a supported paid listing plan" });
       return;
     }
-    if (Array.isArray(payload.photos) && payload.photos.length > 20) {
-      res.status(400).json({ error: "Paid listings allow up to 20 photos" });
+    const plan = payload.plan_code === "pro_marketing" ? PAID_LISTING_PLANS.pro_marketing : PAID_LISTING_PLANS.verified_listing;
+    const photoLimit = plan.photoLimit;
+    if (Array.isArray(payload.photos) && payload.photos.length > photoLimit) {
+      res.status(400).json({ error: `This listing allows up to ${photoLimit} photos` });
       return;
     }
 
