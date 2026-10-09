@@ -99,7 +99,7 @@ function PropertyCodesPage() {
             <p className="mt-4 text-sm text-destructive">{error}</p>
           ) : (
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-left text-sm">
+              <table className="w-full min-w-275 text-left text-sm">
                 <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="py-2">Property Code</th>

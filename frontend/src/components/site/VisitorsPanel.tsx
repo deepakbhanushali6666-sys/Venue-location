@@ -157,7 +157,7 @@ export function VisitorsPanel() {
         <p className="mt-4 text-sm text-muted-foreground">Loading visitors...</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-225 text-left text-sm">
             <thead>
               <tr className="text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Date / Time</th>
