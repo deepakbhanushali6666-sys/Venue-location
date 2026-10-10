@@ -113,9 +113,10 @@ const OTHER_CITIES = ["Panjim", "Jaipur", "Udaipur", "Bengaluru", "Ahmedabad", "
 
 export const states = ENABLE_OTHER_STATES ? ["Maharashtra", ...OTHER_STATES] : ["Maharashtra"];
 
-export const cities = ENABLE_OTHER_STATES
+export const cities = (ENABLE_OTHER_STATES
   ? [...MAHARASHTRA_CITIES, ...OTHER_CITIES]
-  : MAHARASHTRA_CITIES;
+  : [...MAHARASHTRA_CITIES]
+).sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 
 // Overall location/space types available for film & photo shoots.
 export const locationTypes = [
