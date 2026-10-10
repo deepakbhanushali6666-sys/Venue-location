@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PropertyPagination, PROPERTIES_PER_PAGE } from "@/components/site/PropertyPagination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -150,6 +151,13 @@ function AdminPanel() {
   const [checked, setChecked] = useState(false);
   const [deletionRequestCount, setDeletionRequestCount] = useState(0);
   const [venues, setVenues] = useState<VenueRow[]>([]);
+  const [venuePage, setVenuePage] = useState(0);
+  const currentVenuePage = Math.min(venuePage, Math.max(0, Math.ceil(venues.length / PROPERTIES_PER_PAGE) - 1));
+  const visibleVenues = venues.slice(currentVenuePage * PROPERTIES_PER_PAGE, (currentVenuePage + 1) * PROPERTIES_PER_PAGE);
+  const changeVenuePage = (next: number) => {
+    setVenuePage(next);
+    document.getElementById("admin-venues-table")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -1011,8 +1019,9 @@ function AdminPanel() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-xl border border-border bg-card p-6 shadow-panel">
+        <section id="admin-venues-table" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
           <h2 className="font-display text-xl font-extrabold text-navy">Venues</h2>
+          <PropertyPagination page={currentVenuePage} total={venues.length} onPageChange={changeVenuePage} />
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-260 table-fixed text-left text-sm">
               <colgroup>
@@ -1042,7 +1051,7 @@ function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {venues.map((v) => (
+                {visibleVenues.map((v) => (
                   <tr key={v.id} className="border-t border-border align-top hover:bg-secondary/30">
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.property_code}</td>
                     <td className="wrap-break-word px-2 py-4 font-bold text-navy">{v.name}</td>
@@ -1188,7 +1197,7 @@ function AdminPanel() {
                     </td>
                   </tr>
                 ))}
-                {venues.map((v) => editingVenue === v.id && (
+                {visibleVenues.map((v) => editingVenue === v.id && (
                   <tr key={`${v.id}-editor`} className="border-t border-border bg-secondary/40">
                     <td colSpan={10} className="py-3">
                       <form
@@ -1237,6 +1246,7 @@ function AdminPanel() {
               </tbody>
             </table>
           </div>
+          <PropertyPagination page={currentVenuePage} total={venues.length} onPageChange={changeVenuePage} />
         </section>
 
         <nav className="sticky top-16 z-20 mt-6 flex flex-wrap gap-2 rounded-xl border border-border bg-background/95 p-3 shadow-card backdrop-blur" aria-label="Admin sections">

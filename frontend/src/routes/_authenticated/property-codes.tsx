@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getAdminProperties, type AdminProperty } from "@/lib/api";
+import { PropertyPagination, PROPERTIES_PER_PAGE } from "@/components/site/PropertyPagination";
 
 export const Route = createFileRoute("/_authenticated/property-codes")({
   head: () => ({
@@ -33,6 +34,7 @@ function PropertyCodesPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [purposeFilter, setPurposeFilter] = useState("all");
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     getAdminProperties()
@@ -59,6 +61,12 @@ function PropertyCodesPage() {
       return matchesPurpose && matchesSearch;
     });
   }, [properties, query, purposeFilter]);
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / PROPERTIES_PER_PAGE) - 1));
+  const visibleProperties = filtered.slice(currentPage * PROPERTIES_PER_PAGE, (currentPage + 1) * PROPERTIES_PER_PAGE);
+  const changePage = (next: number) => {
+    setPage(next);
+    document.getElementById("property-codes-table")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="min-h-screen bg-sand px-4 py-10">
@@ -73,19 +81,19 @@ function PropertyCodesPage() {
           </Link>
         </div>
 
-        <section className="mt-6 rounded-xl border border-border bg-card p-6 shadow-panel">
+        <section id="property-codes-table" className="mt-6 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => { setQuery(event.target.value); setPage(0); }}
               placeholder="Search by code, property, city or owner contact"
               aria-label="Search properties"
               className="w-full max-w-md rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             />
             <select
               value={purposeFilter}
-              onChange={(event) => setPurposeFilter(event.target.value)}
+              onChange={(event) => { setPurposeFilter(event.target.value); setPage(0); }}
               aria-label="Filter properties by listing purpose"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold sm:w-auto"
             >
@@ -94,6 +102,7 @@ function PropertyCodesPage() {
               <option value="film">Film Shooting Locations</option>
             </select>
           </div>
+          {!error && !loading && <PropertyPagination page={currentPage} total={filtered.length} onPageChange={changePage} />}
 
           {error ? (
             <p className="mt-4 text-sm text-destructive">{error}</p>
@@ -113,7 +122,7 @@ function PropertyCodesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((p) => (
+                  {!loading && visibleProperties.map((p) => (
                     <tr key={p.id} className="border-t border-border">
                       <td className="py-3 font-bold text-navy">{p.property_code}</td>
                       <td>{p.name}</td>
@@ -145,6 +154,7 @@ function PropertyCodesPage() {
               </table>
             </div>
           )}
+          {!error && !loading && <PropertyPagination page={currentPage} total={filtered.length} onPageChange={changePage} />}
         </section>
       </div>
     </div>
