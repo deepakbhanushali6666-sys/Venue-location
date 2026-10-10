@@ -42,6 +42,7 @@ export const categories: Category[] = [
   { slug: "corporate-event-venues", name: "Corporate Event Venues", image: banquet, blurb: "Conference halls, auditoriums and offsite venues." },
   { slug: "wedding-venues", name: "Wedding Venues", image: lawn, blurb: "Complete wedding destinations with stay and catering." },
 ];
+categories.sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 
 export const categoryBySlug = (slug: string) => categories.find((c) => c.slug === slug);
 

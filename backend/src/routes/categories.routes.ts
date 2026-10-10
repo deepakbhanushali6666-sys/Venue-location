@@ -26,7 +26,7 @@ categoriesRouter.get("/", async (req, res, next) => {
     const categories = (categoriesRes.data ?? []).map((c) => ({
       ...c,
       subcategories: (subcategoriesRes.data ?? []).filter((s) => s.category_id === c.id),
-    }));
+    })).sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
     res.json({ categories });
   } catch (err) {
     next(err);

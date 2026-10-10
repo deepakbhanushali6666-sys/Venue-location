@@ -152,6 +152,10 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+Venue and film-location category lists are displayed alphabetically (A-Z),
+including admin lists and fallback venue categories. Newly added or renamed
+categories appear in alphabetical position. Subcategory ordering is unchanged.
+
 City choices are displayed alphabetically (A-Z) in search, listing forms and
 admin location lists, including fallback cities. Newly added cities appear in
 alphabetical position regardless of their stored sort order. State ordering
