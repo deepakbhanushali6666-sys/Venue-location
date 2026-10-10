@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Check, Trash2, Video, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
+import { createCroppedJpeg } from "@/lib/image-crop";
 import "react-easy-crop/react-easy-crop.css";
 import {
   createGalleryItem,
@@ -19,26 +20,6 @@ const sections: { key: GallerySection; label: string }[] = [
   { key: "testimonial", label: "Client Testimonials" },
   { key: "celebrity", label: "Celebrity Collaborations" },
 ];
-
-async function createCroppedJpeg(file: File, area: Area): Promise<Blob> {
-  const imageUrl = URL.createObjectURL(file);
-  try {
-    const image = new Image();
-    image.src = imageUrl;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = 1600;
-    canvas.height = 900;
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Could not prepare cropped image");
-    context.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height);
-    return await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not export cropped image")), "image/jpeg", 0.9);
-    });
-  } finally {
-    URL.revokeObjectURL(imageUrl);
-  }
-}
 
 function SectionEditor({
   section,
