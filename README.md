@@ -152,6 +152,25 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+City choices are displayed alphabetically (A-Z) in search, listing forms and
+admin location lists, including fallback cities. Newly added cities appear in
+alphabetical position regardless of their stored sort order. State ordering
+is unchanged.
+
+The main admin Venues table and the Property Codes page show 20 properties per
+page, with First/Previous/Next/Last controls above and below each table. Switching
+pages returns to the table heading. Property Codes search and purpose filters
+apply to the full loaded list and reset to page one; CSV exports and analytics
+continue to use the full list rather than just the visible page.
+
+### Team and advisor photos
+
+In Admin Panel > Team & Advisors, choosing a photo opens a 4:3 crop preview.
+Drag to position the face, adjust zoom, then choose **Crop & Upload** and save
+the profile. Edit an existing profile and choose **Crop current photo** to
+reframe it. Public cards show the complete saved image without automatically
+cutting off faces; older portrait images may have padding until recropped.
+
 ### Frontend → Vercel
 
 When importing this repo in Vercel:
