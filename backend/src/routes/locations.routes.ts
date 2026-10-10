@@ -8,7 +8,13 @@ locationsRouter.get("/", async (_req, res, next) => {
   try {
     const { data, error } = await supabasePublic.from("venue_locations").select("*").order("kind").order("sort_order").order("name");
     if (error) throw error;
-    res.json({ locations: data ?? [] });
+    const locations = data ?? [];
+    locations.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+      if (a.kind === "city") return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+      return a.sort_order - b.sort_order || a.name.localeCompare(b.name);
+    });
+    res.json({ locations });
   } catch (err) {
     next(err);
   }
