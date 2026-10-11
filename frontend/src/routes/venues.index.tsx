@@ -266,18 +266,6 @@ function VenuesPage() {
                 ))}
               </select>
             </Filter>
-            <Filter label="City">
-              <select
-                className={select}
-                value={search["city"] ?? ""}
-                onChange={(e) => update("city", e.target.value)}
-              >
-                <option value="">All cities</option>
-                {locationCities.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </Filter>
             <Filter label="State">
               <select
                 className={select}
@@ -287,6 +275,18 @@ function VenuesPage() {
                 <option value="">All states</option>
                 {locationStates.map((s) => (
                   <option key={s}>{s}</option>
+                ))}
+              </select>
+            </Filter>
+            <Filter label="City">
+              <select
+                className={select}
+                value={search["city"] ?? ""}
+                onChange={(e) => update("city", e.target.value)}
+              >
+                <option value="">All cities</option>
+                {locationCities.map((c) => (
+                  <option key={c}>{c}</option>
                 ))}
               </select>
             </Filter>

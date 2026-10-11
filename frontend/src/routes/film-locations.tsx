@@ -240,17 +240,6 @@ function FilmLocations() {
           <h2 className="section-title text-2xl text-navy">Shoot-ready locations</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <select
-              value={search.city ?? ""}
-              onChange={(event) => update("city", event.target.value)}
-              aria-label="City"
-              className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
-            >
-              <option value="">All cities</option>
-              {locationCities.map((city) => (
-                <option key={city}>{city}</option>
-              ))}
-            </select>
-            <select
               value={search.state ?? ""}
               onChange={(event) => update("state", event.target.value)}
               aria-label="State"
@@ -259,6 +248,17 @@ function FilmLocations() {
               <option value="">All states</option>
               {locationStates.map((state) => (
                 <option key={state}>{state}</option>
+              ))}
+            </select>
+            <select
+              value={search.city ?? ""}
+              onChange={(event) => update("city", event.target.value)}
+              aria-label="City"
+              className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
+            >
+              <option value="">All cities</option>
+              {locationCities.map((city) => (
+                <option key={city}>{city}</option>
               ))}
             </select>
             <select
