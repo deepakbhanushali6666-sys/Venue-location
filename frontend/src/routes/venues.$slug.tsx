@@ -262,18 +262,21 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               )}
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
-              <h2 className="section-title border-b border-border p-5 text-base text-navy">
-                Venue Video
-              </h2>
-              <iframe
-                title={`${venue.name} video`}
-                src={`https://www.youtube.com/embed/${venue.videoId}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-                allowFullScreen
-                className="aspect-video w-full"
-              />
-            </div>
+            {venue.videoId && (
+              <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+                <h2 className="section-title border-b border-border p-5 text-base text-navy">
+                  Venue Video
+                </h2>
+                <iframe
+                  title={`${venue.name} video`}
+                  src={`https://www.youtube.com/embed/${venue.videoId}`}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                  allowFullScreen
+                  className="aspect-video w-full"
+                />
+              </div>
+            )}
 
             {venueId && <VenueReviews venueId={venueId} venueName={venue.name} />}
 

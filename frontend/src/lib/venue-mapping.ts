@@ -1,5 +1,6 @@
 import fallbackImage from "@/assets/cat-villa.jpg";
 import type { CategorySlug, Venue } from "@/data/venues";
+import { getYouTubeVideoId } from "@/lib/youtube";
 
 export type VenueRow = {
   id: string;
@@ -60,9 +61,7 @@ export function rowToVenue(row: VenueRow): Venue {
 }
 
 export function extractYouTubeId(url: string) {
-  if (!url) return "";
-  const match = url.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{6,})/);
-  return match?.[1] ?? url;
+  return getYouTubeVideoId(url) ?? "";
 }
 
 export const VENUE_SELECT =

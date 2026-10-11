@@ -152,6 +152,10 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+Property YouTube videos support Shorts, watch, share, embed and live links, as
+well as existing video IDs. Save the original link in the property's YouTube
+video field; share parameters are excluded from the embedded video ID.
+
 ### State-specific cities
 
 For new and existing databases, run
