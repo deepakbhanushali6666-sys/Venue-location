@@ -152,6 +152,27 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+### State-specific cities
+
+For new and existing databases, run
+[`supabase/location_states.sql`](supabase/location_states.sql) after the base
+schema and before deploying these location changes. It links the known
+Maharashtra cities to Maharashtra, leaves other existing cities unassigned,
+and allows the same city name in different states. Do not rerun the base schema
+on an existing database.
+
+In Admin Panel > Venue Locations, add the state first, then select **State for
+cities** before adding a city. Use the state selector beside an existing city
+to assign or move it. Unassigned cities are shown for assignment and are not
+included when filtering by a specific state. A state with cities cannot be
+deleted until its cities have been moved or deleted.
+
+Listing registration and property editors require a state before choosing its
+cities. Homepage search, Venue and Film Location filters show only the selected state's cities
+in A-Z order and clear the previous city when the state changes. With **All
+states**, public filters show all cities. Existing listings with older location
+values remain editable without silently removing their saved state/city.
+
 Venue and film-location category lists are displayed alphabetically (A-Z),
 including admin lists and fallback venue categories. Newly added or renamed
 categories appear in alphabetical position. Subcategory ordering is unchanged.

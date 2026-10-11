@@ -1,14 +1,14 @@
-import { createPayment, createVenue, createVenueDraft, getMySubscription, listAmenities, listCategories, listLocations, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
+import { createPayment, createVenue, createVenueDraft, getMySubscription, listAmenities, listCategories, listPurposes, type AmenityRecord, type CategoryRecord } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Check, Eye, EyeOff, Info } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { cities, states } from "@/data/venues";
 import { BUSINESS, PAYMENT_DETAILS, PLAN, PRO_MARKETING_PLAN, upiLink } from "@/data/business";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
+import { StateCityFields } from "@/components/site/StateCityFields";
 import { supabase } from "@/integrations/supabase/client";
 import basicPlanImage from "@/assets/cat-film.jpg";
 import verifiedPlanImage from "@/assets/cat-resort.jpg";
@@ -176,8 +176,6 @@ function ListYourVenue() {
   const [selectedListingPurposes, setSelectedListingPurposes] = useState<string[]>([]);
   const [bookingOptions, setBookingOptions] = useState<string[]>(bookingPurposes.map(([, label]) => label));
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
-  const [formStates, setFormStates] = useState<string[]>(states);
-  const [formCities, setFormCities] = useState<string[]>(cities);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedFilmCategory, setSelectedFilmCategory] = useState("");
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
@@ -229,12 +227,6 @@ function ListYourVenue() {
     listAmenities()
       .then(({ amenities: rows }) => setAmenities(rows))
       .catch(() => toast.error("Could not load venue amenities"));
-    listLocations()
-      .then(({ locations }) => {
-        setFormStates(locations.filter((location) => location.kind === "state").map((location) => location.name));
-        setFormCities(locations.filter((location) => location.kind === "city").map((location) => location.name));
-      })
-      .catch(() => undefined);
     listPurposes()
       .then(({ purposes: rows }) => setBookingOptions(rows.map((purpose) => purpose.name)))
       .catch(() => undefined);
@@ -599,24 +591,9 @@ function ListYourVenue() {
               {err("venueName")}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <select name="city" defaultValue="" className={field}>
-                  <option value="">City*</option>
-                  {formCities.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-                {err("city")}
-              </div>
-              <div>
-                <select name="state" defaultValue="" className={field}>
-                  <option value="">State*</option>
-                  {formStates.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-                {err("state")}
-              </div>
+              <StateCityFields className={field} />
+              {err("state")}
+              {err("city")}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <input

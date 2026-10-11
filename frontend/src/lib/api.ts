@@ -398,13 +398,17 @@ export type LocationRecord = {
   kind: "state" | "city";
   name: string;
   sort_order: number;
+  state_id: string | null;
 };
 export const listLocations = () => get<{ locations: LocationRecord[] }>("/locations");
 export const createLocation = (payload: {
   kind: "state" | "city";
   name: string;
   sort_order?: number;
+  state_id?: string;
 }) => post<{ location: LocationRecord }>("/locations", payload);
+export const assignCityState = (id: string, state_id: string) =>
+  patch<{ location: LocationRecord }>(`/locations/${id}/state`, { state_id });
 export const deleteLocation = (id: string) => del<void>(`/locations/${id}`);
 
 // Lead purposes (admin-managed options)

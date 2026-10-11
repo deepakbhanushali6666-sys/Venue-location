@@ -16,10 +16,11 @@ import {
   budgetBands,
   capacityBands,
   categories as defaultCategories,
-  cities as defaultCities,
   eventTypes,
 } from "@/data/venues";
 import { listCategories, listLocations, listPurposes, type CategoryRecord } from "@/lib/api";
+import { citiesForState, fallbackLocations } from "@/lib/locations";
+import { toast } from "sonner";
 import {
   Command,
   CommandEmpty,
@@ -39,12 +40,13 @@ const tabs = [
 type Field = {
   icon: typeof MapPin;
   placeholder: string;
-  key: "city" | "date" | "category" | "subcategory" | "capacity" | "event" | "budget";
+  key: "state" | "city" | "date" | "category" | "subcategory" | "capacity" | "event" | "budget";
   options?: string[];
   type?: "date";
 };
 
 const fields: Field[] = [
+  { icon: MapPin, placeholder: "All states", key: "state" },
   { icon: MapPin, placeholder: "Location / City", key: "city" },
   { icon: CalendarDays, placeholder: "Event / Shoot Date", key: "date", type: "date" },
   { icon: Building2, placeholder: "Venue Type / Category", key: "category" },
@@ -71,7 +73,9 @@ export function SearchPanel() {
   const [venueCategories, setVenueCategories] = useState<CategoryRecord[]>([]);
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [openPicker, setOpenPicker] = useState<"category" | "subcategory" | null>(null);
-  const [locationCities, setLocationCities] = useState<string[]>(defaultCities);
+  const [locations, setLocations] = useState(fallbackLocations);
+  const locationCities = citiesForState(locations, values.state ?? "");
+  const locationStates = locations.filter((location) => location.kind === "state").map((location) => location.name);
   const [purposes, setPurposes] = useState<string[]>(eventTypes);
 
   useEffect(() => {
@@ -91,12 +95,8 @@ export function SearchPanel() {
       .then(({ categories: rows }) => setFilmCategories(rows))
       .catch(() => setFilmCategories([]));
     listLocations()
-      .then(({ locations }) =>
-        setLocationCities(
-          locations.filter((location) => location.kind === "city").map((location) => location.name),
-        ),
-      )
-      .catch(() => setLocationCities(defaultCities));
+      .then(({ locations: rows }) => setLocations(rows))
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Could not load states and cities"));
     listPurposes()
       .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
       .catch(() => setPurposes(eventTypes));
@@ -107,6 +107,7 @@ export function SearchPanel() {
       ...current,
       [key]: value,
       ...(key === "category" ? { subcategory: "" } : {}),
+      ...(key === "state" ? { city: "" } : {}),
     }));
   const venueCategorySlugs = new Set(venueCategories.map((category) => category.slug));
   const categoryOptions =
@@ -132,6 +133,7 @@ export function SearchPanel() {
           ...(category ? { category } : {}),
           ...(category && subcategory ? { subcategory } : {}),
           ...(values["city"] ? { city: values["city"] } : {}),
+          ...(values["state"] ? { state: values["state"] } : {}),
           ...(values["capacity"] ? { capacity: values["capacity"] } : {}),
           ...(values["event"] ? { event: values["event"] } : {}),
           ...(values["budget"] ? { budget: values["budget"] } : {}),
@@ -147,6 +149,7 @@ export function SearchPanel() {
         ...(category ? { category } : {}),
         ...(category && subcategory ? { subcategory } : {}),
         ...(values["city"] ? { city: values["city"] } : {}),
+        ...(values["state"] ? { state: values["state"] } : {}),
         ...(values["capacity"] ? { capacity: values["capacity"] } : {}),
         ...(values["event"] ? { event: values["event"] } : {}),
         ...(values["budget"] ? { budget: values["budget"] } : {}),
@@ -294,7 +297,7 @@ export function SearchPanel() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-              ) : f.options || f.key === "city" || f.key === "event" ? (
+              ) : f.options || f.key === "state" || f.key === "city" || f.key === "event" ? (
                 <select
                   aria-label={f.placeholder}
                   value={values[f.key] ?? ""}
@@ -302,6 +305,8 @@ export function SearchPanel() {
                   className="w-full bg-transparent text-sm text-foreground outline-none"
                 >
                   <option value="">{f.placeholder}</option>
+                  {f.key === "state" &&
+                    locationStates.map((state) => <option key={state}>{state}</option>)}
                   {f.key === "city" &&
                     locationCities.map((city) => <option key={city}>{city}</option>)}
                   {f.key === "event" &&

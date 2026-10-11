@@ -49,7 +49,7 @@ export const categoryBySlug = (slug: string) => categories.find((c) => c.slug ==
 // Flip to true to re-enable other states/cities across India.
 const ENABLE_OTHER_STATES = false;
 
-const MAHARASHTRA_CITIES = [
+export const MAHARASHTRA_CITIES = [
   "Mumbai",
   "Navi Mumbai",
   "Thane",

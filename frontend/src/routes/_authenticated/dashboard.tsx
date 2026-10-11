@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { StateCityFields } from "@/components/site/StateCityFields";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trash2, X } from "lucide-react";
@@ -391,8 +392,7 @@ function OwnerDashboard() {
                   </fieldset>
                 );
               })()}
-              <input name="city" placeholder="City" defaultValue={editing?.city} className={input} />
-              <input name="state" placeholder="State" defaultValue={editing?.state} className={input} />
+              <StateCityFields key={editing?.id} initialState={editing?.state ?? ""} initialCity={editing?.city ?? ""} className={input} />
               <input name="area" placeholder="Area / Locality" defaultValue={editing?.area} className={input} />
               <input name="pincode" placeholder="PIN Code (optional)" defaultValue={editing?.pincode} inputMode="numeric" maxLength={6} pattern="[1-9][0-9]{5}" className={input} />
               <input name="parking" placeholder="Parking (e.g. 120 cars)" defaultValue={editing?.parking} className={input} />

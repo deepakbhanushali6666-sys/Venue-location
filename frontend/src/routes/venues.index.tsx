@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { citiesForState, fallbackLocations } from "@/lib/locations";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SlidersHorizontal } from "lucide-react";
 import {
   budgetBands,
   capacityBands,
   categories as defaultCategories,
-  cities,
   eventTypes,
-  states,
   type Venue,
 } from "@/data/venues";
 import { VenueCard } from "@/components/site/VenueCard";
@@ -90,8 +90,9 @@ function VenuesPage() {
     })),
   );
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
-  const [locationCities, setLocationCities] = useState(cities);
-  const [locationStates, setLocationStates] = useState(states);
+  const [locations, setLocations] = useState(fallbackLocations);
+  const locationCities = citiesForState(locations, search.state ?? "");
+  const locationStates = locations.filter((location) => location.kind === "state").map((location) => location.name);
   const [purposes, setPurposes] = useState(eventTypes);
 
   useEffect(() => {
@@ -113,16 +114,9 @@ function VenuesPage() {
       .catch(() => undefined);
     listLocations()
       .then(({ locations }) => {
-        setLocationCities(
-          locations.filter((location) => location.kind === "city").map((location) => location.name),
-        );
-        setLocationStates(
-          locations
-            .filter((location) => location.kind === "state")
-            .map((location) => location.name),
-        );
+        setLocations(locations);
       })
-      .catch(() => undefined);
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Could not load locations"));
     listPurposes()
       .then(({ purposes: rows }) => setPurposes(rows.map((purpose) => purpose.name)))
       .catch(() => undefined);
@@ -132,6 +126,7 @@ function VenuesPage() {
     const next: VenueSearch = { ...search };
     if (key === "category") delete next.subcategory;
     if (key === "filmType") delete next.filmSubcategory;
+    if (key === "state") delete next.city;
     if (value) next[key] = value;
     else delete next[key];
     navigate({ to: "/venues", search: next });

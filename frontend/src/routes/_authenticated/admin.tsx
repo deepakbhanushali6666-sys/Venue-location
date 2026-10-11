@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { StateCityFields } from "@/components/site/StateCityFields";
 import { PropertyPagination, PROPERTIES_PER_PAGE } from "@/components/site/PropertyPagination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -28,7 +29,6 @@ import {
   updateVenue,
   verifyPayment as apiVerifyPayment,
 } from "@/lib/api";
-import { cities, states } from "@/data/venues";
 import { listCategories, type CategoryRecord } from "@/lib/api";
 import { useRoles } from "@/hooks/useAuth";
 import { downloadCsv } from "@/lib/csv";
@@ -1207,12 +1207,7 @@ function AdminPanel() {
                           void saveVenueDetails(v, event.currentTarget);
                         }}
                       >
-                        <select name="state" defaultValue={v.state} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
-                          {states.map((state) => <option key={state}>{state}</option>)}
-                        </select>
-                        <select name="city" defaultValue={v.city} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
-                          {cities.map((city) => <option key={city}>{city}</option>)}
-                        </select>
+                        <StateCityFields initialState={v.state} initialCity={v.city} className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
                         <input name="area" defaultValue={v.area} placeholder="Area / Locality" className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
                         <input name="pincode" defaultValue={v.pincode} placeholder="PIN Code (optional)" inputMode="numeric" maxLength={6} pattern="[1-9][0-9]{5}" className="rounded-md border border-border bg-background px-2 py-2 text-sm" />
                         <select name="category" defaultValue={v.category} className="rounded-md border border-border bg-background px-2 py-2 text-sm">
