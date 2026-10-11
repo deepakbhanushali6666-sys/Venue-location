@@ -45,19 +45,66 @@ visitorsRouter.post("/", async (req, res, next) => {
   }
 });
 
-visitorsRouter.get("/", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+function visitorFilters(query: AuthedRequest["query"]) {
+  const page = query["page"] === undefined ? 0 : Number(query["page"]);
+  if (!Number.isSafeInteger(page) || page < 0 || page > 100000) throw new Error("Invalid page");
+  const value = (key: string) => {
+    const raw = query[key];
+    if (raw === undefined) return "";
+    if (typeof raw !== "string") throw new Error("Invalid visitor filters");
+    return raw.trim();
+  };
+  const search = value("search"), type = value("type"), mobile = value("mobile");
+  if (search.length > 80 || (search && (!/^[\p{L}\p{N} +\-]+$/u.test(search) || !/[\p{L}\p{N}]/u.test(search))) ||
+    !["", "venue", "film", "all", "property"].includes(type) ||
+    (mobile && !/^[0-9]{8,15}$/.test(mobile))) throw new Error("Invalid name, phone or activity filter");
+  const date = (key: string) => {
+    const raw = value(key);
+    if (!raw) return "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || !Number.isFinite(Date.parse(raw)) ||
+      new Date(raw).toISOString().slice(0, 10) !== raw) throw new Error("Invalid date filter");
+    return raw;
+  };
+  const from = date("from"), to = date("to");
+  if (from && to && from > to) throw new Error("Start date must not be after end date");
+  return { page, search, type, mobile, from: from ? `${from}T00:00:00.000Z` : null,
+    to: to ? new Date(Date.parse(to) + 86400000).toISOString() : null };
+}
+
+visitorsRouter.get("/summary", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  let filters;
+  try { filters = visitorFilters(req.query); }
+  catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Invalid visitor filters" }); return; }
   try {
-    const page = req.query["page"] === undefined ? 0 : Number(req.query["page"]);
-    if (!Number.isSafeInteger(page) || page < 0 || page > 100000) {
-      res.status(400).json({ error: "Invalid page" });
-      return;
-    }
-    const { data, error, count } = await req.client!
+    const { data, error } = await req.client!.rpc("visitor_activity_summary", {
+      p_page: filters.page, p_search: filters.search, p_type: filters.type,
+      p_mobile: filters.mobile, p_from: filters.from, p_to: filters.to,
+    });
+    if (error) throw error;
+    res.json(data);
+  } catch (error) { next(error); }
+});
+
+visitorsRouter.get("/", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  let filters;
+  try { filters = visitorFilters(req.query); }
+  catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : "Invalid visitor filters" }); return; }
+  try {
+    let query = req.client!
       .from("visitor_searches")
-      .select("id, visitor_name, mobile, search_type, property_slug, requirements, created_at", { count: "exact" })
+      .select("id, visitor_name, mobile, search_type, property_slug, requirements, created_at", { count: "exact" });
+    if (filters.search) {
+      const phone = /^[0-9+ -]+$/.test(filters.search) ? filters.search.replace(/\D/g, "") : filters.search;
+      query = query.or(`visitor_name.ilike.%${filters.search}%,mobile_key.ilike.%${phone}%`);
+    }
+    if (filters.type) query = query.eq("search_type", filters.type);
+    if (filters.mobile) query = query.eq("mobile_key", filters.mobile);
+    if (filters.from) query = query.gte("created_at", filters.from);
+    if (filters.to) query = query.lt("created_at", filters.to);
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .order("id")
-      .range(page * 50, page * 50 + 49);
+      .range(filters.page * 50, filters.page * 50 + 49);
     if (error) throw error;
     res.json({ visitors: data, total: count });
   } catch (error) {

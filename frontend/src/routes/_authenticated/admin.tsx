@@ -41,7 +41,6 @@ import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 import { LocationsPanel } from "@/components/site/LocationsPanel";
 import { PurposesPanel } from "@/components/site/PurposesPanel";
 import { TeamMembersPanel } from "@/components/site/TeamMembersPanel";
-import { VisitorsPanel } from "@/components/site/VisitorsPanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -591,6 +590,12 @@ function AdminPanel() {
               className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
             >
               Property Codes
+            </Link>
+            <Link
+              to="/visitors"
+              className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-navy-foreground"
+            >
+              Visitors
             </Link>
             <Link
               to="/subscriptions"
@@ -1269,7 +1274,6 @@ function AdminPanel() {
           venueNames={Object.fromEntries(venues.map((v) => [v.id, v.name]))}
         />
 
-        <VisitorsPanel />
         <CategoriesPanel />
 
         <CategoriesPanel kind="film" />

@@ -30,6 +30,7 @@ import { Route as AuthenticatedDeletionRequestsRouteImport } from './routes/_aut
 import { Route as AuthenticatedLeadPageRouteImport } from './routes/_authenticated/lead-page'
 import { Route as AuthenticatedPropertyCodesRouteImport } from './routes/_authenticated/property-codes'
 import { Route as AuthenticatedSubscriptionsRouteImport } from './routes/_authenticated/subscriptions'
+import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as VenuesIndexRouteImport } from './routes/venues.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
 
@@ -140,6 +141,11 @@ const AuthenticatedSubscriptionsRoute =
     path: '/subscriptions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVisitorsRoute = AuthenticatedVisitorsRouteImport.update({
+  id: '/visitors',
+  path: '/visitors',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const VenuesIndexRoute = VenuesIndexRouteImport.update({
   id: '/venues/',
   path: '/venues/',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/subscriptions': typeof AuthenticatedSubscriptionsRoute
+  '/visitors': typeof AuthenticatedVisitorsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
 }
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/subscriptions': typeof AuthenticatedSubscriptionsRoute
+  '/visitors': typeof AuthenticatedVisitorsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues': typeof VenuesIndexRoute
 }
@@ -222,6 +230,7 @@ export interface FileRoutesById {
   '/_authenticated/lead-page': typeof AuthenticatedLeadPageRoute
   '/_authenticated/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/_authenticated/subscriptions': typeof AuthenticatedSubscriptionsRoute
+  '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/venues/': typeof VenuesIndexRoute
 }
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/lead-page'
     | '/property-codes'
     | '/subscriptions'
+    | '/visitors'
     | '/venues/$slug'
     | '/venues/'
   fileRoutesByTo: FileRoutesByTo
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/lead-page'
     | '/property-codes'
     | '/subscriptions'
+    | '/visitors'
     | '/venues/$slug'
     | '/venues'
   id:
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lead-page'
     | '/_authenticated/property-codes'
     | '/_authenticated/subscriptions'
+    | '/_authenticated/visitors'
     | '/venues/$slug'
     | '/venues/'
   fileRoutesById: FileRoutesById
@@ -470,6 +482,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSubscriptionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/visitors': {
+      id: '/_authenticated/visitors'
+      path: '/visitors'
+      fullPath: '/visitors'
+      preLoaderRoute: typeof AuthenticatedVisitorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/venues/': {
       id: '/venues/'
       path: '/venues'
@@ -494,6 +513,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadPageRoute: typeof AuthenticatedLeadPageRoute
   AuthenticatedPropertyCodesRoute: typeof AuthenticatedPropertyCodesRoute
   AuthenticatedSubscriptionsRoute: typeof AuthenticatedSubscriptionsRoute
+  AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -503,6 +523,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadPageRoute: AuthenticatedLeadPageRoute,
   AuthenticatedPropertyCodesRoute: AuthenticatedPropertyCodesRoute,
   AuthenticatedSubscriptionsRoute: AuthenticatedSubscriptionsRoute,
+  AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

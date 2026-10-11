@@ -51,8 +51,33 @@ export type VisitorSearch = {
 };
 export const recordVisitorSearch = (payload: Omit<VisitorSearch, "created_at">) =>
   post<{ recorded: true }>("/visitors", payload);
-export const listVisitors = (page = 0) =>
-  get<{ visitors: VisitorSearch[]; total: number }>(`/visitors?page=${page}`);
+export type VisitorFilters = {
+  search?: string;
+  type?: "" | VisitorSearch["search_type"];
+  from?: string;
+  to?: string;
+  mobile?: string;
+};
+export type VisitorActivity = {
+  mobile: string;
+  visitor_name: string;
+  names: string[];
+  activity_count: number;
+  search_count: number;
+  property_views: number;
+  unique_properties: number;
+  first_activity: string;
+  last_activity: string;
+};
+function visitorQuery(page: number, filters: VisitorFilters) {
+  const query = new URLSearchParams({ page: String(page) });
+  for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value);
+  return query.toString();
+}
+export const listVisitors = (page = 0, filters: VisitorFilters = {}) =>
+  get<{ visitors: VisitorSearch[]; total: number }>(`/visitors?${visitorQuery(page, filters)}`);
+export const listVisitorActivity = (page = 0, filters: VisitorFilters = {}) =>
+  get<{ visitors: VisitorActivity[]; total: number; activityTotal: number }>(`/visitors/summary?${visitorQuery(page, filters)}`);
 
 // Venues
 export const listVenues = (filters?: { category?: string; city?: string; search?: string }) => {

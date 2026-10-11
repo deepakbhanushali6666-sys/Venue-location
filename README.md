@@ -152,6 +152,19 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+### Visitor activity analytics
+
+Run [`supabase/visitor_analytics.sql`](supabase/visitor_analytics.sql) after
+[`supabase/visitors.sql`](supabase/visitors.sql), then deploy backend/frontend.
+Admin > Visitors opens a separate page beside Property Codes. Activity history
+and Frequent visitors each paginate 50 rows and support name/phone, activity-type
+and inclusive UTC date filters across the full database. CSV exports all matching
+activity records, not only the current page. Frequent visitors groups phone
+digits (ignoring formatting, not inferring country codes), ranks by recorded
+searches/property views, and shows names, counts, distinct properties, first/last
+activity and full-history drilldown. These are recorded interactions, not a
+count of all site visits or verified unique people.
+
 Property YouTube videos support Shorts, watch, share, embed and live links, as
 well as existing video IDs. Save the original link in the property's YouTube
 video field; share parameters are excluded from the embedded video ID.
