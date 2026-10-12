@@ -152,6 +152,12 @@ backend and frontend for these columns; no database migration is required.
 
 ## Deployment
 
+Admin > Team & Advisors supports a **Display order** for each profile: 1 first,
+2 second, and so on, independently for Team and Advisors. Edit a profile and save
+its order to change public card placement. Equal orders use name ordering;
+choose distinct numbers for fixed placement. This uses the existing `sort_order`
+column (zero-based internally); no new SQL migration is required.
+
 ### Visitor activity analytics
 
 Run [`supabase/visitor_analytics.sql`](supabase/visitor_analytics.sql) after

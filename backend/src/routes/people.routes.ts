@@ -39,6 +39,10 @@ peopleRouter.post("/", requireAuth, requireAdmin, async (req: AuthedRequest, res
       res.status(400).json({ error: "Name is required" });
       return;
     }
+    if (sort_order !== undefined && (!Number.isSafeInteger(sort_order) || sort_order < 0 || sort_order > 2147483646)) {
+      res.status(400).json({ error: "Display order must be a valid non-negative whole number" });
+      return;
+    }
     const { data, error } = await req.client!
       .from("people_profiles")
       .insert({
@@ -62,6 +66,10 @@ peopleRouter.patch("/:id", requireAuth, requireAdmin, async (req: AuthedRequest,
   try {
     const { section, name, title, description, photo_url, sort_order } = req.body as Record<string, unknown>;
     const updates: Record<string, unknown> = {};
+    if (sort_order !== undefined && (typeof sort_order !== "number" || !Number.isSafeInteger(sort_order) || sort_order < 0 || sort_order > 2147483646)) {
+      res.status(400).json({ error: "Display order must be a valid non-negative whole number" });
+      return;
+    }
     if (section !== undefined && SECTIONS.includes(section as Section)) updates.section = section;
     if (typeof name === "string" && name.trim()) updates.name = name.trim();
     if (typeof title === "string") updates.title = title.trim();

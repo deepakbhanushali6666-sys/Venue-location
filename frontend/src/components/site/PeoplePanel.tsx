@@ -28,6 +28,7 @@ export function PeoplePanel() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [displayOrder, setDisplayOrder] = useState("1");
   const [editing, setEditing] = useState<PeopleProfile | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -128,9 +129,16 @@ export function PeoplePanel() {
     setDescription("");
     setPhotoUrl("");
     setEditing(null);
+    setDisplayOrder("1");
   };
 
   const save = async () => {
+    if (busy) return;
+    const rank = Number(displayOrder);
+    if (!Number.isSafeInteger(rank) || rank < 1 || rank > 2147483647) {
+      toast.error("Display order must be a whole number from 1 to 2147483647");
+      return;
+    }
     if (!name.trim()) {
       toast.error("Name is required");
       return;
@@ -143,7 +151,7 @@ export function PeoplePanel() {
         title: title.trim(),
         description: description.trim(),
         photo_url: photoUrl,
-        sort_order: editing?.sort_order ?? 0,
+        sort_order: rank - 1,
       };
       if (editing) {
         await updatePeopleProfile(editing.id, payload);
@@ -168,6 +176,7 @@ export function PeoplePanel() {
     setTitle(profile.title);
     setDescription(profile.description);
     setPhotoUrl(profile.photo_url);
+    setDisplayOrder(String(profile.sort_order + 1));
   };
 
   const remove = async (profile: PeopleProfile) => {
@@ -184,7 +193,7 @@ export function PeoplePanel() {
   return (
     <section id="admin-people" className="mt-8 scroll-mt-24 rounded-xl border border-border bg-card p-6 shadow-panel">
       <h2 className="font-display text-xl font-extrabold text-navy">Team & Advisors</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Add names, photos, titles and descriptions shown on the public pages.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Add names, photos, titles and descriptions shown on the public pages. Display order 1 appears first, then 2, then 3, within each section. Profiles with the same order are sorted by name; use different numbers for a fixed order.</p>
       <Dialog open={cropFile !== null} onOpenChange={(open) => { if (!open && !busy) setCropFile(null); }}>
         <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto" onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
           <DialogTitle>Crop profile photo</DialogTitle>
@@ -208,6 +217,10 @@ export function PeoplePanel() {
         </select>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title / role" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+        <label className="grid gap-1 text-sm">
+          Display order (1 = first)
+          <input type="number" min={1} max={2147483647} step={1} required value={displayOrder} onChange={(event) => setDisplayOrder(event.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+        </label>
         <button type="button" onClick={() => inputRef.current?.click()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-md border border-navy px-3 py-2 text-sm font-bold text-navy disabled:opacity-60">
           <Upload className="size-4" /> {photoUrl ? "Replace photo" : "Upload photo"}
         </button>
@@ -237,6 +250,7 @@ export function PeoplePanel() {
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-navy">{profile.name}</p>
                     <p className="text-xs text-muted-foreground">{profile.title}</p>
+                    <p className="text-xs text-muted-foreground">Display order: {profile.sort_order + 1}</p>
                     <div className="mt-2 flex gap-3">
                       <button type="button" onClick={() => startEdit(profile)} className="inline-flex items-center gap-1 text-xs font-bold text-navy"><Pencil className="size-3" /> Edit</button>
                       <button type="button" onClick={() => void remove(profile)} className="inline-flex items-center gap-1 text-xs font-bold text-destructive"><Trash2 className="size-3" /> Delete</button>
