@@ -107,6 +107,43 @@ alter table public.venues add column if not exists booking_restrictions text[] n
 create index if not exists idx_venues_status on public.venues(status);
 create index if not exists idx_venues_owner on public.venues(owner_id);
 
+-- PROPERTY OWNER CONTACTS -----------------------------------------------
+create table if not exists public.venue_owner_contacts (
+  venue_id uuid primary key references public.venues(id) on delete cascade,
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  contact_name text not null,
+  contact_mobile text not null,
+  contact_email text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.venue_owner_contacts enable row level security;
+drop policy if exists "Owners and admins can view property contacts" on public.venue_owner_contacts;
+create policy "Owners and admins can view property contacts"
+  on public.venue_owner_contacts for select to authenticated
+  using (auth.uid() = owner_id or public.has_role(auth.uid(), 'admin'));
+drop policy if exists "Owners can create property contacts" on public.venue_owner_contacts;
+create policy "Owners can create property contacts"
+  on public.venue_owner_contacts for insert to authenticated
+  with check (
+    auth.uid() = owner_id
+    and exists (
+      select 1 from public.venues
+      where venues.id = venue_id and venues.owner_id = auth.uid()
+    )
+  );
+drop policy if exists "Owners can update property contacts" on public.venue_owner_contacts;
+create policy "Owners can update property contacts"
+  on public.venue_owner_contacts for update to authenticated
+  using (auth.uid() = owner_id)
+  with check (
+    auth.uid() = owner_id
+    and exists (
+      select 1 from public.venues
+      where venues.id = venue_id and venues.owner_id = auth.uid()
+    )
+  );
+
 -- LEADS --------------------------------------------------------------
 create sequence if not exists public.lead_code_seq start 1;
 
@@ -853,6 +890,91 @@ grant all on public.user_roles to service_role;
 
 grant select, insert, update on public.profiles to authenticated;
 grant all on public.profiles to service_role;
+
+grant select, insert, update on public.venue_owner_contacts to authenticated;
+grant all on public.venue_owner_contacts to service_role;
+
+create or replace function public.create_venue_with_owner_contact(
+  p_venue jsonb,
+  p_contact_name text default null,
+  p_contact_mobile text default null,
+  p_contact_email text default null
+)
+returns setof public.venues
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_columns text;
+  v_values text;
+  v_venue public.venues;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+
+  if (
+    nullif(trim(coalesce(p_contact_name, '')), '') is not null
+    or nullif(trim(coalesce(p_contact_mobile, '')), '') is not null
+    or nullif(trim(coalesce(p_contact_email, '')), '') is not null
+  ) and (
+    nullif(trim(coalesce(p_contact_name, '')), '') is null
+    or nullif(trim(coalesce(p_contact_mobile, '')), '') is null
+    or nullif(trim(coalesce(p_contact_email, '')), '') is null
+  ) then
+    raise exception 'Owner name, phone, and email must all be provided together'
+      using errcode = '22023';
+  end if;
+
+  select
+    string_agg(format('%I', attribute.attname), ', ' order by attribute.attnum),
+    string_agg(
+      format('(jsonb_populate_record(null::public.venues, $1)).%I', attribute.attname),
+      ', ' order by attribute.attnum
+    )
+  into v_columns, v_values
+  from pg_attribute as attribute
+  where attribute.attrelid = 'public.venues'::regclass
+    and attribute.attnum > 0
+    and not attribute.attisdropped
+    and p_venue ? attribute.attname
+    and attribute.attname not in (
+      'id', 'owner_id', 'status', 'property_code', 'created_at', 'updated_at'
+    );
+
+  if v_columns is null then
+    raise exception 'Venue payload has no insertable fields' using errcode = '22023';
+  end if;
+
+  execute format(
+    'insert into public.venues (owner_id, status, %s)
+     select $2, ''pending'', %s
+     returning *',
+    v_columns,
+    v_values
+  )
+  using p_venue, auth.uid()
+  into v_venue;
+
+  if nullif(trim(coalesce(p_contact_name, '')), '') is not null then
+    insert into public.venue_owner_contacts (
+      venue_id, owner_id, contact_name, contact_mobile, contact_email
+    ) values (
+      v_venue.id,
+      auth.uid(),
+      trim(p_contact_name),
+      trim(p_contact_mobile),
+      trim(p_contact_email)
+    );
+  end if;
+
+  return next v_venue;
+end;
+$$;
+
+revoke all on function public.create_venue_with_owner_contact(jsonb, text, text, text) from public;
+grant execute on function public.create_venue_with_owner_contact(jsonb, text, text, text) to authenticated;
 
 grant select on public.audit_log to authenticated;
 grant all on public.audit_log to service_role;

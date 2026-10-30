@@ -40,6 +40,14 @@ function request(subscription, body, existingPhotos = []) {
         };
         return query;
       },
+      rpc(name, args) {
+        writes.push({ table: "venues", name, args, payload: args.p_venue });
+        return {
+          async single() {
+            return { data: { id: "created", ...args.p_venue }, error: null };
+          },
+        };
+      },
     },
   };
   return { req, writes };
@@ -144,6 +152,67 @@ test("account upgrade payment is pending and uses server price, not client price
     assert.equal(writes[0].payload.invoice_to_name, invoiceDetails.invoice_to_name);
     assert.equal(writes[0].payload.invoice_to_gstin, invoiceDetails.invoice_to_gstin);
   }
+});
+
+test("venue submission stores owner contact details separately from public venue data", async () => {
+  const writes = [];
+  const req = {
+    user: { id: "owner", isAdmin: false },
+    body: {
+      name: "Example Venue",
+      slug: "example-venue",
+      category: "resorts",
+      city: "Mumbai",
+      owner_contact_name: "Mohit Pandey",
+      owner_contact_mobile: "9000000001",
+      owner_contact_email: "mohit@example.test",
+      photos: [],
+    },
+    client: {
+      from(table) {
+        const query = {
+          select() { return this; },
+          eq() { return this; },
+          async maybeSingle() { return { data: null, error: null }; },
+        };
+        return query;
+      },
+      rpc(name, args) {
+        writes.push({ name, args });
+        return {
+          async single() {
+            return { data: { id: "venue-id", ...args.p_venue }, error: null };
+          },
+        };
+      },
+    },
+  };
+  const result = await invoke(handler(venuesRouter, "post", "/"), req);
+  assert.equal(result.status, 201);
+  assert.equal(writes[0].name, "create_venue_with_owner_contact");
+  assert.equal(writes[0].args.p_venue.owner_contact_name, undefined);
+  assert.deepEqual(writes[0].args, {
+    p_venue: {
+      name: "Example Venue",
+      slug: "example-venue",
+      category: "resorts",
+      city: "Mumbai",
+      photos: [],
+      owner_id: "owner",
+      status: "pending",
+      description: "",
+      gst_number: "",
+      amenities: [],
+      suitable_for: [],
+      booking_purposes: [],
+      booking_restrictions: [],
+      subcategory: [],
+      film_subcategory: [],
+    },
+    p_contact_name: "Mohit Pandey",
+    p_contact_mobile: "9000000001",
+    p_contact_email: "mohit@example.test",
+  });
 });
 
 test("subscription payments require billing details and reject malformed GSTINs", async () => {

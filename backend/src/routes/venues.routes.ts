@@ -75,7 +75,32 @@ venuesRouter.get("/:slug", async (req, res, next) => {
 // Auth: create a venue owned by the current user.
 venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
   try {
-    const { ownerName, mobile, email, venueName, gst, notes, property_code, ...rest } = req.body ?? {};
+    const {
+      ownerName,
+      mobile,
+      email,
+      venueName,
+      gst,
+      notes,
+      property_code,
+      owner_contact_name,
+      owner_contact_mobile,
+      owner_contact_email,
+      ...rest
+    } = req.body ?? {};
+    const ownerContact = {
+      contact_name: typeof owner_contact_name === "string" ? owner_contact_name.trim() : "",
+      contact_mobile: typeof owner_contact_mobile === "string" ? owner_contact_mobile.trim() : "",
+      contact_email: typeof owner_contact_email === "string" ? owner_contact_email.trim() : "",
+    };
+    const hasOwnerContact = Object.values(ownerContact).some(Boolean);
+    if (
+      hasOwnerContact &&
+      (!ownerContact.contact_name || !ownerContact.contact_mobile || !ownerContact.contact_email)
+    ) {
+      res.status(400).json({ error: "Owner name, phone, and email must all be provided together" });
+      return;
+    }
     const photos = Array.isArray(rest.photos) ? rest.photos : [];
     const maxPhotos = await maxVenuePhotosForOwner(req, req.user!.id);
     if (photos.length > maxPhotos) {
@@ -98,9 +123,12 @@ venuesRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
     };
 
     const { data, error } = await req.client!
-      .from("venues")
-      .insert(payload)
-      .select()
+      .rpc("create_venue_with_owner_contact", {
+        p_venue: payload,
+        p_contact_name: hasOwnerContact ? ownerContact.contact_name : null,
+        p_contact_mobile: hasOwnerContact ? ownerContact.contact_mobile : null,
+        p_contact_email: hasOwnerContact ? ownerContact.contact_email : null,
+      })
       .single();
     if (error) throw error;
     res.status(201).json({ venue: data });

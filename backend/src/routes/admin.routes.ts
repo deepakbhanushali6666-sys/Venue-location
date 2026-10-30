@@ -58,21 +58,31 @@ adminRouter.get("/properties", requireAuth, requireAdmin, async (req: AuthedRequ
       return;
     }
 
-    const { data: profiles, error: profilesError } = await req.client!
-      .from("profiles")
-      .select("id, full_name, mobile, email")
-      .in("id", ownerIds);
+    const [{ data: profiles, error: profilesError }, { data: contacts, error: contactsError }] =
+      await Promise.all([
+        req.client!
+          .from("profiles")
+          .select("id, full_name, mobile, email")
+          .in("id", ownerIds),
+        req.client!
+          .from("venue_owner_contacts")
+          .select("venue_id, contact_name, contact_mobile, contact_email")
+          .in("venue_id", properties.map((property) => property.id)),
+      ]);
     if (profilesError) throw profilesError;
+    if (contactsError) throw contactsError;
     const owners = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+    const ownerContacts = new Map((contacts ?? []).map((contact) => [contact.venue_id, contact]));
 
     res.json({
       properties: properties.map(({ owner_id, ...property }) => {
         const owner = owners.get(owner_id);
+        const contact = ownerContacts.get(property.id);
         return {
           ...property,
-          owner_name: owner?.full_name ?? null,
-          owner_mobile: owner?.mobile ?? null,
-          owner_email: owner?.email ?? null,
+          owner_name: contact?.contact_name || owner?.full_name || null,
+          owner_mobile: contact?.contact_mobile || owner?.mobile || null,
+          owner_email: contact?.contact_email || owner?.email || null,
         };
       }),
     });

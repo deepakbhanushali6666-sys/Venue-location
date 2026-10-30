@@ -30,6 +30,13 @@ new and existing databases:
 1. [`supabase/verified_listing_payment.sql`](supabase/verified_listing_payment.sql)
 2. [`supabase/account_photo_limits.sql`](supabase/account_photo_limits.sql)
 
+The updated `verified_listing_payment.sql` also creates a private
+`venue_owner_contacts` table. Run it again on existing databases before
+deploying the matching app code. Each venue form saves its owner name, phone,
+and email against that property (not on the public venue record); the Property
+Codes page shows those values for each code, falling back to the account
+profile only for older listings that predate this change.
+
 The dashboard lets an owner upgrade or renew their account plan. Basic accounts
 allow 10 photos per property, the INR 3,650 annual plan allows 20, and the
 INR 36,500 annual plan allows 60. One verified subscription covers all existing

@@ -420,11 +420,50 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_owner_contacts: {
+        Row: {
+          contact_email: string
+          contact_mobile: string
+          contact_name: string
+          created_at: string
+          owner_id: string
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          contact_email: string
+          contact_mobile: string
+          contact_name: string
+          created_at?: string
+          owner_id: string
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          contact_email?: string
+          contact_mobile?: string
+          contact_name?: string
+          created_at?: string
+          owner_id?: string
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_venue_with_owner_contact: {
+        Args: {
+          p_contact_email?: string | null
+          p_contact_mobile?: string | null
+          p_contact_name?: string | null
+          p_venue: Json
+        }
+        Returns: Database["public"]["Tables"]["venues"]["Row"][]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
