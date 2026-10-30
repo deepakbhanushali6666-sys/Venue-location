@@ -51,11 +51,14 @@ The table is admin-only and paginated. Pending payments stay in the admin panel'
 payment verification table until an account subscription is activated.
 
 Payment verification issues an invoice number and activates the subscription.
-The dashboard shows the latest invoice number and each verified payment's number
-as plain text. Invoice documents and viewing/download options remain disabled
-until an approved invoice template is added.
-For an existing database, rerun `supabase/verified_listing_payment.sql` to replace
-the verification function with this number-only version.
+When submitting a paid plan payment, the owner provides billing name, address,
+state/union territory, and an optional GSTIN. These details are saved on that
+payment as an invoice snapshot. After an admin verifies payment, the owner can
+open **Download GST invoice** in the dashboard and print it or save it as a PDF.
+Plan prices are final amounts inclusive of 18% GST; intra-state invoices split
+GST into CGST/SGST and inter-state invoices show IGST. Applying
+`supabase/verified_listing_payment.sql` adds the invoice fields for existing
+databases as well as installing the verification function.
 
 Run [`supabase/visitors.sql`](supabase/visitors.sql) after the schema setup for
 both new and existing projects to enable visitor search capture.

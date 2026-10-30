@@ -5,7 +5,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Check, Eye, EyeOff, Info } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { BUSINESS, PAYMENT_DETAILS, PLAN, PRO_MARKETING_PLAN, upiLink } from "@/data/business";
+import {
+  BUSINESS,
+  INDIAN_STATES_AND_UTS,
+  PAYMENT_DETAILS,
+  PLAN,
+  PRO_MARKETING_PLAN,
+  upiLink,
+} from "@/data/business";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/site/PhotoUploader";
 import { StateCityFields } from "@/components/site/StateCityFields";
@@ -185,6 +192,10 @@ function ListYourVenue() {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState("");
   const [payerName, setPayerName] = useState("");
+  const [invoiceToName, setInvoiceToName] = useState("");
+  const [invoiceToAddress, setInvoiceToAddress] = useState("");
+  const [invoiceToState, setInvoiceToState] = useState("");
+  const [invoiceToGstin, setInvoiceToGstin] = useState("");
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -255,6 +266,12 @@ function ListYourVenue() {
 
   const submitVerifiedPayment = async () => {
     if (!draftId || !paymentReference.trim() || submittingPayment) return;
+    if (!invoiceToName.trim() || !invoiceToAddress.trim() || !invoiceToState.trim()) {
+      toast.error(
+        "Enter the billing name, full billing address, and billing state for your GST invoice.",
+      );
+      return;
+    }
     setSubmittingPayment(true);
     try {
       await createPayment({
@@ -263,6 +280,10 @@ function ListYourVenue() {
         method: "upi",
         reference: paymentReference.trim(),
         payer_name: payerName.trim(),
+        invoice_to_name: invoiceToName.trim(),
+        invoice_to_address: invoiceToAddress.trim(),
+        invoice_to_state: invoiceToState.trim(),
+        invoice_to_gstin: invoiceToGstin.trim().toUpperCase(),
         venue_draft_id: draftId,
       });
       setPaymentSubmitted(true);
@@ -888,7 +909,7 @@ function ListYourVenue() {
                   Pay {selectedPaymentPlan.amount.toLocaleString("en-IN")} to continue
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Scan the QR with your UPI app. After payment, enter the UTR/reference number. We’ll verify it before sending your listing for approval.
+                  Scan the QR with your UPI app. The plan price is the final amount and includes 18% GST. After payment, enter the UTR/reference number. We’ll verify it before sending your listing for approval.
                 </p>
                 <div className="mt-4 grid gap-5 sm:grid-cols-[220px_1fr] sm:items-center">
                   <div className="mx-auto rounded-md bg-white p-3">
@@ -942,6 +963,60 @@ function ListYourVenue() {
                           placeholder="Name on payment (optional)"
                           className={field}
                         />
+                        <label className="grid gap-1 text-sm font-semibold text-navy">
+                          Billing name
+                          <input
+                            value={invoiceToName}
+                            onChange={(event) => setInvoiceToName(event.target.value)}
+                            placeholder="Person or business name for the invoice"
+                            maxLength={120}
+                            autoComplete="organization"
+                            required
+                            className={field}
+                          />
+                        </label>
+                        <label className="grid gap-1 text-sm font-semibold text-navy">
+                          Billing address
+                          <textarea
+                            value={invoiceToAddress}
+                            onChange={(event) => setInvoiceToAddress(event.target.value)}
+                            placeholder="Full billing address"
+                            rows={2}
+                            maxLength={500}
+                            autoComplete="street-address"
+                            required
+                            className={field}
+                          />
+                        </label>
+                        <label className="grid gap-1 text-sm font-semibold text-navy">
+                          Billing state / union territory
+                          <select
+                            value={invoiceToState}
+                            onChange={(event) => setInvoiceToState(event.target.value)}
+                            required
+                            className={field}
+                          >
+                            <option value="">Select a state or union territory</option>
+                            {INDIAN_STATES_AND_UTS.map((state) => (
+                              <option key={state} value={state}>
+                                {state}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1 text-sm font-semibold text-navy">
+                          GSTIN (optional)
+                          <input
+                            value={invoiceToGstin}
+                            onChange={(event) =>
+                              setInvoiceToGstin(event.target.value.toUpperCase())
+                            }
+                            placeholder="15-character GSTIN, if registered"
+                            maxLength={15}
+                            autoCapitalize="characters"
+                            className={field}
+                          />
+                        </label>
                         <input
                           value={paymentReference}
                           onChange={(event) => setPaymentReference(event.target.value)}

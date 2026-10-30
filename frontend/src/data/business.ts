@@ -9,6 +9,52 @@ export const BUSINESS = {
   website: "www.venueslocation.com",
 };
 
+export const INVOICE_SUPPLIER = {
+  legalName: "Once More Entertainments",
+  address:
+    "Park Plaza, 113 B Wing, Off Yari Road, Versova, Punch Marg. Andheri (West), Mumbai-400061",
+  gstin: "27ADWPB0518R2ZZ",
+};
+
+export const INDIAN_STATES_AND_UTS = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+] as const;
+
 export const PLAN = {
   code: "verified_listing",
   name: "VENUES LOCATION Verified Listing",

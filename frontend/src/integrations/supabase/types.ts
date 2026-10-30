@@ -133,6 +133,10 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          invoice_to_address: string
+          invoice_to_gstin: string
+          invoice_to_name: string
+          invoice_to_state: string
           invoice_number: string
           method: Database["public"]["Enums"]["payment_method"]
           note: string
@@ -149,6 +153,10 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          invoice_to_address?: string
+          invoice_to_gstin?: string
+          invoice_to_name?: string
+          invoice_to_state?: string
           invoice_number?: string
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string
@@ -165,6 +173,10 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          invoice_to_address?: string
+          invoice_to_gstin?: string
+          invoice_to_name?: string
+          invoice_to_state?: string
           invoice_number?: string
           method?: Database["public"]["Enums"]["payment_method"]
           note?: string

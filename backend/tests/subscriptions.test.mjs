@@ -124,8 +124,16 @@ test("subscription API returns authoritative account photo allowance", async () 
 });
 
 test("account upgrade payment is pending and uses server price, not client price", async () => {
+  const invoiceDetails = {
+    invoice_to_name: "Example Venue Pvt Ltd",
+    invoice_to_address: "10 Market Road, Mumbai",
+    invoice_to_state: "Maharashtra",
+    invoice_to_gstin: "27ABCDE1234F1Z5",
+  };
   for (const [plan_code, amount] of [["verified_listing", 3650], ["pro_marketing", 36500]]) {
-    const { req, writes } = request(null, { plan_code, amount: 1, reference: "UTR123" });
+    const { req, writes } = request(null, {
+      plan_code, amount: 1, reference: "UTR123", ...invoiceDetails,
+    });
     const result = await invoke(handler(paymentsRouter, "post", "/"), req);
     assert.equal(result.status, 201);
     assert.equal(writes.length, 1);
@@ -133,6 +141,29 @@ test("account upgrade payment is pending and uses server price, not client price
     assert.equal(writes[0].payload.amount, amount);
     assert.equal(writes[0].payload.status, "pending");
     assert.equal(writes[0].payload.owner_id, "owner");
+    assert.equal(writes[0].payload.invoice_to_name, invoiceDetails.invoice_to_name);
+    assert.equal(writes[0].payload.invoice_to_gstin, invoiceDetails.invoice_to_gstin);
+  }
+});
+
+test("subscription payments require billing details and reject malformed GSTINs", async () => {
+  const valid = {
+    plan_code: "verified_listing",
+    reference: "UTR123",
+    invoice_to_name: "Example Venue",
+    invoice_to_address: "10 Market Road",
+    invoice_to_state: "Maharashtra",
+  };
+  for (const body of [
+    { ...valid, invoice_to_name: "" },
+    { ...valid, invoice_to_address: "" },
+    { ...valid, invoice_to_state: "" },
+    { ...valid, invoice_to_gstin: "not-a-gstin" },
+  ]) {
+    const { req, writes } = request(null, body);
+    const result = await invoke(handler(paymentsRouter, "post", "/"), req);
+    assert.equal(result.status, 400);
+    assert.equal(writes.length, 0);
   }
 });
 

@@ -14,6 +14,10 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
       payer_name = "",
       note = "",
       venue_draft_id,
+      invoice_to_name = "",
+      invoice_to_address = "",
+      invoice_to_state = "",
+      invoice_to_gstin = "",
     } = req.body;
     if (plan_code !== "verified_listing" && plan_code !== "pro_marketing") {
       res.status(400).json({ error: "Select a valid subscription plan" });
@@ -22,6 +26,29 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
     const plan = plan_code === "pro_marketing" ? PAID_LISTING_PLANS.pro_marketing : PAID_LISTING_PLANS.verified_listing;
     if (!String(reference).trim()) {
       res.status(400).json({ error: "Enter the UPI transaction reference" });
+      return;
+    }
+    const invoiceToName = String(invoice_to_name).trim();
+    const invoiceToAddress = String(invoice_to_address).trim();
+    const invoiceToState = String(invoice_to_state).trim();
+    const invoiceToGstin = String(invoice_to_gstin).trim().toUpperCase();
+    if (!invoiceToName || invoiceToName.length > 120) {
+      res.status(400).json({ error: "Enter a billing name up to 120 characters" });
+      return;
+    }
+    if (!invoiceToAddress || invoiceToAddress.length > 500) {
+      res.status(400).json({ error: "Enter a billing address up to 500 characters" });
+      return;
+    }
+    if (!invoiceToState || invoiceToState.length > 80) {
+      res.status(400).json({ error: "Enter a billing state or union territory" });
+      return;
+    }
+    if (
+      invoiceToGstin &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9]Z[A-Z0-9]$/.test(invoiceToGstin)
+    ) {
+      res.status(400).json({ error: "Enter a valid 15-character GSTIN or leave it blank" });
       return;
     }
     let paymentNote = String(note).trim();
@@ -73,6 +100,10 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
         reference,
         payer_name,
         note: paymentNote,
+        invoice_to_name: invoiceToName,
+        invoice_to_address: invoiceToAddress,
+        invoice_to_state: invoiceToState,
+        invoice_to_gstin: invoiceToGstin,
         ...(venue_draft_id ? { venue_draft_id } : {}),
         status: "pending",
       })

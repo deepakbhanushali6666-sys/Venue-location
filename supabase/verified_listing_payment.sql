@@ -27,6 +27,12 @@ alter table public.payments
 alter table public.payments
   add column if not exists plan_code text not null default 'verified_listing';
 
+alter table public.payments
+  add column if not exists invoice_to_name text not null default '',
+  add column if not exists invoice_to_address text not null default '',
+  add column if not exists invoice_to_state text not null default '',
+  add column if not exists invoice_to_gstin text not null default '';
+
 do $$
 begin
   if not exists (

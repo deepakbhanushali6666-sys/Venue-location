@@ -141,12 +141,16 @@ test("verification SQL issues a number once and saves it on payment and subscrip
   }
 });
 
-test("dashboard shows invoice numbers as text without invoice download links", async () => {
+test("dashboard offers print-ready GST invoices for verified payments", async () => {
   const panel = await readFile(new URL("../../frontend/src/components/site/SubscriptionPanel.tsx", import.meta.url), "utf8");
   assert.match(panel, /Latest invoice number/);
   assert.match(panel, /p\.invoice_number \|\| "Not issued"/);
-  assert.match(panel, /Invoice downloads are not available yet/);
-  assert.doesNotMatch(panel, /to="\/invoice|window\.print|download=/);
+  assert.match(panel, /Download GST invoice/);
+  assert.match(panel, /Print \/ Save as PDF/);
+  assert.match(panel, /invoice_to_address/);
+  assert.match(panel, /CGST/);
+  assert.match(panel, /IGST/);
+  assert.match(panel, /window\.print/);
 });
 
 test("admin subscriptions display the latest invoice number without download links", async () => {

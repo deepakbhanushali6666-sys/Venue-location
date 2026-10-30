@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createPayment, listMyPayments, type AccountSubscription } from "@/lib/api";
-import { BUSINESS, PAYMENT_DETAILS, PLAN, PRO_MARKETING_PLAN, formatINR, upiLink } from "@/data/business";
+import {
+  BUSINESS,
+  INDIAN_STATES_AND_UTS,
+  INVOICE_SUPPLIER,
+  PAYMENT_DETAILS,
+  PLAN,
+  PRO_MARKETING_PLAN,
+  formatINR,
+  upiLink,
+} from "@/data/business";
 
 type PaymentRow = {
   id: string;
@@ -12,6 +21,11 @@ type PaymentRow = {
   status: string;
   admin_note: string;
   invoice_number: string;
+  invoice_to_name: string;
+  invoice_to_address: string;
+  invoice_to_state: string;
+  invoice_to_gstin: string;
+  verified_at: string | null;
   created_at: string;
 };
 
@@ -28,6 +42,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedCode, setSelectedCode] = useState(PLAN.code);
+  const [invoicePayment, setInvoicePayment] = useState<PaymentRow | null>(null);
 
   const loadPayments = async () => {
     try {
@@ -70,6 +85,10 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
         reference,
         payer_name: String(f.get("payer_name") ?? "").trim(),
         note: String(f.get("note") ?? "").trim(),
+        invoice_to_name: String(f.get("invoice_to_name") ?? "").trim(),
+        invoice_to_address: String(f.get("invoice_to_address") ?? "").trim(),
+        invoice_to_state: String(f.get("invoice_to_state") ?? "").trim(),
+        invoice_to_gstin: String(f.get("invoice_to_gstin") ?? "").trim().toUpperCase(),
       });
       toast.success("Payment submitted. We'll verify and activate within 24 hours.");
       setOpen(false);
@@ -92,7 +111,9 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
             {" "}One account plan covers all your existing and future properties.
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isActive ? `${formatINR(currentPlan.amount)} for ${currentPlan.period}.` : "Upgrade below to upload more photos."}
+            {isActive
+              ? `${formatINR(currentPlan.amount)} for ${currentPlan.period}, inclusive of 18% GST.`
+              : "Upgrade below to upload more photos."}
           </p>
         </div>
         <span
@@ -123,7 +144,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
         </div>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        Invoice numbers are issued after payment verification. Invoice downloads are not available yet.
+        A GST invoice is available for each payment after our team verifies it. Plan prices include 18% GST.
       </p>
 
       <ul className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
@@ -177,7 +198,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
           <div>
             <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(selectedPlan.amount)}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pay by UPI or bank transfer, then submit the reference number for verification.
+              Pay by UPI or bank transfer, then submit the reference number for verification. The plan price is the final amount and includes 18% GST.
             </p>
             <dl className="mt-3 space-y-1 text-sm">
               <div className="flex justify-between gap-3">
@@ -222,7 +243,63 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
             </select>
             <input name="reference" placeholder="UPI UTR / transaction reference" className={input} />
             <input name="payer_name" placeholder="Name on the payment" className={input} />
-            <textarea name="note" rows={2} placeholder="Note for our team (optional)" className={input} />
+            <label className="grid gap-1 text-sm font-semibold text-navy">
+              Billing name
+              <input
+                name="invoice_to_name"
+                required
+                maxLength={120}
+                autoComplete="organization"
+                placeholder="Person or business name for the invoice"
+                className={input}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold text-navy">
+              Billing address
+              <textarea
+                name="invoice_to_address"
+                required
+                maxLength={500}
+                autoComplete="street-address"
+                placeholder="Full billing address"
+                rows={2}
+                className={input}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold text-navy">
+              Billing state / union territory
+              <select
+                name="invoice_to_state"
+                required
+                className={input}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Select a state or union territory
+                </option>
+                {INDIAN_STATES_AND_UTS.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-semibold text-navy">
+              GSTIN (optional)
+              <input
+                name="invoice_to_gstin"
+                maxLength={15}
+                autoCapitalize="characters"
+                placeholder="15-character GSTIN, if registered"
+                className={input}
+              />
+            </label>
+            <textarea
+              name="note"
+              rows={2}
+              placeholder="Note for our team (optional)"
+              className={input}
+            />
             <button
               type="submit"
               disabled={saving}
@@ -258,13 +335,166 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
                     {p.status}
                     {p.status === "rejected" && p.admin_note ? ` — ${p.admin_note}` : ""}
                   </td>
-                  <td>{p.status === "verified" ? p.invoice_number || "Not issued" : "Awaiting verification"}</td>
+                  <td>
+                    {p.status === "verified" ? (
+                      <div className="grid justify-items-start gap-1">
+                        <span>{p.invoice_number || "Not issued"}</span>
+                        {p.invoice_number &&
+                          p.invoice_to_name &&
+                          p.invoice_to_address &&
+                          p.invoice_to_state && (
+                            <button
+                              type="button"
+                              onClick={() => setInvoicePayment(p)}
+                              className="font-bold text-blue-700 underline print:hidden"
+                            >
+                              Download GST invoice
+                            </button>
+                          )}
+                      </div>
+                    ) : (
+                      "Awaiting verification"
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {invoicePayment && (
+        <div
+          className="gst-invoice-overlay fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gst-invoice-title"
+        >
+          <div className="gst-invoice-sheet mx-auto w-full max-w-3xl bg-white p-6 text-slate-950 shadow-2xl sm:p-10">
+            <div className="gst-invoice-controls mb-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white"
+              >
+                Print / Save as PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setInvoicePayment(null)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-bold"
+              >
+                Close
+              </button>
+            </div>
+            <InvoiceDocument payment={invoicePayment} />
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function InvoiceDocument({ payment }: { payment: PaymentRow }) {
+  const total = payment.amount;
+  const taxable = Math.round((total / 1.18) * 100) / 100;
+  const tax = Math.round((total - taxable) * 100) / 100;
+  const sameState = payment.invoice_to_state.trim().toLowerCase() === "maharashtra";
+  const halfTax = Math.round((tax / 2) * 100) / 100;
+  const otherHalfTax = Math.round((tax - halfTax) * 100) / 100;
+  const plan = payment.plan_code === PRO_MARKETING_PLAN.code ? PRO_MARKETING_PLAN : PLAN;
+  const invoiceDate = new Date(payment.verified_at ?? payment.created_at).toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  );
+
+  return (
+    <article className="text-sm">
+      <header className="border-b-2 border-slate-900 pb-5 text-center">
+        <h1 id="gst-invoice-title" className="text-xl font-extrabold uppercase tracking-wide">
+          Tax Invoice
+        </h1>
+        <h2 className="mt-3 text-lg font-extrabold uppercase">{INVOICE_SUPPLIER.legalName}</h2>
+        <p className="mt-1">{INVOICE_SUPPLIER.address}</p>
+        <p className="mt-1 font-semibold">GSTIN: {INVOICE_SUPPLIER.gstin}</p>
+      </header>
+
+      <div className="grid gap-4 border-b border-slate-300 py-5 sm:grid-cols-2">
+        <div>
+          <h3 className="font-bold uppercase tracking-wide">Bill to</h3>
+          <p className="mt-2 font-semibold">{payment.invoice_to_name}</p>
+          <p className="whitespace-pre-line">{payment.invoice_to_address}</p>
+          <p>{payment.invoice_to_state}</p>
+          {payment.invoice_to_gstin && <p>GSTIN: {payment.invoice_to_gstin}</p>}
+        </div>
+        <dl className="grid grid-cols-[auto_1fr] content-start gap-x-3 gap-y-1">
+          <dt className="font-semibold">Invoice number</dt>
+          <dd className="break-all">{payment.invoice_number}</dd>
+          <dt className="font-semibold">Invoice date</dt>
+          <dd>{invoiceDate}</dd>
+          <dt className="font-semibold">Place of supply</dt>
+          <dd>{payment.invoice_to_state}</dd>
+          <dt className="font-semibold">Payment reference</dt>
+          <dd className="break-all">{payment.reference}</dd>
+        </dl>
+      </div>
+
+      <table className="mt-5 w-full border-collapse text-left">
+        <thead>
+          <tr className="border-y border-slate-400">
+            <th className="py-2 pr-2">Description</th>
+            <th className="px-2 py-2 text-right">GST</th>
+            <th className="py-2 pl-2 text-right">Amount (INR)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <td className="py-3 pr-2">
+              {plan.name} — annual subscription
+              <span className="block text-xs text-slate-600">Taxable value</span>
+            </td>
+            <td className="px-2 py-3 text-right">18%</td>
+            <td className="py-3 pl-2 text-right">{formatINR(taxable)}</td>
+          </tr>
+          {sameState ? (
+            <>
+              <tr className="border-b border-slate-200">
+                <td className="py-2 pr-2">CGST</td>
+                <td className="px-2 py-2 text-right">9%</td>
+                <td className="py-2 pl-2 text-right">{formatINR(halfTax)}</td>
+              </tr>
+              <tr className="border-b border-slate-200">
+                <td className="py-2 pr-2">SGST</td>
+                <td className="px-2 py-2 text-right">9%</td>
+                <td className="py-2 pl-2 text-right">{formatINR(otherHalfTax)}</td>
+              </tr>
+            </>
+          ) : (
+            <tr className="border-b border-slate-200">
+              <td className="py-2 pr-2">IGST</td>
+              <td className="px-2 py-2 text-right">18%</td>
+              <td className="py-2 pl-2 text-right">{formatINR(tax)}</td>
+            </tr>
+          )}
+          <tr className="border-t-2 border-slate-900 font-extrabold">
+            <td colSpan={2} className="py-3 pr-2 text-right">
+              Total (GST inclusive)
+            </td>
+            <td className="py-3 pl-2 text-right">{formatINR(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <footer className="mt-12 flex justify-end">
+        <div className="min-w-52 border-t border-slate-400 pt-2 text-center">
+          For {INVOICE_SUPPLIER.legalName}
+          <p className="mt-8 font-semibold">Authorized Signatory</p>
+        </div>
+      </footer>
+    </article>
   );
 }

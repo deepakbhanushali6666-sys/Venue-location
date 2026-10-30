@@ -162,3 +162,42 @@
     }
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .gst-invoice-overlay {
+    position: static !important;
+    display: block !important;
+    overflow: visible !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .gst-invoice-sheet,
+  .gst-invoice-sheet * {
+    visibility: visible !important;
+  }
+
+  .gst-invoice-sheet {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .gst-invoice-controls {
+    display: none !important;
+  }
+}
