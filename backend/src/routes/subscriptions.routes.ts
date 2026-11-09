@@ -84,7 +84,19 @@ subscriptionsRouter.post("/admin-assign", requireAuth, requireAdmin, async (req:
       p_plan_code: planCode,
       p_auto_lead_contact: autoLeadContact,
     });
-    if (error) throw error;
+    if (error) {
+      if (
+        (error.code === "PGRST202" || error.code === "42883") &&
+        error.message.includes("admin_assign_subscription")
+      ) {
+        res.status(503).json({
+          error:
+            "Subscription management is not installed in the database yet. Run the latest supabase/account_photo_limits.sql in the Supabase SQL Editor, then try again.",
+        });
+        return;
+      }
+      throw error;
+    }
     res.json({ subscription: data });
   } catch (err) {
     next(err);

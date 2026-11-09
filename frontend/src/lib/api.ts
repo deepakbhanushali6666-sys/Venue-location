@@ -220,6 +220,19 @@ export const assignAdminSubscription = (
   });
 export const revokeAdminSubscription = (ownerId: string) =>
   post<{ subscription: Record<string, unknown> }>(`/subscriptions/admin/${ownerId}/revoke`);
+export type LeadContactAccessAccount = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  mobile: string | null;
+  auto_lead_contact: boolean;
+};
+export const listLeadContactAccess = () =>
+  get<{ accounts: LeadContactAccessAccount[] }>("/admin/lead-contact-access");
+export const setLeadContactAccess = (userId: string, enabled: boolean) =>
+  patch<{ account: LeadContactAccessAccount }>(`/admin/lead-contact-access/${userId}`, {
+    auto_lead_contact: enabled,
+  });
 
 // Payments
 export const createPayment = (payload: Record<string, unknown>) =>

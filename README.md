@@ -70,6 +70,12 @@ record and lead-contact setting intact; turning auto-approval off immediately
 revokes the account's automatic access to lead phone numbers and emails for its
 own properties. Pending payments still use the payment-verification flow.
 
+Admins can also open **Lead Access** (`/lead-access`) to manage lead-contact
+approval separately from subscriptions. Search for an account by email, review
+the name, email, and mobile number, then confirm access. The page lists every
+account with auto-approval enabled and allows access to be revoked or granted
+again without changing the account's subscription.
+
 Payment verification issues an invoice number and activates the subscription.
 When submitting a paid plan payment, the owner provides billing name, address,
 state/union territory, and an optional GSTIN. These details are saved on that

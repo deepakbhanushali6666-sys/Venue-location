@@ -317,6 +317,36 @@ end;
 $$;
 revoke all on function public.admin_assign_subscription(uuid, text, boolean) from public;
 grant execute on function public.admin_assign_subscription(uuid, text, boolean) to authenticated;
+
+create or replace function public.admin_set_lead_contact_access(
+  p_owner_id uuid,
+  p_auto_lead_contact boolean
+)
+returns public.profiles
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_profile public.profiles;
+begin
+  if auth.uid() is null or not public.has_role(auth.uid(), 'admin') then
+    raise exception 'Admin access required' using errcode = '42501';
+  end if;
+
+  update public.profiles
+    set auto_lead_contact = p_auto_lead_contact, updated_at = now()
+    where id = p_owner_id
+    returning * into v_profile;
+  if not found then
+    raise exception 'Account not found';
+  end if;
+
+  return v_profile;
+end;
+$$;
+revoke all on function public.admin_set_lead_contact_access(uuid, boolean) from public;
+grant execute on function public.admin_set_lead_contact_access(uuid, boolean) to authenticated;
 alter table public.subscriptions enable row level security;
 
 -- AUDIT LOG --------------------------------------------------------------

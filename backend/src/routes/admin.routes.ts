@@ -5,6 +5,7 @@ import { requireAdmin, requireAuth, type AuthedRequest } from "../middleware/aut
 export const adminRouter = Router();
 
 const AUDIT_COLUMNS = "id, action, entity_type, entity_id, entity_label, from_value, to_value, created_at, actor_id";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Admin: combined dashboard data (venues, leads, subscriptions, payments, audit log) in one call.
 adminRouter.get("/overview", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
@@ -163,6 +164,57 @@ adminRouter.get("/team", requireAuth, requireAdmin, async (req: AuthedRequest, r
         return { id, full_name: "", email: "", mobile: "", auto_lead_contact: false, ...(profile ?? {}) };
       }),
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: accounts with automatic lead-contact access enabled.
+adminRouter.get("/lead-contact-access", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const { data, error } = await req.client!
+      .from("profiles")
+      .select("id, full_name, email, mobile, auto_lead_contact")
+      .eq("auto_lead_contact", true)
+      .order("full_name", { ascending: true })
+      .order("id", { ascending: true });
+    if (error) throw error;
+    res.json({ accounts: data ?? [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin: grant or revoke automatic lead-contact access for any account.
+adminRouter.patch("/lead-contact-access/:userId", requireAuth, requireAdmin, async (req: AuthedRequest, res, next) => {
+  try {
+    const autoLeadContact = req.body?.auto_lead_contact;
+    if (!UUID_PATTERN.test(req.params.userId)) {
+      res.status(400).json({ error: "userId must be a valid account ID" });
+      return;
+    }
+    if (typeof autoLeadContact !== "boolean") {
+      res.status(400).json({ error: "auto_lead_contact must be true or false" });
+      return;
+    }
+    const { data, error } = await req.client!.rpc("admin_set_lead_contact_access", {
+      p_owner_id: req.params.userId,
+      p_auto_lead_contact: autoLeadContact,
+    });
+    if (error) {
+      if (
+        (error.code === "PGRST202" || error.code === "42883") &&
+        error.message.includes("admin_set_lead_contact_access")
+      ) {
+        res.status(503).json({
+          error:
+            "Lead access management is not installed in the database yet. Run the latest supabase/account_photo_limits.sql in the Supabase SQL Editor, then try again.",
+        });
+        return;
+      }
+      throw error;
+    }
+    res.json({ account: data });
   } catch (err) {
     next(err);
   }

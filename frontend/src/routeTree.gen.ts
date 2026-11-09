@@ -27,6 +27,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDeletionRequestsRouteImport } from './routes/_authenticated/deletion-requests'
+import { Route as AuthenticatedLeadAccessRouteImport } from './routes/_authenticated/lead-access'
 import { Route as AuthenticatedLeadPageRouteImport } from './routes/_authenticated/lead-page'
 import { Route as AuthenticatedPropertyCodesRouteImport } from './routes/_authenticated/property-codes'
 import { Route as AuthenticatedSubscriptionsRouteImport } from './routes/_authenticated/subscriptions'
@@ -124,6 +125,11 @@ const AuthenticatedDeletionRequestsRoute =
     path: '/deletion-requests',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLeadAccessRoute = AuthenticatedLeadAccessRouteImport.update({
+  id: '/lead-access',
+  path: '/lead-access',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLeadPageRoute = AuthenticatedLeadPageRouteImport.update({
   id: '/lead-page',
   path: '/lead-page',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/lead-access': typeof AuthenticatedLeadAccessRoute
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/subscriptions': typeof AuthenticatedSubscriptionsRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/lead-access': typeof AuthenticatedLeadAccessRoute
   '/lead-page': typeof AuthenticatedLeadPageRoute
   '/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/subscriptions': typeof AuthenticatedSubscriptionsRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deletion-requests': typeof AuthenticatedDeletionRequestsRoute
+  '/_authenticated/lead-access': typeof AuthenticatedLeadAccessRoute
   '/_authenticated/lead-page': typeof AuthenticatedLeadPageRoute
   '/_authenticated/property-codes': typeof AuthenticatedPropertyCodesRoute
   '/_authenticated/subscriptions': typeof AuthenticatedSubscriptionsRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/deletion-requests'
+    | '/lead-access'
     | '/lead-page'
     | '/property-codes'
     | '/subscriptions'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/deletion-requests'
+    | '/lead-access'
     | '/lead-page'
     | '/property-codes'
     | '/subscriptions'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/deletion-requests'
+    | '/_authenticated/lead-access'
     | '/_authenticated/lead-page'
     | '/_authenticated/property-codes'
     | '/_authenticated/subscriptions'
@@ -461,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeletionRequestsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lead-access': {
+      id: '/_authenticated/lead-access'
+      path: '/lead-access'
+      fullPath: '/lead-access'
+      preLoaderRoute: typeof AuthenticatedLeadAccessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/lead-page': {
       id: '/_authenticated/lead-page'
       path: '/lead-page'
@@ -510,6 +529,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeletionRequestsRoute: typeof AuthenticatedDeletionRequestsRoute
+  AuthenticatedLeadAccessRoute: typeof AuthenticatedLeadAccessRoute
   AuthenticatedLeadPageRoute: typeof AuthenticatedLeadPageRoute
   AuthenticatedPropertyCodesRoute: typeof AuthenticatedPropertyCodesRoute
   AuthenticatedSubscriptionsRoute: typeof AuthenticatedSubscriptionsRoute
@@ -520,6 +540,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeletionRequestsRoute: AuthenticatedDeletionRequestsRoute,
+  AuthenticatedLeadAccessRoute: AuthenticatedLeadAccessRoute,
   AuthenticatedLeadPageRoute: AuthenticatedLeadPageRoute,
   AuthenticatedPropertyCodesRoute: AuthenticatedPropertyCodesRoute,
   AuthenticatedSubscriptionsRoute: AuthenticatedSubscriptionsRoute,

@@ -39,6 +39,7 @@ function mockClient({
     auto_lead_contact: true,
   },
   subscription = null,
+  rpcError = null,
 } = {}) {
   const calls = [];
   return {
@@ -79,7 +80,7 @@ function mockClient({
     },
     async rpc(name, args) {
       calls.push({ rpc: name, args });
-      return { data: { id: "subscription-id" }, error: null };
+      return { data: rpcError ? null : { id: "subscription-id" }, error: rpcError };
     },
   };
 }
@@ -156,6 +157,25 @@ test("manual plan activation validates inputs before calling the atomic database
     },
   });
   assert.equal(result.body.subscription.id, "subscription-id");
+});
+
+test("manual plan activation explains when the database RPC has not been installed", async () => {
+  const result = await invoke(routeHandler("post", "/admin-assign"), {
+    body: {
+      owner_id: "00000000-0000-4000-8000-000000000001",
+      plan_code: "pro_marketing",
+      auto_lead_contact: true,
+    },
+    client: mockClient({
+      rpcError: {
+        code: "PGRST202",
+        message: "Could not find the function public.admin_assign_subscription",
+      },
+    }),
+  });
+
+  assert.equal(result.status, 503);
+  assert.match(result.body.error, /supabase\/account_photo_limits\.sql/);
 });
 
 test("subscription revocation cancels the account plan without deleting its record", async () => {
