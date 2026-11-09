@@ -3,7 +3,7 @@ import { StateCityFields } from "@/components/site/StateCityFields";
 import { PropertyPagination, PROPERTIES_PER_PAGE } from "@/components/site/PropertyPagination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,11 +36,15 @@ import { formatBudget } from "@/lib/utils";
 import { ReviewsPanel } from "@/components/site/ReviewsPanel";
 import { CategoriesPanel } from "@/components/site/CategoriesPanel";
 import { GalleryPanel } from "@/components/site/GalleryPanel";
+import { Footer } from "@/components/site/Footer";
+import { Header } from "@/components/site/Header";
 import { PeoplePanel } from "@/components/site/PeoplePanel";
 import { AmenitiesPanel } from "@/components/site/AmenitiesPanel";
 import { LocationsPanel } from "@/components/site/LocationsPanel";
 import { PurposesPanel } from "@/components/site/PurposesPanel";
 import { TeamMembersPanel } from "@/components/site/TeamMembersPanel";
+import { rowToVenue } from "@/lib/venue-mapping";
+import { PublicVenueDetail } from "@/routes/venues.$slug";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -63,6 +67,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 type VenueRow = {
   id: string;
   property_code: string;
+  slug: string;
   name: string;
   city: string;
   state: string;
@@ -72,9 +77,17 @@ type VenueRow = {
   subcategory: string[];
   film_category: string;
   film_subcategory: string[];
+  capacity: number;
+  starting_price: number;
+  parking: string;
+  description: string;
+  amenities: string[];
   suitable_for: string[];
   booking_purposes: string[];
   booking_restrictions: string[];
+  photos: string[];
+  video_url: string;
+  map_query: string;
   status: string;
   featured: boolean;
   featured_order: number;
@@ -167,6 +180,8 @@ function AdminPanel() {
   const [filmCategories, setFilmCategories] = useState<CategoryRecord[]>([]);
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
   const [savingVenue, setSavingVenue] = useState<string | null>(null);
+  const [reviewingVenueId, setReviewingVenueId] = useState<string | null>(null);
+  const [savingReviewStatus, setSavingReviewStatus] = useState(false);
   const [deletingLead, setDeletingLead] = useState<string | null>(null);
   const [transferVenue, setTransferVenue] = useState<VenueRow | null>(null);
 
@@ -371,14 +386,19 @@ function AdminPanel() {
     );
   }
 
-  const setStatus = async (id: string, status: "approved" | "rejected" | "pending") => {
+  const setStatus = async (
+    id: string,
+    status: "approved" | "rejected" | "pending",
+  ): Promise<boolean> => {
     try {
       await setVenueStatus(id, status);
       setVenues((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)));
       toast.success(`Venue ${status}`);
       void refreshAudit();
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not update venue status");
+      return false;
     }
   };
 
@@ -554,6 +574,25 @@ function AdminPanel() {
     { label: "Bookings", value: leads.filter((l) => l.status === "Booked").length },
     { label: "Active Subscriptions", value: subs.filter((s) => s.status === "active").length },
   ];
+  const reviewingVenue = venues.find((venue) => venue.id === reviewingVenueId);
+  const reviewPurpose =
+    reviewingVenue &&
+    (reviewingVenue.category === "film-shooting-locations" ||
+      Boolean(reviewingVenue.film_category) ||
+      reviewingVenue.suitable_for.some((purpose) =>
+        ["Film Shooting Locations", "Film Shoot"].includes(purpose),
+      ))
+      ? "film"
+      : "venue";
+  const decideReview = async (status: "approved" | "rejected") => {
+    if (!reviewingVenue || savingReviewStatus) return;
+    setSavingReviewStatus(true);
+    try {
+      if (await setStatus(reviewingVenue.id, status)) setReviewingVenueId(null);
+    } finally {
+      setSavingReviewStatus(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-sand px-4 py-10">
@@ -1172,23 +1211,14 @@ function AdminPanel() {
                           Transfer
                         </button>
 
-                        {v.status !== "approved" && (
-                          <button
-                            onClick={() => setStatus(v.id, "approved")}
-                            className="font-bold text-gold"
-                          >
-                            Approve
-                          </button>
-                        )}
-
-                        {v.status !== "rejected" && (
-                          <button
-                            onClick={() => setStatus(v.id, "rejected")}
-                            className="font-bold text-destructive"
-                          >
-                            Reject
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setReviewingVenueId(v.id)}
+                          className="inline-flex items-center gap-1 font-bold text-gold"
+                        >
+                          <Eye className="size-3.5" />
+                          Review listing
+                        </button>
 
                         <button
                           onClick={() => void removeVenue(v.id, v.name)}
@@ -1359,6 +1389,85 @@ function AdminPanel() {
           </div>
         </section>
       </div>
+      {reviewingVenue && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="venue-review-title"
+          className="fixed inset-0 z-[100] flex flex-col bg-sand"
+        >
+          <header className="z-10 flex flex-wrap items-center justify-between gap-3 bg-navy px-4 py-3 text-white shadow-lg sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setReviewingVenueId(null)}
+                disabled={savingReviewStatus}
+                className="shrink-0 rounded-md border border-white/30 px-3 py-2 text-sm font-bold hover:bg-white/10 disabled:opacity-50"
+              >
+                Back to admin
+              </button>
+              <div className="min-w-0">
+                <h2 id="venue-review-title" className="font-display text-lg font-extrabold">
+                  Listing review
+                </h2>
+                <p className="truncate text-xs text-white/75">
+                  {reviewingVenue.property_code} · {reviewingVenue.name}
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold capitalize">
+              {reviewingVenue.status}
+            </span>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="pointer-events-none" aria-hidden="true">
+              <Header />
+            </div>
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-900">
+              {reviewingVenue.status === "approved"
+                ? "Full public-listing preview. This listing is already visible to the public."
+                : "Full public-listing preview. This listing is not visible to the public until approved."}
+            </div>
+            <PublicVenueDetail
+              venue={rowToVenue(reviewingVenue)}
+              purpose={reviewPurpose}
+              previewMode
+            />
+            <div className="pointer-events-none" aria-hidden="true">
+              <Footer />
+            </div>
+          </div>
+
+          <footer className="z-10 flex flex-col gap-3 border-t border-border bg-card px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="text-sm text-muted-foreground">
+              Review the photos and listing details above before changing its status.
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              {reviewingVenue.status !== "rejected" && (
+                <button
+                  type="button"
+                  onClick={() => void decideReview("rejected")}
+                  disabled={savingReviewStatus}
+                  className="rounded-md border border-destructive px-4 py-2 text-sm font-bold text-destructive disabled:opacity-50"
+                >
+                  {savingReviewStatus ? "Saving…" : "Reject listing"}
+                </button>
+              )}
+              {reviewingVenue.status !== "approved" && (
+                <button
+                  type="button"
+                  onClick={() => void decideReview("approved")}
+                  disabled={savingReviewStatus}
+                  className="rounded-md bg-gold px-4 py-2 text-sm font-extrabold text-gold-foreground disabled:opacity-50"
+                >
+                  {savingReviewStatus ? "Saving…" : "Approve & publish"}
+                </button>
+              )}
+            </div>
+          </footer>
+        </div>
+      )}
     </div>
   );
 }

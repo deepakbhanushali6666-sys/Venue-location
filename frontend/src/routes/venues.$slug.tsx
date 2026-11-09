@@ -75,6 +75,7 @@ export const Route = createFileRoute("/venues/$slug")({
 function VenueDetailRoute() {
   const { venue: staticVenue } = Route.useLoaderData();
   const { slug } = Route.useParams();
+  const { purpose } = Route.useSearch();
   const [dbVenue, setDbVenue] = useState<{ venue: Venue; id: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -106,10 +107,18 @@ function VenueDetailRoute() {
     );
   }
 
-  if (dbVenue) return <VenueDetail venue={dbVenue.venue} venueId={dbVenue.id} />;
+  if (dbVenue)
+    return (
+      <PublicVenueDetail
+        venue={dbVenue.venue}
+        venueId={dbVenue.id}
+        {...(purpose ? { purpose } : {})}
+      />
+    );
 
   // Fallback to static demo data only if no live database listing exists.
-  if (staticVenue) return <VenueDetail venue={staticVenue} />;
+  if (staticVenue)
+    return <PublicVenueDetail venue={staticVenue} {...(purpose ? { purpose } : {})} />;
 
   return (
     <div className="grid min-h-[60vh] place-items-center bg-sand px-4 text-center">
@@ -126,8 +135,17 @@ function VenueDetailRoute() {
   );
 }
 
-function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
-  const { purpose } = Route.useSearch();
+export function PublicVenueDetail({
+  venue,
+  venueId,
+  purpose,
+  previewMode = false,
+}: {
+  venue: Venue;
+  venueId?: string;
+  purpose?: "venue" | "film";
+  previewMode?: boolean;
+}) {
   const purposes = venue.suitableFor ?? [];
   const selectedPurpose =
     purpose === "film" &&
@@ -150,9 +168,13 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
     <div className="bg-sand">
       <div className="mx-auto max-w-7xl px-4 py-8">
         <nav className="mb-4 text-sm text-muted-foreground">
-          <Link to="/venues" search={{}} className="hover:text-gold">
-            Venues
-          </Link>
+          {previewMode ? (
+            <span>Venues</span>
+          ) : (
+            <Link to="/venues" search={{}} className="hover:text-gold">
+              Venues
+            </Link>
+          )}
           <span className="mx-2">/</span>
           <span className="text-navy">{venue.name}</span>
         </nav>
@@ -278,7 +300,9 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               </div>
             )}
 
-            {venueId && <VenueReviews venueId={venueId} venueName={venue.name} />}
+            {!previewMode && venueId && (
+              <VenueReviews venueId={venueId} venueName={venue.name} />
+            )}
 
             <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
               <h2 className="section-title border-b border-border p-5 text-base text-navy">
@@ -301,43 +325,51 @@ function VenueDetail({ venue, venueId }: { venue: Venue; venueId?: string }) {
               </p>
               <p className="text-xs text-muted-foreground">per event / shoot day (indicative)</p>
 
-              <div className="mt-5">
-                <h2 className="section-title text-base text-navy">
-                  {selectedPurpose === "Film Shooting"
-                    ? "Request Film Shooting"
-                    : "Request Booking"}
-                </h2>
-                {selectedPurpose && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Selected purpose: {selectedPurpose}
-                  </p>
-                )}
-                <div className="mt-3">
-                  <EnquiryForm
-                    venueName={venue.name}
-                    venueId={venueId}
-                    listingPurpose={selectedPurpose}
-                    compact
-                  />
-                </div>
-              </div>
+              {previewMode ? (
+                <p className="mt-5 rounded-md bg-secondary p-4 text-sm text-muted-foreground">
+                  Booking and contact actions are disabled in this review preview.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-5">
+                    <h2 className="section-title text-base text-navy">
+                      {selectedPurpose === "Film Shooting"
+                        ? "Request Film Shooting"
+                        : "Request Booking"}
+                    </h2>
+                    {selectedPurpose && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Selected purpose: {selectedPurpose}
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      <EnquiryForm
+                        venueName={venue.name}
+                        venueId={venueId}
+                        listingPurpose={selectedPurpose}
+                        compact
+                      />
+                    </div>
+                  </div>
 
-              <div className="mt-4 grid gap-2">
-                <a
-                  href={`https://wa.me/${CONTACT.phoneIntl}?text=${waText}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-3 text-sm font-bold text-gold-foreground"
-                >
-                  <MessageCircle className="size-4" /> WhatsApp Enquiry
-                </a>
-                <a
-                  href={`tel:${CONTACT.phone}`}
-                  className="flex items-center justify-center gap-2 rounded-md border border-border px-4 py-3 text-sm font-bold text-navy"
-                >
-                  <Phone className="size-4" /> Call {CONTACT.phone}
-                </a>
-              </div>
+                  <div className="mt-4 grid gap-2">
+                    <a
+                      href={`https://wa.me/${CONTACT.phoneIntl}?text=${waText}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-3 text-sm font-bold text-gold-foreground"
+                    >
+                      <MessageCircle className="size-4" /> WhatsApp Enquiry
+                    </a>
+                    <a
+                      href={`tel:${CONTACT.phone}`}
+                      className="flex items-center justify-center gap-2 rounded-md border border-border px-4 py-3 text-sm font-bold text-navy"
+                    >
+                      <Phone className="size-4" /> Call {CONTACT.phone}
+                    </a>
+                  </div>
+                </>
+              )}
             </div>
           </aside>
         </div>
