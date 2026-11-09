@@ -30,6 +30,11 @@ new and existing databases:
 1. [`supabase/verified_listing_payment.sql`](supabase/verified_listing_payment.sql)
 2. [`supabase/account_photo_limits.sql`](supabase/account_photo_limits.sql)
 
+Re-run the updated `account_photo_limits.sql` on existing databases before
+deploying this version. It adds the admin-only, atomic account plan activation
+function and the profile auto-lead-contact setting; it does not delete existing
+data.
+
 The updated `verified_listing_payment.sql` also creates a private
 `venue_owner_contacts` table. Run it again on existing databases before
 deploying the matching app code. Each venue form saves its owner name, phone,
@@ -54,8 +59,16 @@ Admins can open **Subscriptions** from the admin panel (`/subscriptions`) to
 view purchased account plans, owner name, phone, email, exact property counts
 (including pending/rejected listings), current photo allowance, status, dates
 and latest invoice number (plain text, without a download option).
-The table is admin-only and paginated. Pending payments stay in the admin panel's
-payment verification table until an account subscription is activated.
+The table is admin-only and paginated. Admins can search for an account by email,
+review its profile and current plan, select an annual plan, and choose whether
+lead phone/email auto-approval is enabled. A confirmation preview is required
+before activation. Manual admin activation does not collect payment or issue an
+invoice; it activates for one year, extending an existing future expiry by one
+year. Admins can separately preview and confirm changes to lead-contact
+auto-approval or cancel a subscription. Cancelling leaves the subscription
+record and lead-contact setting intact; turning auto-approval off immediately
+revokes the account's automatic access to lead phone numbers and emails for its
+own properties. Pending payments still use the payment-verification flow.
 
 Payment verification issues an invoice number and activates the subscription.
 When submitting a paid plan payment, the owner provides billing name, address,

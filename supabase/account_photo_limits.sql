@@ -14,6 +14,83 @@ create policy "Admins can update subscriptions"
   using (public.has_role(auth.uid(), 'admin'))
   with check (public.has_role(auth.uid(), 'admin'));
 
+alter table public.profiles
+  add column if not exists auto_lead_contact boolean not null default false;
+
+create or replace function public.admin_assign_subscription(
+  p_owner_id uuid,
+  p_plan_code text,
+  p_auto_lead_contact boolean
+)
+returns public.subscriptions
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_plan_name text;
+  v_amount integer;
+  v_started_on date;
+  v_expires_on date;
+  v_new_expiry date;
+  v_subscription public.subscriptions;
+begin
+  if auth.uid() is null or not public.has_role(auth.uid(), 'admin') then
+    raise exception 'Admin access required' using errcode = '42501';
+  end if;
+
+  case p_plan_code
+    when 'verified_listing' then
+      v_plan_name := 'VENUES LOCATION Verified Listing';
+      v_amount := 3650;
+    when 'pro_marketing' then
+      v_plan_name := 'VENUES LOCATION Pro Marketing';
+      v_amount := 36500;
+    else
+      raise exception 'Unsupported subscription plan';
+  end case;
+
+  update public.profiles
+    set auto_lead_contact = p_auto_lead_contact, updated_at = now()
+    where id = p_owner_id;
+  if not found then
+    raise exception 'Account not found';
+  end if;
+
+  select started_on, expires_on
+    into v_started_on, v_expires_on
+    from public.subscriptions
+    where owner_id = p_owner_id
+    for update;
+
+  if v_expires_on is not null and v_expires_on > current_date then
+    v_new_expiry := (v_expires_on + interval '1 year')::date;
+  else
+    v_new_expiry := (current_date + interval '1 year')::date;
+  end if;
+
+  insert into public.subscriptions (
+    owner_id, plan_name, amount, status, started_on, expires_on, invoice_number
+  ) values (
+    p_owner_id, v_plan_name, v_amount, 'active', coalesce(v_started_on, current_date), v_new_expiry, ''
+  )
+  on conflict (owner_id) do update
+    set plan_name = excluded.plan_name,
+        amount = excluded.amount,
+        status = 'active',
+        started_on = coalesce(public.subscriptions.started_on, excluded.started_on),
+        expires_on = excluded.expires_on,
+        invoice_number = '',
+        updated_at = now()
+  returning * into v_subscription;
+
+  return v_subscription;
+end;
+$$;
+
+revoke all on function public.admin_assign_subscription(uuid, text, boolean) from public;
+grant execute on function public.admin_assign_subscription(uuid, text, boolean) to authenticated;
+
 create or replace function public.enforce_account_photo_limit()
 returns trigger
 language plpgsql

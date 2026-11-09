@@ -67,6 +67,7 @@ test("admin subscriptions join owner contacts and exact counts, including zero p
   assert.deepEqual(result.body.subscriptions[0], {
     ...subscription("one"), owner_name: "Test Owner", owner_mobile: "9876543210",
     owner_email: "owner@example.test", property_count: 1501, photo_limit: 20,
+    auto_lead_contact: false,
   });
   assert.equal(result.body.subscriptions[1].property_count, 0);
   assert.equal(result.body.subscriptions[1].owner_name, null);
@@ -157,6 +158,10 @@ test("admin subscriptions display the latest invoice number without download lin
   const page = await readFile(new URL("../../frontend/src/routes/_authenticated/subscriptions.tsx", import.meta.url), "utf8");
   assert.match(page, /Latest Invoice Number/);
   assert.match(page, /subscription\.invoice_number \|\| "Not issued"/);
-  assert.match(page, /colSpan=\{11\}/);
+  assert.match(page, /Find account and preview plan/);
+  assert.match(page, /Approve and activate/);
+  assert.match(page, /Revoke plan/);
+  assert.match(page, /Lead-contact auto approval/);
+  assert.match(page, /colSpan=\{13\}/);
   assert.doesNotMatch(page, /to="\/invoice|window\.print|download=/);
 });

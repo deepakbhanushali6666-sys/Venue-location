@@ -77,7 +77,9 @@ function visitorQuery(page: number, filters: VisitorFilters) {
 export const listVisitors = (page = 0, filters: VisitorFilters = {}) =>
   get<{ visitors: VisitorSearch[]; total: number }>(`/visitors?${visitorQuery(page, filters)}`);
 export const listVisitorActivity = (page = 0, filters: VisitorFilters = {}) =>
-  get<{ visitors: VisitorActivity[]; total: number; activityTotal: number }>(`/visitors/summary?${visitorQuery(page, filters)}`);
+  get<{ visitors: VisitorActivity[]; total: number; activityTotal: number }>(
+    `/visitors/summary?${visitorQuery(page, filters)}`,
+  );
 
 // Venues
 export const listVenues = (filters?: { category?: string; city?: string; search?: string }) => {
@@ -176,9 +178,48 @@ export type AdminSubscription = {
   started_on: string | null;
   expires_on: string | null;
   photo_limit: number;
+  auto_lead_contact: boolean;
+};
+export type AdminSubscriptionPlanCode = "verified_listing" | "pro_marketing";
+export type AdminSubscriptionAccountPreview = {
+  account: {
+    id: string;
+    full_name: string;
+    email: string;
+    mobile: string;
+    auto_lead_contact: boolean;
+  };
+  subscription: {
+    id: string;
+    plan_name: string;
+    amount: number;
+    status: string;
+    started_on: string | null;
+    expires_on: string | null;
+    invoice_number: string;
+  } | null;
+  property_count: number;
 };
 export const listSubscriptionOwners = (page = 0) =>
-  get<{ subscriptions: AdminSubscription[]; total: number; pageSize: number }>(`/subscriptions/owners?page=${page}`);
+  get<{ subscriptions: AdminSubscription[]; total: number; pageSize: number }>(
+    `/subscriptions/owners?page=${page}`,
+  );
+export const previewAdminSubscriptionAccount = (email: string) =>
+  get<AdminSubscriptionAccountPreview>(
+    `/subscriptions/admin-preview?email=${encodeURIComponent(email)}`,
+  );
+export const assignAdminSubscription = (
+  owner_id: string,
+  plan_code: AdminSubscriptionPlanCode,
+  auto_lead_contact: boolean,
+) =>
+  post<{ subscription: Record<string, unknown> }>("/subscriptions/admin-assign", {
+    owner_id,
+    plan_code,
+    auto_lead_contact,
+  });
+export const revokeAdminSubscription = (ownerId: string) =>
+  post<{ subscription: Record<string, unknown> }>(`/subscriptions/admin/${ownerId}/revoke`);
 
 // Payments
 export const createPayment = (payload: Record<string, unknown>) =>
@@ -187,8 +228,7 @@ export const listMyPayments = () => get<{ payments: Record<string, unknown>[] }>
 export const listPayments = () => get<{ payments: Record<string, unknown>[] }>("/payments");
 export const getPayment = (id: string) =>
   get<{ payment: Record<string, unknown> }>(`/payments/${id}`);
-export const verifyPayment = (id: string) =>
-  post<{ success: boolean }>(`/payments/${id}/verify`);
+export const verifyPayment = (id: string) => post<{ success: boolean }>(`/payments/${id}/verify`);
 export const rejectPayment = (id: string, reason: string) =>
   post<{ success: boolean }>(`/payments/${id}/reject`, { reason });
 
