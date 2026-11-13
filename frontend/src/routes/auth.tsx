@@ -170,6 +170,14 @@ function AuthPage() {
           </form>
         )}
 
+        {mode === "signin" && !pendingConfirm && (
+          <div className="mt-3 text-right">
+            <Link to="/forgot-password" className="text-sm font-bold text-gold hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+        )}
+
         <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
           <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
         </div>

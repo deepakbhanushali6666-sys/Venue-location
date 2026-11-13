@@ -119,6 +119,11 @@ npm run dev            # http://localhost:4000
 No service-role/secret key is required — the backend forwards each user's
 own Supabase session token, so Postgres RLS enforces all authorization.
 
+The sign-in page includes **Forgot password?**. Supabase sends a recovery email
+back to `/reset-password`, where the user can set a new password. Add the
+deployed URL ending in `/reset-password` (and the local development URL when
+needed) to Supabase Authentication > URL Configuration > Redirect URLs.
+
 ### 3. Frontend
 
 ```sh

@@ -17,11 +17,13 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FilmLocationsRouteImport } from './routes/film-locations'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ListYourVenueRouteImport } from './routes/list-your-venue'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -74,6 +76,11 @@ const FilmLocationsRoute = FilmLocationsRouteImport.update({
   path: '/film-locations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FounderRoute = FounderRouteImport.update({
   id: '/founder',
   path: '/founder',
@@ -97,6 +104,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
   id: '/refund-policy',
   path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeamRoute = TeamRouteImport.update({
@@ -171,11 +183,13 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
   '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -197,11 +211,13 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
   '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -225,11 +241,13 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/film-locations': typeof FilmLocationsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/founder': typeof FounderRoute
   '/gallery': typeof GalleryRoute
   '/list-your-venue': typeof ListYourVenueRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/team': typeof TeamRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -253,11 +271,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/film-locations'
+    | '/forgot-password'
     | '/founder'
     | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/team'
     | '/terms'
     | '/admin'
@@ -279,11 +299,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/film-locations'
+    | '/forgot-password'
     | '/founder'
     | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/team'
     | '/terms'
     | '/admin'
@@ -306,11 +328,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/film-locations'
+    | '/forgot-password'
     | '/founder'
     | '/gallery'
     | '/list-your-venue'
     | '/privacy'
     | '/refund-policy'
+    | '/reset-password'
     | '/team'
     | '/terms'
     | '/_authenticated/admin'
@@ -334,11 +358,13 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   FilmLocationsRoute: typeof FilmLocationsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   FounderRoute: typeof FounderRoute
   GalleryRoute: typeof GalleryRoute
   ListYourVenueRoute: typeof ListYourVenueRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TeamRoute: typeof TeamRoute
   TermsRoute: typeof TermsRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
@@ -403,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FilmLocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/founder': {
       id: '/founder'
       path: '/founder'
@@ -436,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/refund-policy'
       fullPath: '/refund-policy'
       preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/team': {
@@ -559,11 +599,13 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   FilmLocationsRoute: FilmLocationsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   FounderRoute: FounderRoute,
   GalleryRoute: GalleryRoute,
   ListYourVenueRoute: ListYourVenueRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TeamRoute: TeamRoute,
   TermsRoute: TermsRoute,
   VenuesSlugRoute: VenuesSlugRoute,
