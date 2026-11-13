@@ -372,6 +372,9 @@ create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
   amount integer not null default 3650,
+  plan_code text not null default 'verified_listing'
+    check (plan_code in ('verified_listing', 'pro_marketing')),
+  legacy_gst_inclusive boolean not null default false,
   method public.payment_method not null default 'upi',
   reference text not null default '',
   payer_name text not null default '',
@@ -654,6 +657,7 @@ declare
   v_start date;
   v_expiry date;
   v_current date;
+  v_plan_amount integer;
 begin
   if not public.has_role(auth.uid(), 'admin') then
     raise exception 'Only admins can verify payments';
@@ -662,6 +666,20 @@ begin
   select * into v_pay from public.payments where id = p_payment_id for update;
   if not found then raise exception 'Payment not found'; end if;
   if v_pay.status = 'verified' then return v_pay.invoice_number; end if;
+
+  if v_pay.plan_code = 'pro_marketing' then
+    v_plan_amount := 36500;
+  elsif v_pay.plan_code = 'verified_listing' then
+    v_plan_amount := 3650;
+  else
+    raise exception 'Unsupported subscription plan';
+  end if;
+  if (
+    (v_pay.legacy_gst_inclusive and v_pay.amount <> v_plan_amount)
+    or (not v_pay.legacy_gst_inclusive and v_pay.amount <> round(v_plan_amount * 1.18)::integer)
+  ) then
+    raise exception 'Payment amount does not match the selected plan';
+  end if;
 
   v_invoice := 'OMS/INV/' || to_char(now(), 'YYYY') || '/' || nextval('public.invoice_seq');
 
@@ -674,7 +692,7 @@ begin
   end if;
 
   insert into public.subscriptions (owner_id, status, amount, started_on, expires_on, invoice_number)
-  values (v_pay.owner_id, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
+  values (v_pay.owner_id, 'active', v_plan_amount, v_start, v_expiry, v_invoice)
   on conflict (owner_id) do update
     set status = 'active', amount = excluded.amount, started_on = coalesce(public.subscriptions.started_on, excluded.started_on),
         expires_on = excluded.expires_on, invoice_number = excluded.invoice_number;
@@ -889,7 +907,11 @@ create policy "Owners and admins can view payments" on public.payments
 drop policy if exists "Owners can submit their own payments" on public.payments;
 create policy "Owners can submit their own payments" on public.payments
   for insert to authenticated
-  with check (auth.uid() = owner_id and status = 'pending');
+  with check (
+    auth.uid() = owner_id
+    and status = 'pending'
+    and legacy_gst_inclusive = false
+  );
 drop policy if exists "Admins can update payments" on public.payments;
 create policy "Admins can update payments" on public.payments
   for update to authenticated

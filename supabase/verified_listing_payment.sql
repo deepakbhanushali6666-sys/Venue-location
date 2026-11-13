@@ -157,6 +157,24 @@ alter table public.payments
   add column if not exists invoice_to_state text not null default '',
   add column if not exists invoice_to_gstin text not null default '';
 
+alter table public.payments
+  add column if not exists legacy_gst_inclusive boolean;
+update public.payments
+  set legacy_gst_inclusive = true
+  where legacy_gst_inclusive is null;
+alter table public.payments
+  alter column legacy_gst_inclusive set default false,
+  alter column legacy_gst_inclusive set not null;
+
+drop policy if exists "Owners can submit their own payments" on public.payments;
+create policy "Owners can submit their own payments" on public.payments
+  for insert to authenticated
+  with check (
+    auth.uid() = owner_id
+    and status = 'pending'
+    and legacy_gst_inclusive = false
+  );
+
 do $$
 begin
   if not exists (
@@ -188,6 +206,7 @@ declare
   v_venue_id uuid;
   v_invoice text;
   v_plan_name text;
+  v_plan_amount integer;
   v_start date;
   v_expiry date;
   v_current date;
@@ -208,12 +227,14 @@ begin
 
   if v_pay.plan_code = 'pro_marketing' then
     v_plan_name := 'VENUES LOCATION Pro Marketing';
+    v_plan_amount := 36500;
   else
     v_plan_name := 'VENUES LOCATION Verified Listing';
+    v_plan_amount := 3650;
   end if;
   if (
-    (v_pay.plan_code = 'verified_listing' and v_pay.amount <> 3650)
-    or (v_pay.plan_code = 'pro_marketing' and v_pay.amount <> 36500)
+    (v_pay.legacy_gst_inclusive and v_pay.amount <> v_plan_amount)
+    or (not v_pay.legacy_gst_inclusive and v_pay.amount <> round(v_plan_amount * 1.18)::integer)
   ) then
     raise exception 'Payment amount does not match the selected plan';
   end if;
@@ -224,7 +245,7 @@ begin
     from public.subscriptions
     where owner_id = v_pay.owner_id and status = 'active'
     for update;
-  if (v_current is null or v_current >= current_date) and v_current_amount > v_pay.amount then
+  if (v_current is null or v_current >= current_date) and v_current_amount > v_plan_amount then
     raise exception 'An active account plan cannot be downgraded through a payment';
   end if;
 
@@ -239,7 +260,7 @@ begin
   -- Activate within this transaction before inserting the paid listing.
   -- Any draft validation failure rolls back both changes.
   insert into public.subscriptions (owner_id, plan_name, status, amount, started_on, expires_on, invoice_number)
-  values (v_pay.owner_id, v_plan_name, 'active', v_pay.amount, v_start, v_expiry, v_invoice)
+  values (v_pay.owner_id, v_plan_name, 'active', v_plan_amount, v_start, v_expiry, v_invoice)
   on conflict (owner_id) do update
     set plan_name = excluded.plan_name, status = 'active', amount = excluded.amount,
         started_on = coalesce(public.subscriptions.started_on, excluded.started_on),

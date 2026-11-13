@@ -81,10 +81,13 @@ When submitting a paid plan payment, the owner provides billing name, address,
 state/union territory, and an optional GSTIN. These details are saved on that
 payment as an invoice snapshot. After an admin verifies payment, the owner can
 open **Download GST invoice** in the dashboard and print it or save it as a PDF.
-Plan prices are final amounts inclusive of 18% GST; intra-state invoices split
-GST into CGST/SGST and inter-state invoices show IGST. Applying
-`supabase/verified_listing_payment.sql` adds the invoice fields for existing
-databases as well as installing the verification function.
+Plan values are before GST: ₹3,650 and ₹36,500. An additional 18% GST is added
+to payments, making the current totals ₹4,307 and ₹43,070 respectively.
+Intra-state invoices split GST into CGST/SGST and inter-state invoices show
+IGST. Re-run the latest `supabase/verified_listing_payment.sql` on existing
+databases to install the updated verification behavior. Earlier payments at
+the previous GST-inclusive amounts remain valid, and their invoices retain the
+original taxable-value calculation.
 
 Run [`supabase/visitors.sql`](supabase/visitors.sql) after the schema setup for
 both new and existing projects to enable visitor search capture.

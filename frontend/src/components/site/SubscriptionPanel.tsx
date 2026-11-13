@@ -9,6 +9,7 @@ import {
   PLAN,
   PRO_MARKETING_PLAN,
   formatINR,
+  planPaymentAmount,
   upiLink,
 } from "@/data/business";
 
@@ -16,6 +17,7 @@ type PaymentRow = {
   id: string;
   amount: number;
   plan_code?: string;
+  legacy_gst_inclusive?: boolean;
   method: string;
   reference: string;
   status: string;
@@ -79,7 +81,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
     setSaving(true);
     try {
       await createPayment({
-        amount: selectedPlan.amount,
+        amount: planPaymentAmount(selectedPlan.amount),
         plan_code: selectedPlan.code,
         method: String(f.get("method") ?? "upi"),
         reference,
@@ -112,7 +114,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {isActive
-              ? `${formatINR(currentPlan.amount)} for ${currentPlan.period}, inclusive of 18% GST.`
+              ? `Plan value ${formatINR(currentPlan.amount)} for ${currentPlan.period}; GST is added to new payments.`
               : "Upgrade below to upload more photos."}
           </p>
         </div>
@@ -144,7 +146,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
         </div>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        A GST invoice is available for each payment after our team verifies it. Plan prices include 18% GST.
+        A GST invoice is available for each payment after our team verifies it. GST at 18% is added to the plan price.
       </p>
 
       <ul className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
@@ -185,10 +187,10 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
             Choose your account plan
             <select value={selectedCode} onChange={(e) => setSelectedCode(e.target.value)} className={input} disabled={saving}>
               <option value={PLAN.code} disabled={photoLimit > PLAN.photoLimit}>
-                {formatINR(PLAN.amount)} / year - 20 photos per property
+                {formatINR(PLAN.amount)} + GST / year - 20 photos per property
               </option>
               <option value={PRO_MARKETING_PLAN.code}>
-                {formatINR(PRO_MARKETING_PLAN.amount)} / year - 60 photos per property
+                {formatINR(PRO_MARKETING_PLAN.amount)} + GST / year - 60 photos per property
               </option>
             </select>
             <span className="font-normal text-muted-foreground">
@@ -196,9 +198,13 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
             </span>
           </label>
           <div>
-            <h3 className="font-display text-base font-extrabold text-navy">Step 1 — Pay {formatINR(selectedPlan.amount)}</h3>
+            <h3 className="font-display text-base font-extrabold text-navy">
+              Step 1 — Pay {formatINR(planPaymentAmount(selectedPlan.amount))}
+            </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pay by UPI or bank transfer, then submit the reference number for verification. The plan price is the final amount and includes 18% GST.
+              Plan value {formatINR(selectedPlan.amount)} + 18% GST{" "}
+              ({formatINR(planPaymentAmount(selectedPlan.amount))} total). Pay by UPI or bank
+              transfer, then submit the reference number for verification.
             </p>
             <dl className="mt-3 space-y-1 text-sm">
               <div className="flex justify-between gap-3">
@@ -227,7 +233,7 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
               </div>
             </dl>
             <a
-              href={upiLink(selectedPlan.amount, selectedPlan.name)}
+              href={upiLink(planPaymentAmount(selectedPlan.amount), selectedPlan.name)}
               className="mt-3 inline-block rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy"
             >
               Open UPI app
@@ -397,12 +403,13 @@ export function SubscriptionPanel({ userId, sub, onChange }: { userId: string; s
 
 function InvoiceDocument({ payment }: { payment: PaymentRow }) {
   const total = payment.amount;
-  const taxable = Math.round((total / 1.18) * 100) / 100;
+  const plan = payment.plan_code === PRO_MARKETING_PLAN.code ? PRO_MARKETING_PLAN : PLAN;
+  const legacyInclusive = payment.legacy_gst_inclusive ?? total === plan.amount;
+  const taxable = legacyInclusive ? Math.round((total / 1.18) * 100) / 100 : plan.amount;
   const tax = Math.round((total - taxable) * 100) / 100;
   const sameState = payment.invoice_to_state.trim().toLowerCase() === "maharashtra";
   const halfTax = Math.round((tax / 2) * 100) / 100;
   const otherHalfTax = Math.round((tax - halfTax) * 100) / 100;
-  const plan = payment.plan_code === PRO_MARKETING_PLAN.code ? PRO_MARKETING_PLAN : PLAN;
   const invoiceDate = new Date(payment.verified_at ?? payment.created_at).toLocaleDateString(
     "en-IN",
     {
@@ -482,7 +489,7 @@ function InvoiceDocument({ payment }: { payment: PaymentRow }) {
           )}
           <tr className="border-t-2 border-slate-900 font-extrabold">
             <td colSpan={2} className="py-3 pr-2 text-right">
-              Total (GST inclusive)
+              Total (including GST)
             </td>
             <td className="py-3 pl-2 text-right">{formatINR(total)}</td>
           </tr>

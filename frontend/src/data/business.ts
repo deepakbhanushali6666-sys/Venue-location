@@ -89,6 +89,10 @@ export const PRO_MARKETING_PLAN = {
   ],
 };
 
+export function planPaymentAmount(amount: number) {
+  return Math.round(amount * 1.18);
+}
+
 export const PAYMENT_DETAILS = {
   upiId: "oncemore@axisbank",
   upiName: "Once More Entertainment",

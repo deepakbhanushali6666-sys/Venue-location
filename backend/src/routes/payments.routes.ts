@@ -94,7 +94,7 @@ paymentsRouter.post("/", requireAuth, async (req: AuthedRequest, res, next) => {
       .from("payments")
       .insert({
         owner_id: req.user!.id,
-        amount: plan.amount,
+        amount: plan.paymentAmount,
         method: venue_draft_id ? "upi" : method,
         plan_code,
         reference,

@@ -11,6 +11,7 @@ import {
   PAYMENT_DETAILS,
   PLAN,
   PRO_MARKETING_PLAN,
+  planPaymentAmount,
   upiLink,
 } from "@/data/business";
 import { useAuth } from "@/hooks/useAuth";
@@ -275,7 +276,7 @@ function ListYourVenue() {
     setSubmittingPayment(true);
     try {
       await createPayment({
-        amount: selectedPaymentPlan.amount,
+        amount: planPaymentAmount(selectedPaymentPlan.amount),
         plan_code: selectedPaymentPlan.code,
         method: "upi",
         reference: paymentReference.trim(),
@@ -532,7 +533,7 @@ function ListYourVenue() {
         <div className="rounded-lg border border-border bg-card p-6 shadow-card">
           <h2 className="section-title text-lg text-navy">Venue Owner Registration</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Selected plan: <strong className="text-navy">{selectedPlan === "basic" ? "Basic Listing · Free" : `${selectedPaymentPlan.name.replace("VENUES LOCATION ", "")} · ${selectedPaymentPlan.amount.toLocaleString("en-IN")}/year`}</strong>
+            Selected plan: <strong className="text-navy">{selectedPlan === "basic" ? "Basic Listing · Free" : `${selectedPaymentPlan.name.replace("VENUES LOCATION ", "")} · ₹${selectedPaymentPlan.amount.toLocaleString("en-IN")} + GST/year`}</strong>
           </p>
           {accountPhotoLimit !== null && accountPhotoLimit > 10 && (
             <p className="mt-2 text-sm font-bold text-navy">
@@ -909,15 +910,18 @@ function ListYourVenue() {
             {draftId && (
               <section className="rounded-lg border border-blue-200 bg-blue-50 p-4" aria-labelledby="verified-payment-heading">
                 <h3 id="verified-payment-heading" className="font-display text-base font-extrabold text-navy">
-                  Pay {selectedPaymentPlan.amount.toLocaleString("en-IN")} to continue
+                  Pay ₹{planPaymentAmount(selectedPaymentPlan.amount).toLocaleString("en-IN")} to continue
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Scan the QR with your UPI app. The plan price is the final amount and includes 18% GST. After payment, enter the UTR/reference number. We’ll verify it before sending your listing for approval.
+                  Plan value ₹{selectedPaymentPlan.amount.toLocaleString("en-IN")} + 18% GST
+                  (₹{planPaymentAmount(selectedPaymentPlan.amount).toLocaleString("en-IN")} total).
+                  Scan the QR with your UPI app, then enter the UTR/reference number. We’ll verify
+                  it before sending your listing for approval.
                 </p>
                 <div className="mt-4 grid gap-5 sm:grid-cols-[220px_1fr] sm:items-center">
                   <div className="mx-auto rounded-md bg-white p-3">
                     <QRCodeSVG
-                      value={upiLink(selectedPaymentPlan.amount, selectedPaymentPlan.name)}
+                      value={upiLink(planPaymentAmount(selectedPaymentPlan.amount), selectedPaymentPlan.name)}
                       size={196}
                       level="M"
                       includeMargin
@@ -949,10 +953,10 @@ function ListYourVenue() {
                       </div>
                     </dl>
                     <a
-                      href={upiLink(selectedPaymentPlan.amount, selectedPaymentPlan.name)}
+                      href={upiLink(planPaymentAmount(selectedPaymentPlan.amount), selectedPaymentPlan.name)}
                       className="inline-flex rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-navy"
                     >
-                      Open UPI app · ₹{selectedPaymentPlan.amount.toLocaleString("en-IN")}
+                      Open UPI app · ₹{planPaymentAmount(selectedPaymentPlan.amount).toLocaleString("en-IN")}
                     </a>
                     {paymentSubmitted ? (
                       <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">

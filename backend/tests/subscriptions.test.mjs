@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { subscriptionPhotoLimit } from "../dist/lib/subscriptions.js";
 import { venuesRouter } from "../dist/routes/venues.routes.js";
@@ -131,14 +132,14 @@ test("subscription API returns authoritative account photo allowance", async () 
   }
 });
 
-test("account upgrade payment is pending and uses server price, not client price", async () => {
+test("account upgrade payment adds GST to the server plan price, not the client price", async () => {
   const invoiceDetails = {
     invoice_to_name: "Example Venue Pvt Ltd",
     invoice_to_address: "10 Market Road, Mumbai",
     invoice_to_state: "Maharashtra",
     invoice_to_gstin: "27ABCDE1234F1Z5",
   };
-  for (const [plan_code, amount] of [["verified_listing", 3650], ["pro_marketing", 36500]]) {
+  for (const [plan_code, amount] of [["verified_listing", 4307], ["pro_marketing", 43070]]) {
     const { req, writes } = request(null, {
       plan_code, amount: 1, reference: "UTR123", ...invoiceDetails,
     });
@@ -151,6 +152,24 @@ test("account upgrade payment is pending and uses server price, not client price
     assert.equal(writes[0].payload.owner_id, "owner");
     assert.equal(writes[0].payload.invoice_to_name, invoiceDetails.invoice_to_name);
     assert.equal(writes[0].payload.invoice_to_gstin, invoiceDetails.invoice_to_gstin);
+  }
+});
+
+test("payment verification accepts legacy inclusive payments and stores the pre-tax plan value", async () => {
+  for (const filename of ["migration.sql", "verified_listing_payment.sql"]) {
+    const sql = await readFile(new URL(`../../supabase/${filename}`, import.meta.url), "utf8");
+    const verification = sql.split("create or replace function public.verify_payment")[1].split("$$;")[0];
+    assert.match(verification, /v_pay\.legacy_gst_inclusive/);
+    assert.match(verification, /round\(v_plan_amount \* 1\.18\)::integer/);
+    assert.match(verification, /insert into public\.subscriptions[\s\S]*v_plan_amount/);
+    assert.match(sql, /legacy_gst_inclusive = false/);
+    if (filename === "verified_listing_payment.sql") {
+      assert.match(verification, /v_current_amount > v_plan_amount/);
+      assert.match(
+        verification,
+        /values \(v_pay\.owner_id, v_plan_name, 'active', v_plan_amount, v_start, v_expiry, v_invoice\)/,
+      );
+    }
   }
 });
 

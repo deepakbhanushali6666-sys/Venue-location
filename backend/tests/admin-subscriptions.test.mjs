@@ -151,6 +151,8 @@ test("dashboard offers print-ready GST invoices for verified payments", async ()
   assert.match(panel, /invoice_to_address/);
   assert.match(panel, /CGST/);
   assert.match(panel, /IGST/);
+  assert.match(panel, /legacy_gst_inclusive/);
+  assert.match(panel, /: plan\.amount/);
   assert.match(panel, /window\.print/);
 });
 
